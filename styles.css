@@ -733,9 +733,9 @@ html, body {
 
 .swipe-hint {
   font-size: 0.85rem;
-  margin-top: 8px;
+  margin-top: 10px;
   color: #666;
-  display: none;
+  text-align: center;
 }
 
 .answer {

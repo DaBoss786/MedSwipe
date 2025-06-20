@@ -1458,13 +1458,13 @@ const MAX_USERS_TO_PROCESS_PER_RUN = 100; // Adjustable: How many users to proce
 
 exports.syncUsersToMailerLiteDaily = onSchedule(
   {
-    schedule: "every day 12:00", // Example: Runs daily at 3:00 AM
-    timeZone: "America/New_York",    // Optional: Specify your preferred timezone
-    secrets: ["MAILERLITE_API_KEY"], // Ensure this secret is set in Firebase
-    timeoutSeconds: 540,             // Max timeout for scheduled functions (9 minutes)
-    memory: "512MiB",                // Adjust memory as needed
-    retryConfig: {                   // Optional: Configure retries on failure
-        retryCount: 2,
+    schedule: "every day 22:00",
+    timeZone: "America/New_York",
+    secrets: ["MAILERLITE_API_KEY"],
+    timeoutSeconds: 540,
+    memory: "512MiB",
+    retryConfig: {
+      retryCount: 2,
     }
   },
   async (event) => {
@@ -1473,16 +1473,17 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
     if (!mailerLiteApiKey) {
       logger.error("MAILERLITE_API_KEY secret is not configured. Aborting MailerLite sync.");
-      return; // Critical configuration missing
+      return;
     }
 
     try {
       const usersRef = db.collection("users");
+      
+      // Query for users who might be on free trials
       const snapshot = await usersRef
-        .where("marketingOptIn", "==", true)
-        .where("email", "!=", null) // Basic check that email field exists
-        .where("mailerLiteSubscriberId", "==", null) // Key: Only get users not yet synced
-        .limit(MAX_USERS_TO_PROCESS_PER_RUN) // Process in batches
+        .where("email", "!=", null)
+        .where("mailerLiteSubscriberId", "==", null)
+        .limit(MAX_USERS_TO_PROCESS_PER_RUN)
         .get();
 
       if (snapshot.empty) {
@@ -1495,38 +1496,83 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
       let errorCount = 0;
       let skippedCount = 0;
 
-      // Process each user found
       for (const userDoc of snapshot.docs) {
         const userId = userDoc.id;
         const userData = userDoc.data();
 
-        // Additional validation for email format (optional, MailerLite will also validate)
+        // CRITICAL CHECK: Only process users who are on FREE TRIALS
+        // A user is on a free trial if:
+        // 1. They have an active subscription (boardReviewActive or cmeSubscriptionActive is true)
+        // 2. They have a trial end date that hasn't passed yet
+        // 3. They have NOT made a payment (no stripeCustomerId or payment history)
+        
+        const hasActiveSubscription = 
+          userData.boardReviewActive === true || 
+          userData.cmeSubscriptionActive === true;
+
+        if (!hasActiveSubscription) {
+          logger.info(`User ${userId} does not have an active subscription. Skipping.`);
+          skippedCount++;
+          continue;
+        }
+
+        // Check if they have trial end dates (indicating they're on a trial)
+        const hasBoardReviewTrial = userData.boardReviewTrialEndDate ? true : false;
+        const hasCmeAnnualTrial = userData.cmeSubscriptionTrialEndDate ? true : false;
+        
+        if (!hasBoardReviewTrial && !hasCmeAnnualTrial) {
+          logger.info(`User ${userId} has active subscription but no trial end date. Likely a paid customer. Skipping.`);
+          skippedCount++;
+          continue;
+        }
+
+        // Additional check: If they have a stripeCustomerId, they've likely made a payment
+        // (though this could be from a previous purchase, so this check might need adjustment)
+        // For the strictest interpretation of "free trial only", you might want to check
+        // if they've EVER made a payment vs just having a customer ID
+        
+        // Optional stricter check - uncomment if needed:
+        // if (userData.stripeCustomerId) {
+        //   logger.info(`User ${userId} has stripeCustomerId, indicating past payment. Skipping.`);
+        //   skippedCount++;
+        //   continue;
+        // }
+
+        // Validate email
         if (!userData.email || typeof userData.email !== 'string' || !userData.email.includes('@')) {
-            logger.warn(`User ${userId} has invalid or missing email ('${userData.email}'). Skipping MailerLite sync for this user.`);
-            // Optionally mark this user so they are not picked up again if email is truly bad
-            // await userDoc.ref.update({ mailerLiteSubscriberId: "INVALID_EMAIL_SKIPPED" });
-            skippedCount++;
-            continue;
+          logger.warn(`User ${userId} has invalid or missing email. Skipping.`);
+          skippedCount++;
+          continue;
         }
 
         const email = userData.email;
-        const name = userData.firstName || userData.displayName || ""; // Use available name fields
-        const lastName = userData.lastName || ""; // Optional: if you collect last name
+        const name = userData.firstName || userData.username || userData.displayName || "";
+        
+        // Determine which trial they're on
+        let trialType = "unknown_trial";
+        if (userData.cmeSubscriptionActive === true && hasCmeAnnualTrial) {
+          trialType = "cme_annual_trial";
+        } else if (userData.boardReviewActive === true && hasBoardReviewTrial) {
+          trialType = "board_review_trial";
+        }
 
-        logger.info(`Processing user ${userId} (Email: ${email}) for MailerLite sync.`);
+        logger.info(`Processing FREE TRIAL user ${userId} (Email: ${email}, Trial Type: ${trialType}) for MailerLite sync.`);
 
         try {
           const response = await axios.post(
-            `https://connect.mailerlite.com/api/subscribers`, // MailerLite API v2 (new API)
+            `https://connect.mailerlite.com/api/subscribers`,
             {
               email: email,
-              fields: { // MailerLite's current API often uses a 'fields' object
+              fields: {
                 name: name,
-                last_name: lastName,
+                customer_type: "free_trial",
+                trial_type: trialType,
+                subscription_plan: userData.cmeSubscriptionPlan || userData.boardReviewTier || "Free Trial",
+                // Track marketing consent even though we're adding them regardless
+                has_marketing_consent: userData.marketingOptIn ? "yes" : "no"
               },
-              groups: [MAILERLITE_GROUP_ID], // Add to specific group(s)
-              status: "active", // Or "unconfirmed" if you use double opt-in via MailerLite
-              // You can add more fields here if needed, like 'source', 'country', etc.
+              groups: [MAILERLITE_GROUP_ID],
+              status: "active", // Active for transactional trial emails
             },
             {
               headers: {
@@ -1534,21 +1580,21 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
                 "Content-Type": "application/json",
                 "Accept": "application/json",
               },
-              timeout: 10000, // 10 second timeout for the API call
+              timeout: 10000,
             }
           );
 
           const subscriberId = response.data?.data?.id;
-          logger.info(`Successfully added/updated ${email} (User ID: ${userId}) in MailerLite. Subscriber ID: ${subscriberId}`);
+          logger.info(`Successfully added/updated FREE TRIAL user ${email} in MailerLite. Subscriber ID: ${subscriberId}`);
           successCount++;
 
-          // Update Firestore to mark as synced and store MailerLite ID
+          // Update Firestore
           await userDoc.ref.update({
-            mailerLiteSubscriberId: subscriberId || `SYNCED_NO_ID_${Date.now()}`, // Store ID, or a generic synced marker if ID is missing
+            mailerLiteSubscriberId: subscriberId || `SYNCED_NO_ID_${Date.now()}`,
             mailerLiteLastSyncTimestamp: admin.firestore.FieldValue.serverTimestamp(),
-            mailerLiteSyncError: admin.firestore.FieldValue.delete() // Clear any previous error
+            mailerLiteSubscriberType: "free_trial_user",
+            mailerLiteSyncError: admin.firestore.FieldValue.delete()
           });
-          logger.info(`Updated Firestore for user ${userId} with MailerLite subscriber ID: ${subscriberId}.`);
 
         } catch (apiError) {
           errorCount++;
@@ -1557,54 +1603,37 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
           let errorData = null;
 
           if (apiError.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
             errorStatus = apiError.response.status;
             errorData = apiError.response.data;
             errorMessage = errorData?.message || JSON.stringify(errorData) || apiError.message;
             logger.error(`MailerLite API Error for ${email} (User ID: ${userId}): Status ${errorStatus}`, { errorData });
           } else if (apiError.request) {
-            // The request was made but no response was received
             logger.error(`MailerLite API No Response for ${email} (User ID: ${userId}):`, apiError.request);
             errorMessage = "No response from MailerLite API.";
           } else {
-            // Something happened in setting up the request that triggered an Error
             logger.error(`MailerLite API Request Setup Error for ${email} (User ID: ${userId}):`, apiError.message);
           }
 
-          // Mark user with error to prevent constant retries for persistent issues
-          // (e.g., invalid email format rejected by MailerLite)
-          if (errorStatus === 422 || errorStatus === 400) { // 422 Unprocessable Entity, 400 Bad Request
+          if (errorStatus === 422 || errorStatus === 400) {
             await userDoc.ref.update({
-              mailerLiteSubscriberId: `ERROR_API_${errorStatus}`, // Mark to avoid re-querying
+              mailerLiteSubscriberId: `ERROR_API_${errorStatus}`,
               mailerLiteSyncError: {
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),
                 message: errorMessage,
                 status: errorStatus,
-                data: errorData ? JSON.stringify(errorData).substring(0, 500) : null, // Store some data, truncated
+                data: errorData ? JSON.stringify(errorData).substring(0, 500) : null,
                 groupId: MAILERLITE_GROUP_ID
               }
             });
             logger.warn(`Marked user ${userId} with persistent MailerLite sync error ${errorStatus}.`);
           }
-          // For other errors (like network issues, 5xx), they will be retried on the next run
-          // because mailerLiteSubscriberId remains null.
         }
-        // Optional: Add a small delay if processing many users to respect API rate limits
-        // await new Promise(resolve => setTimeout(resolve, 250)); // 250ms delay
-      } // End of for loop
+      }
 
       logger.info(`MailerLite sync finished. Processed: ${snapshot.docs.length}, Success: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}.`);
 
-      // If there were more users than MAX_USERS_TO_PROCESS_PER_RUN, you might want to
-      // re-trigger this function or log that more processing is needed.
-      // For simplicity, this example processes one batch per scheduled run.
-
     } catch (error) {
-      logger.error("Unhandled error during scheduled MailerLite sync execution:", error);
-      // Depending on the error, you might want to throw it to trigger Firebase's retry mechanism
-      // if you've configured retries on the function.
-      // throw error; // Uncomment to utilize Firebase Function retries for this type of error
+      logger.error("Unhandled error during scheduled MailerLite sync:", error);
     }
   }
 );

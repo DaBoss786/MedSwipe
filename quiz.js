@@ -487,7 +487,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
             ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
             : "" }
         </div>
-        <div class="swipe-hint" style="display:none;">Swipe up for explanation</div>
+        <div class="swipe-hint">Select an answer to continue</div>
       </div>
     `;
     quizSlides.appendChild(questionSlide);
@@ -506,27 +506,86 @@ async function initializeQuiz(questions, quizType = 'regular') {
     direction: 'vertical',
     loop: false,
     mousewheel: true,
-    touchReleaseOnEdges: true
+    touchReleaseOnEdges: true,
+    allowSlideNext: false,  // Start locked
+    allowSlidePrev: true   // Allow going back
   });
+
+  // Function to lock/unlock swiping
+  function updateSwipePermissions() {
+    const activeIndex = window.mySwiper.activeIndex;
+    
+    // If we're on a question slide (even index)
+    if (activeIndex % 2 === 0) {
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      const card = currentSlide.querySelector('.card');
+      
+      // Check if question has been answered
+      if (card && card.classList.contains('answered')) {
+        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+      } else {
+        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+      }
+    } else {
+      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = true;
+    }
+  }
+
+  // Function to lock/unlock swiping
+  function updateSwipePermissions() {
+    // Safety check - make sure mySwiper exists and has slides
+    if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
+      console.log("Swiper not ready yet, skipping permission update");
+      return;
+    }
+    
+    const activeIndex = window.mySwiper.activeIndex || 0;
+    
+    // If we're on a question slide (even index)
+    if (activeIndex % 2 === 0) {
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      if (!currentSlide) {
+        console.log("Current slide not found");
+        return;
+      }
+      
+      const card = currentSlide.querySelector('.card');
+      
+      // Check if question has been answered
+      if (card && card.classList.contains('answered')) {
+        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+        console.log("Unlocked swiping - question answered");
+      } else {
+        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+        console.log("Locked swiping - question not answered");
+      }
+    } else {
+      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = true;
+      console.log("Unlocked swiping - on answer slide");
+    }
+  }
 
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
-    const previousIndex = window.mySwiper.previousIndex;
+    
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
       console.log("New question slide. questionStartTime updated to:", questionStartTime);
       updateBookmarkIcon();
     }
-    if (activeIndex % 2 === 1 && activeIndex > previousIndex) {
-      const prevSlide = window.mySwiper.slides[activeIndex - 1];
-      const card = prevSlide.querySelector('.card');
-      if (!card.classList.contains('answered')) {
-        window.mySwiper.slideNext();
-      }
-    }
+    
+    // Update swipe permissions for the new slide
+    updateSwipePermissions();
   });
 
   addOptionListeners();
+
+  // Set initial permissions after a small delay to ensure Swiper is fully initialized
+  setTimeout(() => {
+    updateSwipePermissions();
+  }, 100);
   
   // Set the initial bookmark icon state for the first question
   updateBookmarkIcon();
@@ -571,6 +630,13 @@ function addOptionListeners() {
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
+          // Unlock swiping now that question is answered
+          
+          if (window.mySwiper) {
+            window.mySwiper.allowSlideNext = true;
+            console.log("Unlocked swiping after answer selection");
+          }
+          window.mySwiper.allowSlideNext = true;
           const questionSlide = card.closest('.swiper-slide');
           const qId = questionSlide.dataset.id;
           if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
@@ -603,7 +669,15 @@ function addOptionListeners() {
           });
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
-          if (hint) { hint.style.display = 'block'; }
+          console.log("Found hint element:", hint); // Debug log
+          if (hint) { 
+            console.log("Updating hint text"); // Debug log
+            hint.textContent = 'Swipe up for explanation';
+            hint.style.color = '#28a745';
+            hint.style.display = 'block'; // Force it to be visible
+          } else {
+            console.log("Hint element not found!"); // Debug log
+          }
           const answerSlide = questionSlide.nextElementSibling;
 
           if (answerSlide) {
