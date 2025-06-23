@@ -418,6 +418,11 @@ async function initializeQuiz(questions, quizType = 'regular') {
     console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
   questionStartTime = Date.now();
+  // Reset scroll lock and swiper permissions when starting new quiz
+  document.body.classList.remove('scroll-lock');
+  if (window.mySwiper) {
+    window.mySwiper.destroy(true, true);
+  }
   // Get starting XP before the quiz begins
   try {
     const isOnboardingQuiz = window.isOnboardingQuiz || false;
@@ -567,18 +572,30 @@ async function initializeQuiz(questions, quizType = 'regular') {
     }
   }
 
-  window.mySwiper.on('slideChangeTransitionEnd', function() {
-    const activeIndex = window.mySwiper.activeIndex;
-    
-    if (activeIndex % 2 === 0) {
-      questionStartTime = Date.now();
-      console.log("New question slide. questionStartTime updated to:", questionStartTime);
-      updateBookmarkIcon();
-    }
-    
-    // Update swipe permissions for the new slide
-    updateSwipePermissions();
-  });
+// --- START OF NEW CODE ---
+window.mySwiper.on('slideChangeTransitionEnd', function() {
+  const activeIndex = window.mySwiper.activeIndex;
+  const totalSlides = window.mySwiper.slides.length;
+  
+  // Check if we're on the last explanation slide or summary slide
+  if (activeIndex >= totalSlides - 2 && totalSlides > 2) {
+    document.body.classList.add('scroll-lock');
+    console.log(`Page scroll LOCKED on slide index: ${activeIndex}`);
+  } else {
+    document.body.classList.remove('scroll-lock');
+    console.log(`Page scroll UNLOCKED on slide index: ${activeIndex}`);
+  }
+  
+  if (activeIndex % 2 === 0) {
+    questionStartTime = Date.now();
+    console.log("New question slide. questionStartTime updated to:", questionStartTime);
+    updateBookmarkIcon();
+  }
+  
+  // Update swipe permissions for the new slide
+  updateSwipePermissions();
+});
+// --- END OF NEW CODE ---
 
   addOptionListeners();
 
@@ -785,6 +802,7 @@ function addOptionListeners() {
                           returnButton.style.padding = "10px 15px";
                           lastCard.appendChild(returnButton);
                           returnButton.addEventListener('click', function() {
+                            document.body.classList.remove('scroll-lock');
                               console.log("Return to CME Dashboard button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -814,6 +832,7 @@ function addOptionListeners() {
                           continueButton.style.margin = "20px auto";
                           lastCard.appendChild(continueButton);
                           continueButton.addEventListener('click', function() {
+                            document.body.classList.remove('scroll-lock');
                               console.log("Onboarding continue button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -1105,6 +1124,7 @@ function showSummary() {
     const newStartNewQuizButton = startNewQuizButton.cloneNode(true);
     startNewQuizButton.parentNode.replaceChild(newStartNewQuizButton, startNewQuizButton);
     newStartNewQuizButton.addEventListener("click", function() {
+      document.body.classList.remove('scroll-lock');
         window.filterMode = "all"; // Assuming filterMode is a global or appropriately scoped variable
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";
@@ -1128,6 +1148,7 @@ function showSummary() {
         const newLeaderboardButton = leaderboardButton.cloneNode(true);
         leaderboardButton.parentNode.replaceChild(newLeaderboardButton, leaderboardButton);
         newLeaderboardButton.addEventListener("click", function() {
+          document.body.classList.remove('scroll-lock');
             document.getElementById("aboutView").style.display = "none";
             document.getElementById("faqView").style.display = "none";
             document.querySelector(".swiper").style.display = "none";
