@@ -388,19 +388,33 @@
             line-height: 1.6;
         }
         
-        /* Pricing Section */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #f8fafb;
+            padding: 40px 20px;
+        }
+        
         .pricing-section {
-            padding: 120px 40px;
-            background: linear-gradient(135deg, #F8FAFB 0%, #F3F4F6 100%);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 40px;
         }
         
         .pricing-header {
             text-align: center;
-            margin-bottom: 80px;
+            margin-bottom: 60px;
         }
         
         .pricing-header h2 {
-            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-size: 3rem;
             font-weight: 700;
             color: #1a1a1a;
             margin-bottom: 16px;
@@ -410,75 +424,338 @@
         .pricing-header p {
             font-size: 20px;
             color: #666;
+            margin-bottom: 32px;
+        }
+        
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .toggle-container {
+            position: relative;
+            background: #e5e7eb;
+            border-radius: 50px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .toggle-option {
+            padding: 12px 24px;
+            border-radius: 46px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .toggle-option.active {
+            background: #0C72D3;
+            color: white;
+        }
+        
+        .toggle-option:not(.active) {
+            color: #666;
+        }
+        
+        .savings-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .pricing-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 32px;
-            max-width: 1000px;
-            margin: 0 auto;
+            margin-top: 40px;
         }
         
         .pricing-card {
             background: #ffffff;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            border-radius: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.06);
+            border-radius: 24px;
             padding: 40px 32px;
             text-align: center;
             position: relative;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(12, 114, 211, 0.02) 0%, rgba(102, 166, 255, 0.02) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.12);
+            border-color: rgba(12, 114, 211, 0.15);
+        }
+        
+        .pricing-card:hover::before {
+            opacity: 1;
         }
         
         .pricing-card.featured {
             border-color: #0C72D3;
             transform: scale(1.05);
-            box-shadow: 0 20px 40px rgba(12, 114, 211, 0.15);
+            box-shadow: 0 24px 48px rgba(12, 114, 211, 0.15);
+            position: relative;
         }
         
-        .pricing-card.featured::before {
+        .pricing-card.featured::after {
             content: 'Most Popular';
             position: absolute;
             top: -1px;
             left: 50%;
             transform: translateX(-50%);
-            background: #0C72D3;
+            background: linear-gradient(135deg, #0C72D3, #66A6FF);
             color: white;
-            padding: 8px 24px;
-            border-radius: 0 0 12px 12px;
+            padding: 10px 32px;
+            border-radius: 0 0 16px 16px;
             font-size: 14px;
             font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(12, 114, 211, 0.3);
+        }
+        
+        .pricing-card.free {
+            border-color: #e5e7eb;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+        
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .plan-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 28px;
+        }
+        
+        .featured .plan-icon {
+            background: linear-gradient(135deg, rgba(12, 114, 211, 0.1), rgba(102, 166, 255, 0.1));
+            color: #0C72D3;
+        }
+        
+        .free .plan-icon {
+            background: rgba(107, 114, 128, 0.1);
+            color: #6b7280;
+        }
+        
+        .plan-icon:not(.featured):not(.free) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+            color: #10b981;
         }
         
         .pricing-card h3 {
-            font-size: 24px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+        
+        .plan-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 32px;
+            font-weight: 500;
+        }
+        
+        .price-container {
+            margin-bottom: 32px;
+        }
+        
+        .price {
+            font-size: 56px;
+            font-weight: 800;
+            color: #0C72D3;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .free .price {
+            color: #6b7280;
+        }
+        
+        .price-period {
+            font-size: 18px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .price-note {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+        
+        .features-list {
+            text-align: left;
+            margin-bottom: 40px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 16px;
+            color: #374151;
+        }
+        
+        .feature-icon {
+            color: #10b981;
+            font-size: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        
+        .cta-button {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .cta-primary {
+            background: linear-gradient(135deg, #0C72D3, #66A6FF);
+            color: white;
+            box-shadow: 0 4px 14px rgba(12, 114, 211, 0.3);
+        }
+        
+        .cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(12, 114, 211, 0.4);
+        }
+        
+        .cta-secondary {
+            background: white;
+            color: #0C72D3;
+            border: 2px solid #0C72D3;
+        }
+        
+        .cta-secondary:hover {
+            background: #0C72D3;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .cta-free {
+            background: #f3f4f6;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .cta-free:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+        
+        .guarantee {
+            text-align: center;
+            margin-top: 48px;
+            padding: 24px;
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .guarantee-icon {
+            font-size: 32px;
+            color: #10b981;
+            margin-bottom: 12px;
+        }
+        
+        .guarantee h4 {
+            font-size: 20px;
             font-weight: 600;
             color: #1a1a1a;
             margin-bottom: 8px;
         }
         
-        .pricing-card .price {
-            font-size: 48px;
-            font-weight: 700;
-            color: #0C72D3;
-            margin-bottom: 8px;
-        }
-        
-        .pricing-card .price span {
-            font-size: 18px;
+        .guarantee p {
             color: #666;
-            font-weight: 400;
-        }
-        
-        .pricing-card .description {
-            color: #666;
-            margin-bottom: 32px;
             font-size: 16px;
         }
         
-        .pricing-card .btn {
-            width: 100%;
-            justify-content: center;
+        @media (max-width: 768px) {
+            .pricing-section {
+                padding: 60px 20px;
+            }
+            
+            .pricing-header h2 {
+                font-size: 2.5rem;
+            }
+            
+            .pricing-cards {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .pricing-card.featured {
+                transform: none;
+            }
+            
+            .pricing-toggle {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .price {
+                font-size: 48px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .pricing-card {
+                padding: 32px 24px;
+            }
+            
+            .pricing-header h2 {
+                font-size: 2rem;
+            }
+            
+            .price {
+                font-size: 40px;
+            }
         }
         
         /* Social Proof */
@@ -949,42 +1226,169 @@
         </div>
     </section>
 
-    <!-- Pricing Section -->
-    <section class="pricing-section" id="pricing">
-        <div class="container">
-            <div class="pricing-header">
-                <h2>Simple, transparent pricing</h2>
-                <p>Choose the plan that fits your learning goals</p>
-            </div>
-            <div class="pricing-cards">
-                <div class="pricing-card featured">
-                    <h3>Board and In-Service Review</h3>
-                    <div class="price">$15<span>/month</span></div>
-                    <p class="description">600+ high-yield, board-style questions</p>
-                    <p class="description">Intelligent spaced repetition and competitive leaderboards</p>
-                    <p class="description">Mobile-first design - learn on the go</p>
-                    <p class="description">Yearly and 3-month pricing available</p>
-                    <a href="index.html?from=landing" class="btn btn-primary">Start Free Trial</a>
+    <section class="pricing-section">
+        <div class="pricing-header">
+            <h2>Choose Your Path to Success</h2>
+            <p>Flexible plans designed for every stage of your medical career</p>
+            
+            <div class="pricing-toggle">
+                <div class="toggle-container">
+                    <div class="toggle-option active" data-period="monthly">Monthly</div>
+                    <div class="toggle-option" data-period="yearly">Yearly</div>
                 </div>
-                <div class="pricing-card">
-                    <h3>CME Module</h3>
-                    <div class="price">$179<span>/year</span></div>
-                    <p class="description">Earn up to 24 <i>AMA PRA Category 1 CME Credits</i></p>
-                    <p class="description">Unlimited re-tries on missed questions</p>
-                    <p class="description">Download official certificates anytime, anywhere</p>
-                    <p class="description">Includes everything in Board Review Tier including leaderboards</p>
-                    <p class="description">Option to pay per credit as well</p>
-                    <a href="index.html?from=landing" class="btn btn-secondary">Start Free Trial</a>
-                </div>
-                <div class="pricing-card">
-                    <h3>Free Tier</h3>
-                    <div class="price">$0<span>/forever</span></div>
-                    <p class="description">Perfect for getting started</p>
-                    <p class="description">Foundational specialty questions</p>
-                    <p class="description">Upgrade anytime</p>
-                    <a href="index.html?from=landing" class="btn btn-secondary">Get Started</a>
+                <div class="savings-badge">
+                    <i class="fas fa-tag"></i>
+                    Save 30% annually
                 </div>
             </div>
+        </div>
+        
+        <div class="pricing-cards">
+            <!-- Free Tier -->
+            <div class="pricing-card free">
+                <div class="card-content">
+                    <div class="plan-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3>Get Started</h3>
+                    <p class="plan-subtitle">Perfect for exploring MedSwipe</p>
+                    
+                    <div class="price-container">
+                        <div class="price">$0</div>
+                        <div class="price-period">Forever free</div>
+                    </div>
+                    
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Access to foundational ENT questions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Basic quiz functionality</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Progress tracking</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Mobile-optimized experience</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="cta-button cta-free">
+                        Start for $0.00
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Board Review - Featured -->
+            <div class="pricing-card featured">
+                <div class="card-content">
+                    <div class="plan-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3>Board Mastery</h3>
+                    <p class="plan-subtitle">Ace your boards with confidence</p>
+                    
+                    <div class="price-container">
+                        <div class="price" data-monthly="$15" data-yearly="$149">$15</div>
+                        <div class="price-period" data-monthly="/month" data-yearly="/year">/month</div>
+                        <div class="price-note" data-monthly="or $40 for 3 months" data-yearly="$12.42/month billed annually">or $40 for 3 months</div>
+                    </div>
+                    
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span><strong>600+ high-yield</strong> board-style questions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Intelligent spaced repetition algorithm</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Competitive leaderboards & peer comparison</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Advanced analytics & performance insights</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Gamified XP system & achievements</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Mobile-first design for on-the-go learning</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="cta-button cta-primary">
+                        Start for $0.00 (7 Days)
+                        <i class="fas fa-rocket"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CME Module -->
+            <div class="pricing-card">
+                <div class="card-content">
+                    <div class="plan-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h3>CME Credits</h3>
+                    <p class="plan-subtitle">Earn credits while you learn</p>
+                    
+                    <div class="price-container">
+                        <div class="price" data-monthly="$179" data-yearly="$179">$179</div>
+                        <div class="price-period" data-monthly="/year" data-yearly="/year">/year</div>
+                        <div class="price-note">or $8 per credit</div>
+                    </div>
+                    
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Earn up to <strong>24 AMA PRA Category 1 Credits™</strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span><strong>60% less</strong> than traditional CME providers</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Unlimited re-attempts on missed questions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Instant certificate downloads</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Effortless credit tracking & reporting</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span><strong>Everything in Board Mastery</strong> included</span>
+                        </div>
+                    </div>
+                    
+                    <a href="#" class="cta-button cta-secondary">
+                        Start for $0.00 (7 Days)
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="guarantee">
+            <div class="guarantee-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h4>7-Day Money-Back Guarantee</h4>
+            <p>Not satisfied? Get a full refund within 7 days, no questions asked. Cancel anytime.</p>
         </div>
     </section>
 
@@ -1066,6 +1470,47 @@
             <p>&copy; 2025 MedSwipe. All rights reserved.</p>
         </div>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleOptions = document.querySelectorAll('.toggle-option');
+            const prices = document.querySelectorAll('.price');
+            const periods = document.querySelectorAll('.price-period');
+            const notes = document.querySelectorAll('.price-note');
+            
+            toggleOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from all options
+                    toggleOptions.forEach(opt => opt.classList.remove('active'));
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    const period = this.dataset.period;
+                    
+                    // Update prices
+                    prices.forEach(price => {
+                        if (price.dataset[period]) {
+                            price.textContent = price.dataset[period];
+                        }
+                    });
+                    
+                    // Update periods
+                    periods.forEach(periodEl => {
+                        if (periodEl.dataset[period]) {
+                            periodEl.textContent = periodEl.dataset[period];
+                        }
+                    });
+                    
+                    // Update notes
+                    notes.forEach(note => {
+                        if (note.dataset[period]) {
+                            note.textContent = note.dataset[period];
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 
     <script>
         // Simple navbar scroll effect
