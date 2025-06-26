@@ -586,16 +586,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
 // --- START OF NEW CODE ---
 window.mySwiper.on('slideChangeTransitionEnd', function() {
   const activeIndex = window.mySwiper.activeIndex;
-  const totalSlides = window.mySwiper.slides.length;
-  
-  // Check if we're on the last explanation slide or summary slide
-  if (activeIndex >= totalSlides - 2 && totalSlides > 2) {
-    document.body.classList.add('scroll-lock');
-    console.log(`Page scroll LOCKED on slide index: ${activeIndex}`);
-  } else {
-    restoreBodyScroll();
-    console.log(`Page scroll UNLOCKED on slide index: ${activeIndex}`);
-  }
   
   if (activeIndex % 2 === 0) {
     questionStartTime = Date.now();
