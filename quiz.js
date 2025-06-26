@@ -25,6 +25,12 @@ let sessionStartXP = 0;
 let questionStartTime = 0;
 let currentQuizType = 'regular';
 
+// Function to restore scrolling when exiting quiz
+function restoreBodyScroll() {
+  document.body.style.overflow = '';
+  document.body.classList.remove('scroll-lock');
+}
+
 // Replace the OLD fetchQuestionBank function with this NEW one:
 async function fetchQuestionBank() {
   console.log("Fetching question bank from Firestore...");
@@ -415,13 +421,18 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions, quizType = 'regular') {
-    console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
+  console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
   questionStartTime = Date.now();
-  // Reset scroll lock and swiper permissions when starting new quiz
-  document.body.classList.remove('scroll-lock');
+  
+  // Scroll to top before starting quiz to ensure proper alignment
+  window.scrollTo(0, 0);
+  
+  // Lock the body scroll during quiz
+  document.body.style.overflow = 'hidden';
+  
   if (window.mySwiper) {
-    window.mySwiper.destroy(true, true);
+      window.mySwiper.destroy(true, true);
   }
   // Get starting XP before the quiz begins
   try {
@@ -582,7 +593,7 @@ window.mySwiper.on('slideChangeTransitionEnd', function() {
     document.body.classList.add('scroll-lock');
     console.log(`Page scroll LOCKED on slide index: ${activeIndex}`);
   } else {
-    document.body.classList.remove('scroll-lock');
+    restoreBodyScroll();
     console.log(`Page scroll UNLOCKED on slide index: ${activeIndex}`);
   }
   
@@ -802,7 +813,7 @@ function addOptionListeners() {
                           returnButton.style.padding = "10px 15px";
                           lastCard.appendChild(returnButton);
                           returnButton.addEventListener('click', function() {
-                            document.body.classList.remove('scroll-lock');
+                            restoreBodyScroll();
                               console.log("Return to CME Dashboard button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -832,7 +843,7 @@ function addOptionListeners() {
                           continueButton.style.margin = "20px auto";
                           lastCard.appendChild(continueButton);
                           continueButton.addEventListener('click', function() {
-                            document.body.classList.remove('scroll-lock');
+                            restoreBodyScroll();
                               console.log("Onboarding continue button clicked.");
                               const swiperElement = document.querySelector(".swiper");
                               const bottomToolbar = document.getElementById("bottomToolbar");
@@ -1124,7 +1135,7 @@ function showSummary() {
     const newStartNewQuizButton = startNewQuizButton.cloneNode(true);
     startNewQuizButton.parentNode.replaceChild(newStartNewQuizButton, startNewQuizButton);
     newStartNewQuizButton.addEventListener("click", function() {
-      document.body.classList.remove('scroll-lock');
+      restoreBodyScroll();
         window.filterMode = "all"; // Assuming filterMode is a global or appropriately scoped variable
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";
@@ -1148,7 +1159,7 @@ function showSummary() {
         const newLeaderboardButton = leaderboardButton.cloneNode(true);
         leaderboardButton.parentNode.replaceChild(newLeaderboardButton, leaderboardButton);
         newLeaderboardButton.addEventListener("click", function() {
-          document.body.classList.remove('scroll-lock');
+          restoreBodyScroll();
             document.getElementById("aboutView").style.display = "none";
             document.getElementById("faqView").style.display = "none";
             document.querySelector(".swiper").style.display = "none";
