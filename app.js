@@ -19,6 +19,35 @@ async function handleDeepLink() {
     return false; // Not a deep link, let the app start normally.
   }
 
+  // --- START OF NEW, SECURE LOGIC ---
+  console.log("Deep link detected. Waiting for authentication to be ready...");
+
+  // This function creates a Promise that resolves only when Firebase Auth
+  // has established a user session (even an anonymous one).
+  const waitForAuthReady = () => {
+    return new Promise((resolve) => {
+      // If auth is already ready, resolve immediately.
+      if (auth.currentUser) {
+        console.log("Auth is already ready for deep link.");
+        resolve();
+        return;
+      }
+      // Otherwise, set up a one-time listener.
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          console.log("Auth state changed to ready for deep link. User:", user.uid);
+          unsubscribe(); // Important: remove the listener to avoid memory leaks.
+          resolve();
+        }
+      });
+    });
+  };
+
+  // Wait for the auth session to be ready before proceeding.
+  await waitForAuthReady();
+  // --- END OF NEW, SECURE LOGIC ---
+
+
   // Extract the Question ID from the URL. The ID is the full question text.
   // decodeURIComponent is important in case the question has special characters like '?'
   const questionId = decodeURIComponent(hash.substring('#/question/'.length));
@@ -27,11 +56,11 @@ async function handleDeepLink() {
     return false; // Invalid link format.
   }
 
-  console.log("Deep link detected. Fetching question:", questionId);
+  console.log("Auth is ready. Fetching question:", questionId);
 
   try {
     // 2. Fetch only this specific question from Firestore.
-    // We will query for the question text and ensure it's marked as "Free".
+    // This query will now succeed because request.auth is guaranteed to be non-null.
     const questionsCollectionRef = collection(db, 'questions');
     const q = query(questionsCollectionRef, where("Question", "==", questionId), where("Free", "==", true));
     const querySnapshot = await getDocs(q);
