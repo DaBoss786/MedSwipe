@@ -7,6 +7,69 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
 
+/**
+ * Checks the URL for a question deep link and initializes a single-question quiz if found.
+ * @returns {Promise<boolean>} - Returns true if a deep link was handled, false otherwise.
+ */
+async function handleDeepLink() {
+  const hash = window.location.hash;
+
+  // 1. Check if the URL is a question deep link
+  if (!hash.startsWith('#/question/')) {
+    return false; // Not a deep link, let the app start normally.
+  }
+
+  // Extract the Question ID from the URL. The ID is the full question text.
+  // decodeURIComponent is important in case the question has special characters like '?'
+  const questionId = decodeURIComponent(hash.substring('#/question/'.length));
+
+  if (!questionId) {
+    return false; // Invalid link format.
+  }
+
+  console.log("Deep link detected. Fetching question:", questionId);
+
+  try {
+    // 2. Fetch only this specific question from Firestore.
+    // We will query for the question text and ensure it's marked as "Free".
+    const questionsCollectionRef = collection(db, 'questions');
+    const q = query(questionsCollectionRef, where("Question", "==", questionId), where("Free", "==", true));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      // This means the question ID didn't exist or wasn't marked as "Free".
+      throw new Error("This question could not be found or is not available via direct link. It may have been updated or removed.");
+    }
+
+    // 3. Prepare the question data for the quiz.
+    const questionData = querySnapshot.docs[0].data();
+    const questionArray = [questionData]; // initializeQuiz needs an array, even if it's just one.
+
+    // 4. Hide all other screens and show the quiz UI.
+    // This ensures no welcome screens, modals, or dashboards appear.
+    ensureAllScreensHidden();
+    initializeQuiz(questionArray, 'deep_link'); // Start the quiz with just our one question.
+
+    // 5. (Optional but Recommended) Clean up the URL.
+    // This prevents the deep link from being triggered again if the user reloads the page.
+    // It removes the `#/question/...` part from the URL in the browser's address bar without reloading.
+    history.pushState("", document.title, window.location.pathname + window.location.search);
+
+    return true; // Let the app know that the deep link was successfully handled.
+
+  } catch (error) {
+    console.error("Error handling deep link:", error);
+    alert(error.message); // Show the specific error message to the user.
+
+    // If something went wrong, send the user to the main dashboard.
+    ensureAllScreensHidden();
+    const mainOptions = document.getElementById("mainOptions");
+    if (mainOptions) mainOptions.style.display = "flex";
+
+    return true; // We still "handled" the link, even though it was an error.
+  }
+}
+
 // Initialize the cloud function handle
 let getLeaderboardDataFunctionApp;
 try {
@@ -83,7 +146,18 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 }
 
 // Add splash screen, welcome screen, and authentication-based routing
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
+  // --- START OF NEW LOGIC ---
+  // First, check if the URL is a deep link.
+  const isDeepLinkHandled = await handleDeepLink();
+
+  // If a deep link was found and handled, we stop here to prevent
+  // the normal app startup (welcome screens, etc.) from running.
+  if (isDeepLinkHandled) {
+    console.log("Deep link was handled. Halting normal startup sequence.");
+    return;
+  }
+  // --- END OF NEW LOGIC ---
   try {
     // Ensure imported 'functions' instance exists
     if (typeof functions === 'undefined') {

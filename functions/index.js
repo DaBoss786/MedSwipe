@@ -478,6 +478,8 @@ exports.generateCmeCertificate = onCall(
                 boardReviewSubscriptionStartDate: startTS ?? admin.firestore.FieldValue.serverTimestamp(),
                 boardReviewSubscriptionEndDate: endTS,
                 boardReviewTrialEndDate: endTS, // Explicitly store trial end date
+                hasActiveTrial: true, // ADD THIS LINE
+    trialType: "board_review" // ADD THIS LINE
               });
               newAccessTier = "board_review";
             } else if (tier === "cme_annual") {
@@ -488,6 +490,8 @@ exports.generateCmeCertificate = onCall(
                 cmeSubscriptionStartDate: startTS ?? admin.firestore.FieldValue.serverTimestamp(),
                 cmeSubscriptionEndDate: endTS,
                 cmeSubscriptionTrialEndDate: endTS, // Explicitly store trial end date
+                hasActiveTrial: true, // ADD THIS LINE
+    trialType: "cme_annual", // ADD THIS LINE
                 // CME Annual also grants Board Review access
                 boardReviewActive: true, 
                 boardReviewTier: "Granted by CME Annual",
@@ -609,6 +613,8 @@ exports.generateCmeCertificate = onCall(
             updates.boardReviewWillCancelAtPeriodEnd = cancelAtPeriodEnd;
             if (status !== "trialing") { // If no longer in trial (active, canceled, past_due, etc.)
               updates.boardReviewTrialEndDate = admin.firestore.FieldValue.delete();
+              updates.hasActiveTrial = admin.firestore.FieldValue.delete(); // ADD THIS LINE
+    updates.trialType = admin.firestore.FieldValue.delete(); // ADD THIS LINE
           }
 
             if (isActiveStatus) {
@@ -624,6 +630,8 @@ exports.generateCmeCertificate = onCall(
             updates.cmeSubscriptionWillCancelAtPeriodEnd = cancelAtPeriodEnd;
             if (status !== "trialing") { // If no longer in trial
               updates.cmeSubscriptionTrialEndDate = admin.firestore.FieldValue.delete();
+              updates.hasActiveTrial = admin.firestore.FieldValue.delete(); // ADD THIS LINE
+    updates.trialType = admin.firestore.FieldValue.delete(); // ADD THIS LINE
           }
 
             if (isActiveStatus) {
@@ -1483,6 +1491,7 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
       const snapshot = await usersRef
         .where("email", "!=", null)
         .where("mailerLiteSubscriberId", "==", null)
+        .where("hasActiveTrial", "==", true)
         .limit(MAX_USERS_TO_PROCESS_PER_RUN)
         .get();
 
@@ -1500,21 +1509,16 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
         const userId = userDoc.id;
         const userData = userDoc.data();
 
-        // CRITICAL CHECK: Only process users who are on FREE TRIALS
-        // A user is on a free trial if:
-        // 1. They have an active subscription (boardReviewActive or cmeSubscriptionActive is true)
-        // 2. They have a trial end date that hasn't passed yet
-        // 3. They have NOT made a payment (no stripeCustomerId or payment history)
-        
-        const hasActiveSubscription = 
-          userData.boardReviewActive === true || 
-          userData.cmeSubscriptionActive === true;
+        // Since we're now querying for hasActiveTrial=true, we know these are trial users
+// Just do a quick verification
+if (!userData.hasActiveTrial) {
+  logger.warn(`User ${userId} was in trial query but hasActiveTrial is false. Skipping.`);
+  skippedCount++;
+  continue;
+}
 
-        if (!hasActiveSubscription) {
-          logger.info(`User ${userId} does not have an active subscription. Skipping.`);
-          skippedCount++;
-          continue;
-        }
+// Get the trial type from the data
+const trialType = userData.trialType || "unknown_trial";
 
         // Check if they have trial end dates (indicating they're on a trial)
         const hasBoardReviewTrial = userData.boardReviewTrialEndDate ? true : false;
@@ -1548,13 +1552,10 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
         const email = userData.email;
         const name = userData.firstName || userData.username || userData.displayName || "";
         
-        // Determine which trial they're on
-        let trialType = "unknown_trial";
-        if (userData.cmeSubscriptionActive === true && hasCmeAnnualTrial) {
-          trialType = "cme_annual_trial";
-        } else if (userData.boardReviewActive === true && hasBoardReviewTrial) {
-          trialType = "board_review_trial";
-        }
+        // Use the trialType we already have from the database
+const trialTypeForMailerLite = userData.trialType === "cme_annual" ? "cme_annual_trial" : 
+userData.trialType === "board_review" ? "board_review_trial" : 
+"unknown_trial";
 
         logger.info(`Processing FREE TRIAL user ${userId} (Email: ${email}, Trial Type: ${trialType}) for MailerLite sync.`);
 
@@ -1566,7 +1567,7 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
               fields: {
                 name: name,
                 customer_type: "free_trial",
-                trial_type: trialType,
+                ttrial_type: trialTypeForMailerLite,
                 subscription_plan: userData.cmeSubscriptionPlan || userData.boardReviewTier || "Free Trial",
                 // Track marketing consent even though we're adding them regardless
                 has_marketing_consent: userData.marketingOptIn ? "yes" : "no"
