@@ -1,5 +1,5 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
