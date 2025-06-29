@@ -512,29 +512,29 @@ async function initializeQuiz(questions, quizType = 'regular') {
     quizSlides.appendChild(answerSlide);
   });
 
-// Located around line 600 in quiz.js
-window.mySwiper = new Swiper('.swiper', {
-  direction: 'vertical',
-  loop: false,
-  mousewheel: true,
-  touchReleaseOnEdges: true,
-  allowSlideNext: false,  // Start locked
-  allowSlidePrev: true,   // Allow going back
-  
-  // Wait for Swiper to fully initialize before scroll/lock
-  on: {
-    init: function () {
-      console.log("Swiper 'init' event fired. Forcing scroll and lock NOW.");
-      
-      // Force scroll to top with instant behavior
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      
-      // Lock the body scroll
-      document.body.style.overflow = 'hidden';
-      document.body.classList.add('scroll-lock');
+  // --- NEW SCROLL LOGIC ---
+  // We will now only ATTEMPT to scroll to the top.
+  // The scroll lock will be applied later, when the user answers the first question.
+  // This gives the user a chance to manually scroll if the automatic scroll fails on mobile.
+  console.log("Attempting to scroll to top. Scroll will remain UNLOCKED for the first question.");
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  window.mySwiper = new Swiper('.swiper', {
+    direction: 'vertical',
+    loop: false,
+    mousewheel: true,
+    touchReleaseOnEdges: true,
+    allowSlideNext: false,  // Start locked
+    allowSlidePrev: true,   // Allow going back
+    
+    // The on:init logic for scrolling/locking has been removed.
+    on: {
+      init: function () {
+        // We still need this to exist, but the complex logic is gone.
+        console.log("Swiper 'init' event fired. Page is ready.");
+      }
     }
-  }
-});
+  });
 
   // --- START OF MOVED CODE ---
   // This code now runs *after* mySwiper is created.
@@ -634,6 +634,13 @@ function updateBookmarkIcon() {
 function addOptionListeners() {
   document.querySelectorAll('.option-btn').forEach(btn => {
       btn.addEventListener('click', async function() {
+        // If the scroll is not yet locked, lock it now.
+          // This happens on the first answer click of the quiz.
+          if (!document.body.classList.contains('scroll-lock')) {
+            console.log("First answer clicked. Locking body scroll now.");
+            document.body.style.overflow = 'hidden';
+            document.body.classList.add('scroll-lock');
+          }
           const card = this.closest('.card');
           if (card.classList.contains('answered')) return;
           card.classList.add('answered');
