@@ -724,57 +724,6 @@ if (quizSetupModal) {
 }
 // --- End Quiz Setup Modal - Click Outside to Close ---
 
-// --- Updated CME Module Button Logic (Replaces the existing listener for #cmeModuleBtn) ---
-const cmeModuleBtn = document.getElementById("cmeModuleBtn");
-if (cmeModuleBtn) {
-    // Clone the button to remove any previously attached listeners
-    const newCmeModuleBtn = cmeModuleBtn.cloneNode(true);
-    cmeModuleBtn.parentNode.replaceChild(newCmeModuleBtn, cmeModuleBtn);
-
-    newCmeModuleBtn.addEventListener("click", async function() {
-        console.log("--- CME Module Button Click Handler (Tier-Based) START ---");
-
-        // Ensure authState and user are available
-        if (!window.authState || !window.authState.user) {
-            console.error("AuthState or user not available. Cannot determine CME access.");
-            // Fallback: Show info screen or prompt login
-            showCmeInfoScreen(); // Or a login prompt if appropriate
-            return;
-        }
-
-        const accessTier = window.authState.accessTier;
-        const isRegistered = window.authState.isRegistered; // Check if the user is registered (not anonymous)
-
-        console.log(`CME Module button clicked. User Access Tier: ${accessTier}, Is Registered: ${isRegistered}`);
-
-        if (isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
-            // User HAS direct access to CME content
-            console.log("Access GRANTED to CME Dashboard based on tier.");
-            if (typeof showCmeDashboard === 'function') {
-                showCmeDashboard(); // Show the actual CME content dashboard
-            } else {
-                console.error("showCmeDashboard function is not defined!");
-                alert("Error: Could not load the CME module.");
-            }
-        } else {
-            // User does NOT have direct access (free_guest, board_review, or anonymous)
-            // Anonymous users will also fall here because isRegistered will be false.
-            console.log("Access DENIED to CME Dashboard based on tier/registration. Showing CME Info Screen.");
-            if (typeof showCmeInfoScreen === 'function') {
-                showCmeInfoScreen(); // Show the purchase/info screen
-            } else {
-                console.error("showCmeInfoScreen function is not defined!");
-                alert("Error: Could not load CME information.");
-            }
-        }
-        console.log("--- CME Module Button Click Handler (Tier-Based) END ---");
-    });
-    console.log("DEBUG: Tier-based event listener attached to cmeModuleBtn.");
-} else {
-    console.error("DEBUG: CME Module button (#cmeModuleBtn) not found during tier-based listener setup.");
-}
-// --- End of Updated CME Module Button Logic ---
-
 // Add event listener for the CME Dashboard's back button
 const cmeDashboardBackBtn = document.getElementById("cmeDashboardBackBtn");
 if(cmeDashboardBackBtn) {
@@ -3194,6 +3143,58 @@ async function updateReviewQueue() {
 
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
+
+  // --- Updated CME Module Button Logic (Replaces the existing listener for #cmeModuleBtn) ---
+const cmeModuleBtn = document.getElementById("cmeModuleBtn");
+if (cmeModuleBtn) {
+    // Clone the button to remove any previously attached listeners
+    const newCmeModuleBtn = cmeModuleBtn.cloneNode(true);
+    cmeModuleBtn.parentNode.replaceChild(newCmeModuleBtn, cmeModuleBtn);
+
+    newCmeModuleBtn.addEventListener("click", async function() {
+        console.log("--- CME Module Button Click Handler (Tier-Based) START ---");
+
+        // Ensure authState and user are available
+        if (!window.authState || !window.authState.user) {
+            console.error("AuthState or user not available. Cannot determine CME access.");
+            // Fallback: Show info screen or prompt login
+            showCmeInfoScreen(); // Or a login prompt if appropriate
+            return;
+        }
+
+        const accessTier = window.authState.accessTier;
+        const isRegistered = window.authState.isRegistered; // Check if the user is registered (not anonymous)
+
+        console.log(`CME Module button clicked. User Access Tier: ${accessTier}, Is Registered: ${isRegistered}`);
+
+        if (isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
+            // User HAS direct access to CME content
+            console.log("Access GRANTED to CME Dashboard based on tier.");
+            if (typeof showCmeDashboard === 'function') {
+                showCmeDashboard(); // Show the actual CME content dashboard
+            } else {
+                console.error("showCmeDashboard function is not defined!");
+                alert("Error: Could not load the CME module.");
+            }
+        } else {
+            // User does NOT have direct access (free_guest, board_review, or anonymous)
+            // Anonymous users will also fall here because isRegistered will be false.
+            console.log("Access DENIED to CME Dashboard based on tier/registration. Showing CME Info Screen.");
+            if (typeof showCmeInfoScreen === 'function') {
+                showCmeInfoScreen(); // Show the purchase/info screen
+            } else {
+                console.error("showCmeInfoScreen function is not defined!");
+                alert("Error: Could not load CME information.");
+            }
+        }
+        console.log("--- CME Module Button Click Handler (Tier-Based) END ---");
+    });
+    console.log("DEBUG: Tier-based event listener attached to cmeModuleBtn.");
+} else {
+    console.error("DEBUG: CME Module button (#cmeModuleBtn) not found during tier-based listener setup.");
+}
+// --- End of Updated CME Module Button Logic ---
+
   // Start Quiz button on Dashboard
   const startQuizBtn = document.getElementById("startQuizBtn");
   if (startQuizBtn) {
