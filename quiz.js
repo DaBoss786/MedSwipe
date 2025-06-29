@@ -524,6 +524,40 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlidePrev: true   // Allow going back
   });
 
+  // --- START OF MOVED CODE ---
+  // This code now runs *after* mySwiper is created.
+  window.mySwiper.on('slideChangeTransitionEnd', function() {
+    const activeIndex = window.mySwiper.activeIndex;
+    
+    if (activeIndex % 2 === 0) {
+      questionStartTime = Date.now();
+      console.log("New question slide. questionStartTime updated to:", questionStartTime);
+      updateBookmarkIcon();
+    }
+    
+    // Update swipe permissions for the new slide
+    updateSwipePermissions();
+  });
+
+  addOptionListeners();
+
+  // Set initial permissions after a small delay to ensure Swiper is fully initialized
+  setTimeout(() => {
+    updateSwipePermissions();
+  }, 100);
+  
+  // Set the initial bookmark icon state for the first question
+  updateBookmarkIcon();
+
+  document.querySelector(".swiper").style.display = "block";
+  document.getElementById("bottomToolbar").style.display = "flex";
+  document.getElementById("mainOptions").style.display = "none";
+  document.getElementById("performanceView").style.display = "none";
+  document.getElementById("iconBar").style.display = "flex";
+  document.getElementById("aboutView").style.display = "none";
+  document.getElementById("faqView").style.display = "none";
+  // --- END OF MOVED CODE ---
+
   // Force scroll to top after a tiny delay to ensure it works on mobile
   setTimeout(() => {
     window.scrollTo(0, 0);
@@ -532,7 +566,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
 }
 
 // Function to lock/unlock swiping
-  function updateSwipePermissions() {
+function updateSwipePermissions() {
     // Safety check - make sure mySwiper exists and has slides
     if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
       console.log("Swiper not ready yet, skipping permission update");
@@ -564,41 +598,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
       window.mySwiper.allowSlideNext = true;
       console.log("Unlocked swiping - on answer slide");
     }
-  }
-
-// --- START OF NEW CODE ---
-window.mySwiper.on('slideChangeTransitionEnd', function() {
-  const activeIndex = window.mySwiper.activeIndex;
-  
-  if (activeIndex % 2 === 0) {
-    questionStartTime = Date.now();
-    console.log("New question slide. questionStartTime updated to:", questionStartTime);
-    updateBookmarkIcon();
-  }
-  
-  // Update swipe permissions for the new slide
-  updateSwipePermissions();
-});
-// --- END OF NEW CODE ---
-
-  addOptionListeners();
-
-  // Set initial permissions after a small delay to ensure Swiper is fully initialized
-  setTimeout(() => {
-    updateSwipePermissions();
-  }, 100);
-  
-  // Set the initial bookmark icon state for the first question
-  updateBookmarkIcon();
-
-  document.querySelector(".swiper").style.display = "block";
-  document.getElementById("bottomToolbar").style.display = "flex";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("performanceView").style.display = "none";
-  document.getElementById("iconBar").style.display = "flex";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-
+}
 
 // Update the bookmark icon based on the current question's bookmark status
 function updateBookmarkIcon() {
