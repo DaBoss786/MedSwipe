@@ -425,12 +425,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
   currentQuizType = quizType; 
   questionStartTime = Date.now();
   
-  // Force scroll to top BEFORE locking scroll
-  window.scrollTo(0, 0);
-  
-  // Wait a bit longer on mobile devices for keyboard dismissal and scroll completion
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
   // Lock the body scroll during quiz
   document.body.style.overflow = 'hidden';
   
@@ -529,7 +523,34 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlideNext: false,  // Start locked
     allowSlidePrev: true   // Allow going back
   });
+
+  // Force scroll to top after a tiny delay to ensure it works on mobile
+  setTimeout(() => {
+    window.scrollTo(0, 0);
+    console.log("Forcing scroll to top after quiz UI is visible.");
+  }, 50); // 50ms is imperceptible to the user
 }
+
+  // Function to lock/unlock swiping
+  function updateSwipePermissions() {
+    const activeIndex = window.mySwiper.activeIndex;
+    
+    // If we're on a question slide (even index)
+    if (activeIndex % 2 === 0) {
+      const currentSlide = window.mySwiper.slides[activeIndex];
+      const card = currentSlide.querySelector('.card');
+      
+      // Check if question has been answered
+      if (card && card.classList.contains('answered')) {
+        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
+      } else {
+        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
+      }
+    } else {
+      // On answer slides (odd index), always allow swiping
+      window.mySwiper.allowSlideNext = true;
+    }
+  }
 
 // Function to lock/unlock swiping
   function updateSwipePermissions() {
@@ -1330,4 +1351,4 @@ export {
   addOptionListeners, // Likely internal, probably don't need to export
   prepareSummary, // Likely internal
   showSummary // Likely internal
-}
+};
