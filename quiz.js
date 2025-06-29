@@ -425,9 +425,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
   currentQuizType = quizType; 
   questionStartTime = Date.now();
   
-  // Lock the body scroll during quiz
-  document.body.style.overflow = 'hidden';
-  
   if (window.mySwiper) {
       window.mySwiper.destroy(true, true);
   }
@@ -558,11 +555,20 @@ async function initializeQuiz(questions, quizType = 'regular') {
   document.getElementById("faqView").style.display = "none";
   // --- END OF MOVED CODE ---
 
-  // Force scroll to top after a tiny delay to ensure it works on mobile
-  setTimeout(() => {
-    window.scrollTo(0, 0);
-    console.log("Forcing scroll to top after quiz UI is visible.");
-  }, 50); // 50ms is imperceptible to the user
+// --- NEW SCROLL & LOCK LOGIC ---
+// First, force the scroll to the top immediately. This is crucial on mobile
+// where the viewport might be shifted after a keyboard is dismissed.
+window.scrollTo(0, 0);
+console.log("Forcing scroll to top immediately after UI is visible.");
+
+// Then, lock the scroll after a short delay. This gives the browser time
+// to process the scroll command before preventing further scrolling.
+setTimeout(() => {
+  document.body.style.overflow = 'hidden';
+  // The 'scroll-lock' class is already used by restoreBodyScroll, so this is consistent.
+  document.body.classList.add('scroll-lock'); 
+  console.log("Body scroll locked after delay.");
+}, 100); // 100ms is enough for the scroll to happen but is imperceptible.
 }
 
 // Function to lock/unlock swiping
