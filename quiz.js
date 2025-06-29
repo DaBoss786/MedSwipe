@@ -790,95 +790,133 @@ function addOptionListeners() {
                   addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper function
 
 
-                  // --- Add the correct FINAL ACTION BUTTON based on quiz type ---
-                  const lastCard = answerSlide.querySelector('.card');
-                  if (lastCard) {
-                      if (currentQuizType === 'cme') {
-                          // --- CME Quiz End Action --- (No Change Here)
-                          const returnButton = document.createElement('button');
-                          returnButton.id = "returnToCmeDashboardBtn";
-                          returnButton.className = "start-quiz-btn";
-                          returnButton.textContent = "Return to CME Dashboard";
-                          returnButton.style.display = "block";
-                          returnButton.style.margin = "20px auto";
-                          // Add smaller size styling
-                          returnButton.style.width = "180px";
-                          returnButton.style.fontSize = "0.9rem";
-                          returnButton.style.padding = "10px 15px";
-                          lastCard.appendChild(returnButton);
-                          returnButton.addEventListener('click', function() {
-                            restoreBodyScroll();
-                              console.log("Return to CME Dashboard button clicked.");
-                              const swiperElement = document.querySelector(".swiper");
-                              const bottomToolbar = document.getElementById("bottomToolbar");
-                              const iconBar = document.getElementById("iconBar");
-                              if (swiperElement) swiperElement.style.display = "none";
-                              if (bottomToolbar) bottomToolbar.style.display = "none";
-                              if (iconBar) iconBar.style.display = "none";
-                              if (typeof window.showCmeDashboard === 'function') {
-                                  window.showCmeDashboard();
-                              } else {
-                                  console.error("window.showCmeDashboard function not found from quiz.js!");
-                                  const mainOpts = document.getElementById("mainOptions");
-                                  if(mainOpts) mainOpts.style.display = "flex";
-                                  alert("Error: Could not navigate back to the dashboard.");
-                              }
-                          });
-                          // --- End CME Action ---
-
-                      } else if (window.isOnboardingQuiz) {
-                          // --- Onboarding Quiz End Action --- (No Change Here)
-                          console.log("Onboarding quiz finished.");
-                          const continueButton = document.createElement('button');
-                          continueButton.id = "onboardingContinueBtn";
-                          continueButton.className = "start-quiz-btn";
-                          continueButton.textContent = "Continue";
-                          continueButton.style.display = "block";
-                          continueButton.style.margin = "20px auto";
-                          lastCard.appendChild(continueButton);
-                          continueButton.addEventListener('click', function() {
-                            restoreBodyScroll();
-                              console.log("Onboarding continue button clicked.");
-                              const swiperElement = document.querySelector(".swiper");
-                              const bottomToolbar = document.getElementById("bottomToolbar");
-                              const iconBar = document.getElementById("iconBar");
-                              if (swiperElement) swiperElement.style.display = "none";
-                              if (bottomToolbar) bottomToolbar.style.display = "none";
-                              if (iconBar) iconBar.style.display = "none";
-                                                        // Hide quiz elements
-                          const mainOptions = document.getElementById("mainOptions"); // Get main options
-                          if (mainOptions) mainOptions.style.display = "none"; // Ensure main options are hidden
-
-                          // Show the new paywall screen
-                          const newPaywallScreen = document.getElementById("newPaywallScreen");
-                          if (newPaywallScreen) {
-                              newPaywallScreen.style.display = "flex"; // Or "block" if you prefer
-                              console.log("Showing new paywall screen after onboarding.");
-                          } else {
-                              console.error("New paywall screen element not found!");
-                              // Fallback: show main options if paywall is missing
-                              if (mainOptions) mainOptions.style.display = "flex";
-                          }
-                          });
-                          // --- End Onboarding Action ---
-
-                      } else {
-                          // --- Regular Quiz End Action --- (No Change Here)
-                          const summaryButton = document.createElement('button');
-                          summaryButton.id = "viewSummaryBtn";
-                          summaryButton.className = "start-quiz-btn";
-                          summaryButton.textContent = "Loading Summary...";
-                          summaryButton.style.display = "block";
-                          summaryButton.style.margin = "20px auto";
-                          lastCard.appendChild(summaryButton);
-                          if (typeof prepareSummary === 'function') {
-                              setTimeout(() => {
-                                  prepareSummary();
-                              }, 500);
-                          }
-                          // --- End Regular Action ---
-                      }
-                  } // end if(lastCard)
+                                   // --- Add the correct FINAL ACTION BUTTON based on quiz type ---
+                                   const lastCard = answerSlide.querySelector('.card');
+                                   if (lastCard) {
+                                       if (currentQuizType === 'cme') {
+                                           // --- CME Quiz End Action --- (No Change Here)
+                                           const returnButton = document.createElement('button');
+                                           returnButton.id = "returnToCmeDashboardBtn";
+                                           returnButton.className = "start-quiz-btn";
+                                           returnButton.textContent = "Return to CME Dashboard";
+                                           returnButton.style.display = "block";
+                                           returnButton.style.margin = "20px auto";
+                                           // Add smaller size styling
+                                           returnButton.style.width = "180px";
+                                           returnButton.style.fontSize = "0.9rem";
+                                           returnButton.style.padding = "10px 15px";
+                                           lastCard.appendChild(returnButton);
+                                           returnButton.addEventListener('click', function() {
+                                             restoreBodyScroll();
+                                               console.log("Return to CME Dashboard button clicked.");
+                                               const swiperElement = document.querySelector(".swiper");
+                                               const bottomToolbar = document.getElementById("bottomToolbar");
+                                               const iconBar = document.getElementById("iconBar");
+                                               if (swiperElement) swiperElement.style.display = "none";
+                                               if (bottomToolbar) bottomToolbar.style.display = "none";
+                                               if (iconBar) iconBar.style.display = "none";
+                                               if (typeof window.showCmeDashboard === 'function') {
+                                                   window.showCmeDashboard();
+                                               } else {
+                                                   console.error("window.showCmeDashboard function not found from quiz.js!");
+                                                   const mainOpts = document.getElementById("mainOptions");
+                                                   if(mainOpts) mainOpts.style.display = "flex";
+                                                   alert("Error: Could not navigate back to the dashboard.");
+                                               }
+                                           });
+                                           // --- End CME Action ---
+                 
+                                       } else if (window.isOnboardingQuiz) {
+                                           // --- Onboarding Quiz End Action --- (No Change Here)
+                                           console.log("Onboarding quiz finished.");
+                                           const continueButton = document.createElement('button');
+                                           continueButton.id = "onboardingContinueBtn";
+                                           continueButton.className = "start-quiz-btn";
+                                           continueButton.textContent = "Continue";
+                                           continueButton.style.display = "block";
+                                           continueButton.style.margin = "20px auto";
+                                           lastCard.appendChild(continueButton);
+                                           continueButton.addEventListener('click', function() {
+                                             restoreBodyScroll();
+                                               console.log("Onboarding continue button clicked.");
+                                               const swiperElement = document.querySelector(".swiper");
+                                               const bottomToolbar = document.getElementById("bottomToolbar");
+                                               const iconBar = document.getElementById("iconBar");
+                                               if (swiperElement) swiperElement.style.display = "none";
+                                               if (bottomToolbar) bottomToolbar.style.display = "none";
+                                               if (iconBar) iconBar.style.display = "none";
+                                                                         // Hide quiz elements
+                                           const mainOptions = document.getElementById("mainOptions"); // Get main options
+                                           if (mainOptions) mainOptions.style.display = "none"; // Ensure main options are hidden
+                 
+                                           // Show the new paywall screen
+                                           const newPaywallScreen = document.getElementById("newPaywallScreen");
+                                           if (newPaywallScreen) {
+                                               newPaywallScreen.style.display = "flex"; // Or "block" if you prefer
+                                               console.log("Showing new paywall screen after onboarding.");
+                                           } else {
+                                               console.error("New paywall screen element not found!");
+                                               // Fallback: show main options if paywall is missing
+                                               if (mainOptions) mainOptions.style.display = "flex";
+                                           }
+                                           });
+                                           // --- End Onboarding Action ---
+                 
+                                       // --- START OF NEW CODE ---
+                                       } else if (currentQuizType === 'deep_link') {
+                                           // --- Deep Link Quiz End Action ---
+                                           console.log("Deep link quiz finished.");
+                                           const returnToAppButton = document.createElement('button');
+                                           returnToAppButton.id = "returnToAppBtn";
+                                           returnToAppButton.className = "start-quiz-btn";
+                                           returnToAppButton.textContent = "Explore the App";
+                                           returnToAppButton.style.display = "block";
+                                           returnToAppButton.style.margin = "20px auto";
+                                           lastCard.appendChild(returnToAppButton);
+                 
+                                           returnToAppButton.addEventListener('click', function() {
+                                               restoreBodyScroll();
+                                               // Hide all quiz elements
+                                               const swiperElement = document.querySelector(".swiper");
+                                               const bottomToolbar = document.getElementById("bottomToolbar");
+                                               const iconBar = document.getElementById("iconBar");
+                                               if (swiperElement) swiperElement.style.display = "none";
+                                               if (bottomToolbar) bottomToolbar.style.display = "none";
+                                               if (iconBar) iconBar.style.display = "none";
+                 
+                                               // Show the main dashboard
+                                               const mainOptions = document.getElementById("mainOptions");
+                                               if (mainOptions) mainOptions.style.display = "flex";
+                 
+                                               // CRITICAL: Re-initialize the dashboard and its event listeners
+                                               if (typeof initializeDashboard === 'function') {
+                                                   console.log("Re-initializing dashboard after deep link quiz.");
+                                                   initializeDashboard();
+                                               }
+                                               if (typeof setupDashboardEvents === 'function') {
+                                                   console.log("Re-attaching dashboard event listeners.");
+                                                   setupDashboardEvents();
+                                               }
+                                           });
+                                       // --- END OF NEW CODE ---
+                 
+                                       } else {
+                                           // --- Regular Quiz End Action --- (No Change Here)
+                                           const summaryButton = document.createElement('button');
+                                           summaryButton.id = "viewSummaryBtn";
+                                           summaryButton.className = "start-quiz-btn";
+                                           summaryButton.textContent = "Loading Summary...";
+                                           summaryButton.style.display = "block";
+                                           summaryButton.style.margin = "20px auto";
+                                           lastCard.appendChild(summaryButton);
+                                           if (typeof prepareSummary === 'function') {
+                                               setTimeout(() => {
+                                                   prepareSummary();
+                                               }, 500);
+                                           }
+                                           // --- End Regular Action ---
+                                       }
+                                   } // end if(lastCard)
 
               } else {
                   // --- Logic for NON-last questions ---
