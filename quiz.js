@@ -531,28 +531,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
   });
 }
 
-  // Function to lock/unlock swiping
-  function updateSwipePermissions() {
-    const activeIndex = window.mySwiper.activeIndex;
-    
-    // If we're on a question slide (even index)
-    if (activeIndex % 2 === 0) {
-      const currentSlide = window.mySwiper.slides[activeIndex];
-      const card = currentSlide.querySelector('.card');
-      
-      // Check if question has been answered
-      if (card && card.classList.contains('answered')) {
-        window.mySwiper.allowSlideNext = true;  // Allow swiping to answer
-      } else {
-        window.mySwiper.allowSlideNext = false; // Lock swiping until answered
-      }
-    } else {
-      // On answer slides (odd index), always allow swiping
-      window.mySwiper.allowSlideNext = true;
-    }
-  }
-
-  // Function to lock/unlock swiping
+// Function to lock/unlock swiping
   function updateSwipePermissions() {
     // Safety check - make sure mySwiper exists and has slides
     if (!window.mySwiper || !window.mySwiper.slides || window.mySwiper.slides.length === 0) {
