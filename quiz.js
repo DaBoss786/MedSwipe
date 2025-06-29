@@ -425,6 +425,12 @@ async function initializeQuiz(questions, quizType = 'regular') {
   currentQuizType = quizType; 
   questionStartTime = Date.now();
   
+  // Force scroll to top BEFORE locking scroll
+  window.scrollTo(0, 0);
+  
+  // Wait a bit longer on mobile devices for keyboard dismissal and scroll completion
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
   // Lock the body scroll during quiz
   document.body.style.overflow = 'hidden';
   
@@ -523,6 +529,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlideNext: false,  // Start locked
     allowSlidePrev: true   // Allow going back
   });
+}
 
   // Function to lock/unlock swiping
   function updateSwipePermissions() {
@@ -612,13 +619,6 @@ window.mySwiper.on('slideChangeTransitionEnd', function() {
   document.getElementById("iconBar").style.display = "flex";
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
-
-  // Force scroll to top after a tiny delay to ensure it works on mobile
-  setTimeout(() => {
-    window.scrollTo(0, 0);
-    console.log("Forcing scroll to top after quiz UI is visible.");
-  }, 50); // 50ms is imperceptible to the user
-}
 
 
 // Update the bookmark icon based on the current question's bookmark status
@@ -1351,4 +1351,4 @@ export {
   addOptionListeners, // Likely internal, probably don't need to export
   prepareSummary, // Likely internal
   showSummary // Likely internal
-};
+}
