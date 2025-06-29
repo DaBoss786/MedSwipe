@@ -555,20 +555,24 @@ async function initializeQuiz(questions, quizType = 'regular') {
   document.getElementById("faqView").style.display = "none";
   // --- END OF MOVED CODE ---
 
-// --- NEW SCROLL & LOCK LOGIC ---
-// First, force the scroll to the top immediately. This is crucial on mobile
-// where the viewport might be shifted after a keyboard is dismissed.
-window.scrollTo(0, 0);
-console.log("Forcing scroll to top immediately after UI is visible.");
 
-// Then, lock the scroll after a short delay. This gives the browser time
-// to process the scroll command before preventing further scrolling.
-setTimeout(() => {
+// --- NEW, MORE RELIABLE SCROLL & LOCK LOGIC ---
+// Use requestAnimationFrame to sync with the browser's rendering cycle.
+// This is the most robust way to ensure the UI is ready before we act.
+requestAnimationFrame(() => {
+  // This code will run just before the browser repaints the screen.
+
+  // 1. Force the scroll to the top. Use the 'instant' behavior to prevent
+  // any smooth-scrolling animations from interfering with the lock.
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  console.log("Forcing scroll to top inside requestAnimationFrame.");
+
+  // 2. Now that the scroll is set, lock the body. Because this happens in the
+  // same animation frame, the user will not see any flicker or intermediate state.
   document.body.style.overflow = 'hidden';
-  // The 'scroll-lock' class is already used by restoreBodyScroll, so this is consistent.
-  document.body.classList.add('scroll-lock'); 
-  console.log("Body scroll locked after delay.");
-}, 100); // 100ms is enough for the scroll to happen but is imperceptible.
+  document.body.classList.add('scroll-lock');
+  console.log("Body scroll locked inside requestAnimationFrame.");
+});
 }
 
 // Function to lock/unlock swiping
