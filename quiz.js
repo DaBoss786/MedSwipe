@@ -520,17 +520,22 @@ async function initializeQuiz(questions, quizType = 'regular') {
     allowSlideNext: false,  // Start locked
     allowSlidePrev: true,   // Allow going back
     
-    // Wait for Swiper to fully initialize before scroll/lock
+    // NEW code to replace the block above
     on: {
       init: function () {
-        console.log("Swiper 'init' event fired. Forcing scroll and lock NOW.");
+        console.log("Swiper 'init' event fired. Forcing scroll and then lock.");
         
         // Force scroll to top with instant behavior
         window.scrollTo({ top: 0, behavior: 'instant' });
         
-        // Lock the body scroll
-        document.body.style.overflow = 'hidden';
-        document.body.classList.add('scroll-lock');
+        // Use requestAnimationFrame to apply the lock after the browser has had a chance to process the scroll.
+        // This helps prevent a race condition on mobile where the lock is applied before the scroll completes.
+        requestAnimationFrame(() => {
+            // Lock the body scroll
+            document.body.style.overflow = 'hidden';
+            document.body.classList.add('scroll-lock');
+            console.log("Scroll lock applied in next animation frame.");
+        });
       }
     }
   });
