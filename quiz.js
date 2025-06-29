@@ -518,7 +518,21 @@ async function initializeQuiz(questions, quizType = 'regular') {
     mousewheel: true,
     touchReleaseOnEdges: true,
     allowSlideNext: false,  // Start locked
-    allowSlidePrev: true   // Allow going back
+    allowSlidePrev: true,   // Allow going back
+    
+    // Wait for Swiper to fully initialize before scroll/lock
+    on: {
+      init: function () {
+        console.log("Swiper 'init' event fired. Forcing scroll and lock NOW.");
+        
+        // Force scroll to top with instant behavior
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        
+        // Lock the body scroll
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('scroll-lock');
+      }
+    }
   });
 
   // --- START OF MOVED CODE ---
@@ -554,25 +568,6 @@ async function initializeQuiz(questions, quizType = 'regular') {
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
   // --- END OF MOVED CODE ---
-
-
-// --- NEW, MORE RELIABLE SCROLL & LOCK LOGIC ---
-// Use requestAnimationFrame to sync with the browser's rendering cycle.
-// This is the most robust way to ensure the UI is ready before we act.
-requestAnimationFrame(() => {
-  // This code will run just before the browser repaints the screen.
-
-  // 1. Force the scroll to the top. Use the 'instant' behavior to prevent
-  // any smooth-scrolling animations from interfering with the lock.
-  window.scrollTo({ top: 0, behavior: 'instant' });
-  console.log("Forcing scroll to top inside requestAnimationFrame.");
-
-  // 2. Now that the scroll is set, lock the body. Because this happens in the
-  // same animation frame, the user will not see any flicker or intermediate state.
-  document.body.style.overflow = 'hidden';
-  document.body.classList.add('scroll-lock');
-  console.log("Body scroll locked inside requestAnimationFrame.");
-});
 }
 
 // Function to lock/unlock swiping
