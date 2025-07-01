@@ -1719,7 +1719,7 @@ exports.syncActivityToMailerLite = onSchedule(
     logger.info("Starting daily sync of user activity status to MailerLite.");
 
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
-    const INACTIVITY_GROUP_ID = "123456789012345678"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
+    const INACTIVITY_GROUP_ID = "158604236537464197"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
 
     if (!mailerLiteApiKey || !INACTIVITY_GROUP_ID) {
       logger.error("MailerLite API Key or Inactivity Group ID is not configured. Aborting sync.");
