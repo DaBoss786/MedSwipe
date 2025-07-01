@@ -660,8 +660,38 @@ exports.generateCmeCertificate = onCall(
         updates.accessTier = determineAccessTier(potentiallyUpdatedUserData);
 
         await userRef.set(updates, { merge: true });
-
         logger.info(`Firestore updated for ${uid} from ${event.type}. New accessTier: ${updates.accessTier}`);
+
+        // --- START: New MailerLite Trial Status Sync ---
+        // If the subscription is no longer active, update MailerLite
+        if (!isActiveStatus && userData.email) {
+            const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
+            if (mailerLiteApiKey) {
+                logger.info(`Subscription for ${userData.email} ended. Updating MailerLite 'is_on_trial' to false.`);
+                try {
+                    await axios.post(
+                        `https://connect.mailerlite.com/api/subscribers/${encodeURIComponent(userData.email)}`,
+                        {
+                            fields: {
+                                is_on_trial: "false",
+                            },
+                        },
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${mailerLiteApiKey}`,
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                            },
+                        }
+                    );
+                    logger.info(`Successfully updated MailerLite trial status for ${userData.email}.`);
+                } catch (apiError) {
+                    logger.error(`Failed to update MailerLite trial status for ${userData.email}.`, apiError.response?.data || apiError.message);
+                }
+            }
+        }
+        // --- END: New MailerLite Trial Status Sync ---
+
         return res.status(200).send(`OK (${event.type})`);
     }
         
@@ -1244,11 +1274,48 @@ exports.finalizeRegistration = onCall(
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    // 4. Update the user document
+            // 4. Update the user document and sync to MailerLite
     try {
       const userRef = db.collection('users').doc(uid);
       await userRef.update(updateData);
       logger.info(`Successfully finalized registration for user: ${uid}`);
+
+      // --- START: New MailerLite Sync Logic (v2 for plan limitations) ---
+      const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
+      const INACTIVITY_GROUP_ID = "158604236537464197"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
+
+      if (mailerLiteApiKey && INACTIVITY_GROUP_ID) {
+        logger.info(`Syncing new user ${email} to MailerLite inactivity group.`);
+        try {
+          const response = await axios.post(
+            `https://connect.mailerlite.com/api/subscribers`,
+            {
+              email: email,
+              fields: {
+                name: username,
+                is_on_trial: "false",
+                inactivity_status: "inactive", // Start them as inactive to trigger the automation
+              },
+              groups: [INACTIVITY_GROUP_ID],
+              status: "active",
+            },
+            {
+              headers: {
+                "Authorization": `Bearer ${mailerLiteApiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+            }
+          );
+          const subscriberId = response.data?.data?.id;
+          await userRef.update({ mailerLiteInactivitySubscriberId: subscriberId || `SYNCED_${Date.now()}` });
+          logger.info(`Successfully added new user ${email} to MailerLite inactivity workflow.`);
+        } catch (apiError) {
+          logger.error(`Failed to sync new user ${email} to MailerLite.`, apiError.response?.data || apiError.message);
+        }
+      }
+      // --- END: New MailerLite Sync Logic ---
+
       return { success: true, message: "Registration complete!" };
     } catch (error) {
       logger.error(`Error finalizing registration for ${uid}:`, error);
@@ -1635,6 +1702,100 @@ userData.trialType === "board_review" ? "board_review_trial" :
 
     } catch (error) {
       logger.error("Unhandled error during scheduled MailerLite sync:", error);
+    }
+  }
+);
+
+// --- NEW (v2): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+exports.syncActivityToMailerLite = onSchedule(
+  {
+    schedule: "every day 05:00",
+    timeZone: "America/New_York",
+    secrets: ["MAILERLITE_API_KEY"],
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async (event) => {
+    logger.info("Starting daily sync of user activity status to MailerLite.");
+
+    const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
+    const INACTIVITY_GROUP_ID = "123456789012345678"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
+
+    if (!mailerLiteApiKey || !INACTIVITY_GROUP_ID) {
+      logger.error("MailerLite API Key or Inactivity Group ID is not configured. Aborting sync.");
+      return;
+    }
+
+    const usersRef = db.collection("users");
+    const snapshot = await usersRef
+      .where("isRegistered", "==", true)
+      .where("hasActiveTrial", "in", [false, null])
+      .get();
+
+    if (snapshot.empty) {
+      logger.info("No registered, non-trial users found to sync.");
+      return;
+    }
+
+    logger.info(`Found ${snapshot.docs.length} users to process for activity status.`);
+    const subscribersToUpdate = [];
+    const now = Date.now();
+    const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
+
+    snapshot.forEach(doc => {
+      const userData = doc.data();
+      if (userData.email) {
+        const lastActivityMillis = userData.streaks?.lastAnsweredDate?.toMillis();
+        let status = 'inactive';
+        let groups = []; // By default, don't change groups
+
+        if (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) {
+          // User was active in the last 24 hours
+          status = 'active';
+          // We want to REMOVE them from the inactivity group to stop the automation
+          groups = [{ id: INACTIVITY_GROUP_ID, type: 'remove' }];
+        } else {
+          // User has been inactive for more than 24 hours
+          status = 'inactive';
+          // We want to ADD them to the inactivity group to start/restart the automation
+          groups = [{ id: INACTIVITY_GROUP_ID, type: 'add' }];
+        }
+
+        subscribersToUpdate.push({
+          email: userData.email,
+          fields: {
+            inactivity_status: status,
+          },
+          groups_to_add: groups.filter(g => g.type === 'add').map(g => g.id),
+          groups_to_remove: groups.filter(g => g.type === 'remove').map(g => g.id),
+        });
+      }
+    });
+
+    if (subscribersToUpdate.length === 0) {
+      logger.info("No valid users to sync to MailerLite.");
+      return;
+    }
+
+    try {
+      // Use the import endpoint for bulk updates and group management
+      await axios.post(
+        `https://connect.mailerlite.com/api/subscribers/import`,
+        {
+          subscribers: subscribersToUpdate,
+          resubscribe: true, // Allows re-adding users to groups
+        },
+        {
+          headers: {
+            "Authorization": `Bearer ${mailerLiteApiKey}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+        }
+      );
+      logger.info(`Successfully sent ${subscribersToUpdate.length} user activity status updates to MailerLite.`);
+    } catch (apiError) {
+      logger.error("Error during bulk import/update to MailerLite:", apiError.response?.data || apiError.message);
     }
   }
 );
