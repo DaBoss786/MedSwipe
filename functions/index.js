@@ -1274,29 +1274,27 @@ exports.finalizeRegistration = onCall(
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-            // 4. Update the user document and sync to MailerLite
+    // 4. Update the user document and sync to MailerLite
     try {
       const userRef = db.collection('users').doc(uid);
       await userRef.update(updateData);
       logger.info(`Successfully finalized registration for user: ${uid}`);
 
-      // --- START: New MailerLite Sync Logic (v2 for plan limitations) ---
+      // --- START: New MailerLite Sync Logic (v3 - Field Trigger) ---
       const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
-      const INACTIVITY_GROUP_ID = "158604236537464197"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
 
-      if (mailerLiteApiKey && INACTIVITY_GROUP_ID) {
-        logger.info(`Syncing new user ${email} to MailerLite inactivity group.`);
+      if (mailerLiteApiKey) {
+        logger.info(`Setting initial MailerLite fields for new user ${email}.`);
         try {
-          const response = await axios.post(
+          await axios.post(
             `https://connect.mailerlite.com/api/subscribers`,
             {
               email: email,
               fields: {
                 name: username,
                 is_on_trial: "false",
-                inactivity_status: "inactive", // Start them as inactive to trigger the automation
+                inactivity_status: "inactive", // This will trigger the automation
               },
-              groups: [INACTIVITY_GROUP_ID],
               status: "active",
             },
             {
@@ -1307,11 +1305,9 @@ exports.finalizeRegistration = onCall(
               },
             }
           );
-          const subscriberId = response.data?.data?.id;
-          await userRef.update({ mailerLiteInactivitySubscriberId: subscriberId || `SYNCED_${Date.now()}` });
-          logger.info(`Successfully added new user ${email} to MailerLite inactivity workflow.`);
+          logger.info(`Successfully set initial MailerLite fields for ${email}.`);
         } catch (apiError) {
-          logger.error(`Failed to sync new user ${email} to MailerLite.`, apiError.response?.data || apiError.message);
+          logger.error(`Failed to set initial fields for new user ${email}.`, apiError.response?.data || apiError.message);
         }
       }
       // --- END: New MailerLite Sync Logic ---
@@ -1706,7 +1702,8 @@ userData.trialType === "board_review" ? "board_review_trial" :
   }
 );
 
-// --- NEW (v2): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// --- FINAL CORRECTED (v5): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// This version uses a field update trigger AND manages group membership for clarity and robustness.
 exports.syncActivityToMailerLite = onSchedule(
   {
     schedule: "every day 05:00",
@@ -1716,7 +1713,7 @@ exports.syncActivityToMailerLite = onSchedule(
     memory: "512MiB",
   },
   async (event) => {
-    logger.info("Starting daily sync of user activity status to MailerLite.");
+    logger.info("Starting daily sync of user activity status to MailerLite (v5).");
 
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
     const INACTIVITY_GROUP_ID = "158604236537464197"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
@@ -1746,28 +1743,30 @@ exports.syncActivityToMailerLite = onSchedule(
       const userData = doc.data();
       if (userData.email) {
         const lastActivityMillis = userData.streaks?.lastAnsweredDate?.toMillis();
-        let status = 'inactive';
-        let groups = []; // By default, don't change groups
+        let newStatus = 'inactive';
+        let groupsAction = []; // This will hold our group add/remove command
 
         if (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) {
           // User was active in the last 24 hours
-          status = 'active';
+          newStatus = 'active';
+          // --- THIS IS THE CORRECTED LOGIC ---
           // We want to REMOVE them from the inactivity group to stop the automation
-          groups = [{ id: INACTIVITY_GROUP_ID, type: 'remove' }];
+          groupsAction = [{ id: INACTIVITY_GROUP_ID, type: 'remove' }];
         } else {
           // User has been inactive for more than 24 hours
-          status = 'inactive';
-          // We want to ADD them to the inactivity group to start/restart the automation
-          groups = [{ id: INACTIVITY_GROUP_ID, type: 'add' }];
+          newStatus = 'inactive';
+          // We want to ADD them to the inactivity group
+          groupsAction = [{ id: INACTIVITY_GROUP_ID, type: 'add' }];
         }
 
         subscribersToUpdate.push({
           email: userData.email,
           fields: {
-            inactivity_status: status,
+            inactivity_status: newStatus,
           },
-          groups_to_add: groups.filter(g => g.type === 'add').map(g => g.id),
-          groups_to_remove: groups.filter(g => g.type === 'remove').map(g => g.id),
+          // --- THIS IS THE CORRECTED LOGIC ---
+          groups_to_add: groupsAction.filter(g => g.type === 'add').map(g => g.id),
+          groups_to_remove: groupsAction.filter(g => g.type === 'remove').map(g => g.id),
         });
       }
     });
@@ -1778,12 +1777,12 @@ exports.syncActivityToMailerLite = onSchedule(
     }
 
     try {
-      // Use the import endpoint for bulk updates and group management
+      // Use the import endpoint for bulk field updates and group management
       await axios.post(
         `https://connect.mailerlite.com/api/subscribers/import`,
         {
           subscribers: subscribersToUpdate,
-          resubscribe: true, // Allows re-adding users to groups
+          resubscribe: true,
         },
         {
           headers: {
