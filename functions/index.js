@@ -1702,8 +1702,8 @@ userData.trialType === "board_review" ? "board_review_trial" :
   }
 );
 
-// --- FINAL CORRECTED (v5): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
-// This version uses a field update trigger AND manages group membership for clarity and robustness.
+// --- FINAL CORRECTED (v6): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// This version correctly handles users who are missing the hasActiveTrial field.
 exports.syncActivityToMailerLite = onSchedule(
   {
     schedule: "every day 05:00",
@@ -1713,7 +1713,7 @@ exports.syncActivityToMailerLite = onSchedule(
     memory: "512MiB",
   },
   async (event) => {
-    logger.info("Starting daily sync of user activity status to MailerLite (v5).");
+    logger.info("Starting daily sync of user activity status to MailerLite (v6).");
 
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
     const INACTIVITY_GROUP_ID = "158604236537464197"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
@@ -1724,38 +1724,43 @@ exports.syncActivityToMailerLite = onSchedule(
     }
 
     const usersRef = db.collection("users");
+    // --- SIMPLIFIED QUERY ---
+    // Get all registered users. We will filter out trial users in the code.
     const snapshot = await usersRef
       .where("isRegistered", "==", true)
-      .where("hasActiveTrial", "in", [false, null])
       .get();
 
     if (snapshot.empty) {
-      logger.info("No registered, non-trial users found to sync.");
+      logger.info("No registered users found to sync.");
       return;
     }
 
-    logger.info(`Found ${snapshot.docs.length} users to process for activity status.`);
+    logger.info(`Found ${snapshot.docs.length} registered users to process for activity status.`);
     const subscribersToUpdate = [];
     const now = Date.now();
     const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
 
     snapshot.forEach(doc => {
       const userData = doc.data();
+
+      // --- THIS IS THE KEY CHANGE ---
+      // If the user is explicitly on a trial, skip them and do nothing.
+      if (userData.hasActiveTrial === true) {
+        return; // This is like 'continue' in a forEach loop
+      }
+
       if (userData.email) {
         const lastActivityMillis = userData.streaks?.lastAnsweredDate?.toMillis();
         let newStatus = 'inactive';
-        let groupsAction = []; // This will hold our group add/remove command
+        let groupsAction = [];
 
         if (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) {
           // User was active in the last 24 hours
           newStatus = 'active';
-          // --- THIS IS THE CORRECTED LOGIC ---
-          // We want to REMOVE them from the inactivity group to stop the automation
           groupsAction = [{ id: INACTIVITY_GROUP_ID, type: 'remove' }];
         } else {
           // User has been inactive for more than 24 hours
           newStatus = 'inactive';
-          // We want to ADD them to the inactivity group
           groupsAction = [{ id: INACTIVITY_GROUP_ID, type: 'add' }];
         }
 
@@ -1764,7 +1769,6 @@ exports.syncActivityToMailerLite = onSchedule(
           fields: {
             inactivity_status: newStatus,
           },
-          // --- THIS IS THE CORRECTED LOGIC ---
           groups_to_add: groupsAction.filter(g => g.type === 'add').map(g => g.id),
           groups_to_remove: groupsAction.filter(g => g.type === 'remove').map(g => g.id),
         });
@@ -1772,12 +1776,11 @@ exports.syncActivityToMailerLite = onSchedule(
     });
 
     if (subscribersToUpdate.length === 0) {
-      logger.info("No valid users to sync to MailerLite.");
+      logger.info("No valid users to sync to MailerLite after filtering.");
       return;
     }
 
     try {
-      // Use the import endpoint for bulk field updates and group management
       await axios.post(
         `https://connect.mailerlite.com/api/subscribers/import`,
         {
@@ -1793,7 +1796,7 @@ exports.syncActivityToMailerLite = onSchedule(
         }
       );
       logger.info(`Successfully sent ${subscribersToUpdate.length} user activity status updates to MailerLite.`);
-    } catch (apiError) {
+    } catch (apiError)      {
       logger.error("Error during bulk import/update to MailerLite:", apiError.response?.data || apiError.message);
     }
   }
