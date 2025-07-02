@@ -1702,26 +1702,23 @@ userData.trialType === "board_review" ? "board_review_trial" :
   }
 );
 
-// in functions/index.js
 
-// --- FINAL CORRECTED (v7): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
-// This version correctly handles both Timestamp objects and ISO date strings for lastAnsweredDate.
+// --- FINAL CORRECTED (v8): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// This version sends a valid payload to the MailerLite /import endpoint.
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 22:05",
+    schedule: "every day 23:30",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
     memory: "512MiB",
   },
   async (event) => {
-    logger.info("Starting daily sync of user activity status to MailerLite (v7).");
+    logger.info("Starting daily sync of user activity status to MailerLite (v8).");
 
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
-    const INACTIVITY_GROUP_ID = "158604236537464197"; 
-
-    if (!mailerLiteApiKey || !INACTIVITY_GROUP_ID) {
-      logger.error("MailerLite API Key or Inactivity Group ID is not configured. Aborting sync.");
+    if (!mailerLiteApiKey) {
+      logger.error("MailerLite API Key is not configured. Aborting sync.");
       return;
     }
 
@@ -1751,40 +1748,27 @@ exports.syncActivityToMailerLite = onSchedule(
         const lastAnswered = userData.streaks?.lastAnsweredDate;
         let lastActivityMillis = 0;
 
-        // --- THIS IS THE FIX ---
-        // Check if lastAnswered exists and determine its type.
         if (lastAnswered) {
           if (typeof lastAnswered.toMillis === 'function') {
-            // It's a Firestore Timestamp object, use its method.
             lastActivityMillis = lastAnswered.toMillis();
           } else if (typeof lastAnswered === 'string') {
-            // It's an ISO date string, parse it into milliseconds.
             lastActivityMillis = new Date(lastAnswered).getTime();
           }
         }
-        // --- END OF FIX ---
 
-        let newStatus = 'inactive';
-        let groupsAction = [];
+        const newStatus = (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) ? 'active' : 'inactive';
 
-        if (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) {
-          // User was active in the last 24 hours
-          newStatus = 'active';
-          groupsAction = [{ id: INACTIVITY_GROUP_ID, type: 'remove' }];
-        } else {
-          // User has been inactive for more than 24 hours
-          newStatus = 'inactive';
-          groupsAction = [{ id: INACTIVITY_GROUP_ID, type: 'add' }];
-        }
-
+        // --- THIS IS THE FIX ---
+        // The payload for the /import endpoint should only contain keys it recognizes.
+        // We will only update the custom field. Group management will be handled by
+        // an automation within MailerLite that triggers on this field change.
         subscribersToUpdate.push({
           email: userData.email,
           fields: {
             inactivity_status: newStatus,
-          },
-          groups_to_add: groupsAction.filter(g => g.type === 'add').map(g => g.id),
-          groups_to_remove: groupsAction.filter(g => g.type === 'remove').map(g => g.id),
+          }
         });
+        // --- END OF FIX ---
       }
     });
 
@@ -1798,7 +1782,7 @@ exports.syncActivityToMailerLite = onSchedule(
         `https://connect.mailerlite.com/api/subscribers/import`,
         {
           subscribers: subscribersToUpdate,
-          resubscribe: true,
+          resubscribe: true, // Allows updating existing subscribers
         },
         {
           headers: {
@@ -1810,6 +1794,7 @@ exports.syncActivityToMailerLite = onSchedule(
       );
       logger.info(`Successfully sent ${subscribersToUpdate.length} user activity status updates to MailerLite.`);
     } catch (apiError)      {
+      // Log the detailed error from MailerLite's response if it exists
       logger.error("Error during bulk import/update to MailerLite:", apiError.response?.data || apiError.message);
     }
   }
