@@ -1702,21 +1702,23 @@ userData.trialType === "board_review" ? "board_review_trial" :
   }
 );
 
-// --- FINAL CORRECTED (v6): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
-// This version correctly handles users who are missing the hasActiveTrial field.
+// in functions/index.js
+
+// --- FINAL CORRECTED (v7): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// This version correctly handles both Timestamp objects and ISO date strings for lastAnsweredDate.
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 05:00",
+    schedule: "every day 22:05",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
     memory: "512MiB",
   },
   async (event) => {
-    logger.info("Starting daily sync of user activity status to MailerLite (v6).");
+    logger.info("Starting daily sync of user activity status to MailerLite (v7).");
 
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
-    const INACTIVITY_GROUP_ID = "158604236537464197"; // <<< PASTE YOUR INACTIVITY GROUP ID HERE
+    const INACTIVITY_GROUP_ID = "158604236537464197"; 
 
     if (!mailerLiteApiKey || !INACTIVITY_GROUP_ID) {
       logger.error("MailerLite API Key or Inactivity Group ID is not configured. Aborting sync.");
@@ -1724,8 +1726,6 @@ exports.syncActivityToMailerLite = onSchedule(
     }
 
     const usersRef = db.collection("users");
-    // --- SIMPLIFIED QUERY ---
-    // Get all registered users. We will filter out trial users in the code.
     const snapshot = await usersRef
       .where("isRegistered", "==", true)
       .get();
@@ -1743,14 +1743,27 @@ exports.syncActivityToMailerLite = onSchedule(
     snapshot.forEach(doc => {
       const userData = doc.data();
 
-      // --- THIS IS THE KEY CHANGE ---
-      // If the user is explicitly on a trial, skip them and do nothing.
       if (userData.hasActiveTrial === true) {
-        return; // This is like 'continue' in a forEach loop
+        return; // Skip users on an active trial
       }
 
       if (userData.email) {
-        const lastActivityMillis = userData.streaks?.lastAnsweredDate?.toMillis();
+        const lastAnswered = userData.streaks?.lastAnsweredDate;
+        let lastActivityMillis = 0;
+
+        // --- THIS IS THE FIX ---
+        // Check if lastAnswered exists and determine its type.
+        if (lastAnswered) {
+          if (typeof lastAnswered.toMillis === 'function') {
+            // It's a Firestore Timestamp object, use its method.
+            lastActivityMillis = lastAnswered.toMillis();
+          } else if (typeof lastAnswered === 'string') {
+            // It's an ISO date string, parse it into milliseconds.
+            lastActivityMillis = new Date(lastAnswered).getTime();
+          }
+        }
+        // --- END OF FIX ---
+
         let newStatus = 'inactive';
         let groupsAction = [];
 
