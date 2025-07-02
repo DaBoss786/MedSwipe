@@ -1707,7 +1707,7 @@ userData.trialType === "board_review" ? "board_review_trial" :
 // avoiding the /import endpoint's "file required" error.
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 01:25",
+    schedule: "every day 02:15",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
