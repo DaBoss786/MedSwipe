@@ -1707,7 +1707,7 @@ userData.trialType === "board_review" ? "board_review_trial" :
 // This version sends a valid payload to the MailerLite /import endpoint.
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 23:30",
+    schedule: "every day 00:10",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
