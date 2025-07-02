@@ -1702,19 +1702,19 @@ userData.trialType === "board_review" ? "board_review_trial" :
   }
 );
 
-
-// --- FINAL CORRECTED (v8): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
-// This version sends a valid payload to the MailerLite /import endpoint.
+// --- FINAL CORRECTED (v10): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// This version uses the correct API endpoint to update subscribers individually,
+// avoiding the /import endpoint's "file required" error.
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 00:10",
+    schedule: "every day 00:33",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
     memory: "512MiB",
   },
   async (event) => {
-    logger.info("Starting daily sync of user activity status to MailerLite (v8).");
+    logger.info("Starting daily sync of user activity status to MailerLite (v10).");
 
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
     if (!mailerLiteApiKey) {
@@ -1733,69 +1733,62 @@ exports.syncActivityToMailerLite = onSchedule(
     }
 
     logger.info(`Found ${snapshot.docs.length} registered users to process for activity status.`);
-    const subscribersToUpdate = [];
     const now = Date.now();
     const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
+    let successCount = 0;
+    let errorCount = 0;
 
-    snapshot.forEach(doc => {
+    // Process each user individually
+    for (const doc of snapshot.docs) {
       const userData = doc.data();
+      const uid = doc.id;
 
-      if (userData.hasActiveTrial === true) {
-        return; // Skip users on an active trial
+      // Skip users with invalid emails or those on an active trial
+      if (!userData.email || typeof userData.email !== 'string' || userData.email.trim() === '' || userData.hasActiveTrial === true) {
+        continue;
       }
 
-      if (userData.email) {
-        const lastAnswered = userData.streaks?.lastAnsweredDate;
-        let lastActivityMillis = 0;
+      const lastAnswered = userData.streaks?.lastAnsweredDate;
+      let lastActivityMillis = 0;
 
-        if (lastAnswered) {
-          if (typeof lastAnswered.toMillis === 'function') {
-            lastActivityMillis = lastAnswered.toMillis();
-          } else if (typeof lastAnswered === 'string') {
-            lastActivityMillis = new Date(lastAnswered).getTime();
-          }
+      if (lastAnswered) {
+        if (typeof lastAnswered.toMillis === 'function') {
+          lastActivityMillis = lastAnswered.toMillis();
+        } else if (typeof lastAnswered === 'string') {
+          lastActivityMillis = new Date(lastAnswered).getTime();
         }
+      }
 
-        const newStatus = (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) ? 'active' : 'inactive';
+      const newStatus = (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) ? 'active' : 'inactive';
 
+      try {
         // --- THIS IS THE FIX ---
-        // The payload for the /import endpoint should only contain keys it recognizes.
-        // We will only update the custom field. Group management will be handled by
-        // an automation within MailerLite that triggers on this field change.
-        subscribersToUpdate.push({
-          email: userData.email,
-          fields: {
-            inactivity_status: newStatus,
-          }
-        });
-        // --- END OF FIX ---
-      }
-    });
-
-    if (subscribersToUpdate.length === 0) {
-      logger.info("No valid users to sync to MailerLite after filtering.");
-      return;
-    }
-
-    try {
-      await axios.post(
-        `https://connect.mailerlite.com/api/subscribers/import`,
-        {
-          subscribers: subscribersToUpdate,
-          resubscribe: true, // Allows updating existing subscribers
-        },
-        {
-          headers: {
-            "Authorization": `Bearer ${mailerLiteApiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
+        // Use the correct endpoint for creating/updating a single subscriber
+        await axios.post(
+          `https://connect.mailerlite.com/api/subscribers`,
+          {
+            email: userData.email,
+            fields: {
+              inactivity_status: newStatus,
+            },
+            resubscribe: true, // This allows updating an existing subscriber
           },
-        }
-      );
-      logger.info(`Successfully sent ${subscribersToUpdate.length} user activity status updates to MailerLite.`);
-    } catch (apiError)      {
-      // Log the detailed error from MailerLite's response if it exists
-      logger.error("Error during bulk import/update to MailerLite:", apiError.response?.data || apiError.message);
+          {
+            headers: {
+              "Authorization": `Bearer ${mailerLiteApiKey}`,
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
+          }
+        );
+        successCount++;
+        // --- END OF FIX ---
+      } catch (apiError) {
+        errorCount++;
+        logger.error(`Failed to update MailerLite for user ${uid} (${userData.email}):`, apiError.response?.data || apiError.message);
+      }
     }
+
+    logger.info(`MailerLite sync finished. Success: ${successCount}, Errors: ${errorCount}.`);
   }
 );
