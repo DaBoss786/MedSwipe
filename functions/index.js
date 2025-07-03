@@ -1703,56 +1703,62 @@ userData.trialType === "board_review" ? "board_review_trial" :
 );
 
 // --- FINAL CORRECTED (v10): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
-// This version uses the correct API endpoint to update subscribers individually,
-// avoiding the /import endpoint's "file required" error.
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 02:15",
+    schedule: "every day 00:41",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
     memory: "512MiB",
   },
   async (event) => {
-    logger.info("Starting daily sync of user activity status to MailerLite (v11).");
+    logger.info("Starting daily sync of user activity status to MailerLite.");
+
     const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
     if (!mailerLiteApiKey) {
       logger.error("MailerLite API Key is not configured. Aborting sync.");
       return;
     }
-    
+
     const usersRef = db.collection("users");
     const snapshot = await usersRef
       .where("isRegistered", "==", true)
       .get();
-    
+
     if (snapshot.empty) {
       logger.info("No registered users found to sync.");
       return;
     }
-    
+
     logger.info(`Found ${snapshot.docs.length} registered users to process for activity status.`);
     const now = Date.now();
     const twentyFourHoursAgo = now - (24 * 60 * 60 * 1000);
-    const twoWeeksAgo = now - (14 * 24 * 60 * 60 * 1000); // 14 days in milliseconds
     
     let successCount = 0;
     let errorCount = 0;
-    let skippedDormantCount = 0; // Track how many dormant users we skip
-    
+    let skippedCount = 0;
+
     // Process each user individually
     for (const doc of snapshot.docs) {
       const userData = doc.data();
       const uid = doc.id;
-      
-      // Skip users with invalid emails or those on an active trial
-      if (!userData.email || typeof userData.email !== 'string' || userData.email.trim() === '' || userData.hasActiveTrial === true) {
+
+      // Skip trial users
+      if (userData.hasActiveTrial === true) {
+        skippedCount++;
         continue;
       }
-      
+
+      // Skip users without valid emails
+      if (!userData.email || typeof userData.email !== 'string' || !userData.email.includes('@')) {
+        skippedCount++;
+        continue;
+      }
+
+      // Calculate last activity
       const lastAnswered = userData.streaks?.lastAnsweredDate;
       let lastActivityMillis = 0;
-      
+
       if (lastAnswered) {
         if (typeof lastAnswered.toMillis === 'function') {
           lastActivityMillis = lastAnswered.toMillis();
@@ -1760,16 +1766,10 @@ exports.syncActivityToMailerLite = onSchedule(
           lastActivityMillis = new Date(lastAnswered).getTime();
         }
       }
-      
-      // Skip users who haven't been active in over 2 weeks
-      if (!lastActivityMillis || lastActivityMillis < twoWeeksAgo) {
-        skippedDormantCount++;
-        logger.info(`Skipping dormant user ${uid} (${userData.email}) - last activity: ${lastActivityMillis ? new Date(lastActivityMillis).toISOString() : 'never'}`);
-        continue;
-      }
-      
+
+      // Determine status - active if used within 24 hours, otherwise inactive
       const newStatus = (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) ? 'active' : 'inactive';
-      
+
       try {
         await axios.post(
           `https://connect.mailerlite.com/api/subscribers`,
@@ -1789,12 +1789,12 @@ exports.syncActivityToMailerLite = onSchedule(
           }
         );
         successCount++;
-        
-        // Optional: Add a small delay to avoid rate limits
+
+        // Rate limiting - pause every 10 requests
         if (successCount % 10 === 0) {
           await new Promise(resolve => setTimeout(resolve, 200));
         }
-        
+
       } catch (apiError) {
         errorCount++;
         const errorDetails = apiError.response?.data || apiError.message || 'Unknown error';
@@ -1805,7 +1805,7 @@ exports.syncActivityToMailerLite = onSchedule(
         );
       }
     }
-    
-    logger.info(`MailerLite sync finished. Success: ${successCount}, Errors: ${errorCount}, Skipped (dormant >2 weeks): ${skippedDormantCount}.`);
+
+    logger.info(`MailerLite sync completed. Processed: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}`);
   }
 );
