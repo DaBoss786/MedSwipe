@@ -1705,7 +1705,7 @@ userData.trialType === "board_review" ? "board_review_trial" :
 // --- FINAL CORRECTED (v10): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
 exports.syncActivityToMailerLite = onSchedule(
   {
-    schedule: "every day 00:41",
+    schedule: "every day 22:00",
     timeZone: "America/New_York",
     secrets: ["MAILERLITE_API_KEY"],
     timeoutSeconds: 540,
@@ -1737,6 +1737,7 @@ exports.syncActivityToMailerLite = onSchedule(
     let successCount = 0;
     let errorCount = 0;
     let skippedCount = 0;
+    let retryCount = 0;
 
     // Process each user individually
     for (const doc of snapshot.docs) {
@@ -1767,45 +1768,73 @@ exports.syncActivityToMailerLite = onSchedule(
         }
       }
 
-      // Determine status - active if used within 24 hours, otherwise inactive
+      // Determine status
       const newStatus = (lastActivityMillis && lastActivityMillis > twentyFourHoursAgo) ? 'active' : 'inactive';
 
-      try {
-        await axios.post(
-          `https://connect.mailerlite.com/api/subscribers`,
-          {
-            email: userData.email,
-            fields: {
-              inactivity_status: newStatus,
+      // Retry logic for rate limits
+      let attempts = 0;
+      let success = false;
+      
+      while (attempts < 3 && !success) {
+        try {
+          await axios.post(
+            `https://connect.mailerlite.com/api/subscribers`,
+            {
+              email: userData.email,
+              fields: {
+                inactivity_status: newStatus,
+              },
+              resubscribe: true,
             },
-            resubscribe: true,
-          },
-          {
-            headers: {
-              "Authorization": `Bearer ${mailerLiteApiKey}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
+            {
+              headers: {
+                "Authorization": `Bearer ${mailerLiteApiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+            }
+          );
+          successCount++;
+          success = true;
+
+        } catch (apiError) {
+          const statusCode = apiError.response?.status;
+          
+          if (statusCode === 429) {
+            // Rate limit hit - wait and retry
+            attempts++;
+            if (attempts < 3) {
+              retryCount++;
+              const waitTime = attempts * 2000; // 2s, 4s, 6s
+              logger.info(`Rate limit hit for ${userData.email}. Waiting ${waitTime}ms before retry ${attempts}/3`);
+              await new Promise(resolve => setTimeout(resolve, waitTime));
+            } else {
+              errorCount++;
+              logger.error(`Failed after 3 attempts for ${userData.email} due to rate limits`);
+            }
+          } else {
+            // Other error - don't retry
+            errorCount++;
+            const errorDetails = apiError.response?.data || apiError.message || 'Unknown error';
+            logger.error(
+              `Failed to update MailerLite for user ${uid} (${userData.email}). Status: ${statusCode}. Error:`,
+              errorDetails
+            );
+            break;
           }
-        );
-        successCount++;
-
-        // Rate limiting - pause every 10 requests
-        if (successCount % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 200));
         }
+      }
 
-      } catch (apiError) {
-        errorCount++;
-        const errorDetails = apiError.response?.data || apiError.message || 'Unknown error';
-        const statusCode = apiError.response?.status || 'No status code';
-        logger.error(
-          `Failed to update MailerLite for user ${uid} (${userData.email}). Status: ${statusCode}. Error:`,
-          errorDetails
-        );
+      // Always add delay between users to prevent rate limits
+      if (successCount > 0 && successCount % 5 === 0) {
+        // Every 5 successful updates, wait 1 second
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        // Small delay between all requests
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
     }
 
-    logger.info(`MailerLite sync completed. Processed: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}`);
+    logger.info(`MailerLite sync completed. Processed: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}, Retries: ${retryCount}`);
   }
 );
