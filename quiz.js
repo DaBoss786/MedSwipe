@@ -7,8 +7,8 @@ import {
   recordCmeAnswer,            // Needed for CME quizzes
   updateQuestionStats,        // Needed for regular quizzes
   getBookmarks,               // Needed for bookmark filtering
-  updateSpacedRepetitionData  // Needed for difficulty buttons
-  // Add any other functions from user.js called within quiz.js
+  updateSpacedRepetitionData,
+  recordChoiceSelection
 } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
 
@@ -481,22 +481,22 @@ async function initializeQuiz(questions, quizType = 'regular') {
           ? `<img src="${question["Image URL"].trim()}" class="question-image">`
           : "" }
         <div class="options">
-          ${question["Option A"] && question["Option A"].trim() !== ""
-            ? `<button class="option-btn" data-option="A">A. ${question["Option A"]}</button>`
-            : "" }
-          ${question["Option B"] && question["Option B"].trim() !== ""
-            ? `<button class="option-btn" data-option="B">B. ${question["Option B"]}</button>`
-            : "" }
-          ${question["Option C"] && question["Option C"].trim() !== ""
-            ? `<button class="option-btn" data-option="C">C. ${question["Option C"]}</button>`
-            : "" }
-          ${question["Option D"] && question["Option D"].trim() !== ""
-            ? `<button class="option-btn" data-option="D">D. ${question["Option D"]}</button>`
-            : "" }
-          ${question["Option E"] && question["Option E"] !== ""
-            ? `<button class="option-btn" data-option="E">E. ${question["Option E"]}</button>`
-            : "" }
-        </div>
+  ${question["Option A"] && question["Option A"].trim() !== ""
+    ? `<button class="option-btn" data-option="A"><span class="option-text">A. ${question["Option A"]}</span></button>`
+    : "" }
+  ${question["Option B"] && question["Option B"].trim() !== ""
+    ? `<button class="option-btn" data-option="B"><span class="option-text">B. ${question["Option B"]}</span></button>`
+    : "" }
+  ${question["Option C"] && question["Option C"].trim() !== ""
+    ? `<button class="option-btn" data-option="C"><span class="option-text">C. ${question["Option C"]}</span></button>`
+    : "" }
+  ${question["Option D"] && question["Option D"].trim() !== ""
+    ? `<button class="option-btn" data-option="D"><span class="option-text">D. ${question["Option D"]}</span></button>`
+    : "" }
+  ${question["Option E"] && question["Option E"] !== ""
+    ? `<button class="option-btn" data-option="E"><span class="option-text">E. ${question["Option E"]}</span></button>`
+    : "" }
+</div>
         <div class="swipe-hint">Select an answer to continue</div>
       </div>
     `;
@@ -642,45 +642,81 @@ function addOptionListeners() {
             document.body.classList.add('scroll-lock');
           }
           const card = this.closest('.card');
-          if (card.classList.contains('answered')) return;
-          card.classList.add('answered');
-          // Unlock swiping now that question is answered
-          
-          if (window.mySwiper) {
-            window.mySwiper.allowSlideNext = true;
-            console.log("Unlocked swiping after answer selection");
-          }
-          window.mySwiper.allowSlideNext = true;
-          const questionSlide = card.closest('.swiper-slide');
-          const qId = questionSlide.dataset.id;
-          if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
-          const correct = questionSlide.dataset.correct;
-          const explanation = questionSlide.dataset.explanation;
-          const category = questionSlide.dataset.category;
-          const options = card.querySelectorAll('.option-btn');
-          const selected = this.getAttribute('data-option');
-          const isCorrect = (selected === correct);
-          const timeSpent = Date.now() - questionStartTime;
-          
-          if (analytics && logEvent) {
-            logEvent(analytics, 'question_answered', {
-              question_category: category,
-              is_correct: isCorrect,
-              time_to_answer_seconds: Math.round(timeSpent / 1000),
-              is_cme_eligible: questionSlide.dataset.cmeEligible === "true",
-              is_bookmarked: questionSlide.dataset.bookmarked === "true",
-              question_source: currentQuizType === 'cme' ? 'cme_module' : 'regular_quiz',
-              quiz_position: currentQuestion + 1,
-              user_tier: window.authState?.accessTier || 'free_guest'
-            });
+    if (card.classList.contains('answered')) return;
+    card.classList.add('answered');
+    
+    if (window.mySwiper) {
+      window.mySwiper.allowSlideNext = true;
+      console.log("Unlocked swiping after answer selection");
+    }
+    const questionSlide = card.closest('.swiper-slide');
+    const qId = questionSlide.dataset.id;
+    if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
+    const correct = questionSlide.dataset.correct;
+    const explanation = questionSlide.dataset.explanation;
+    const category = questionSlide.dataset.category;
+    const options = card.querySelectorAll('.option-btn');
+    const selected = this.getAttribute('data-option');
+    const isCorrect = (selected === correct);
+    const timeSpent = Date.now() - questionStartTime;
+    
+    // Record which specific choice was selected for statistics
+    await recordChoiceSelection(qId, selected);
+
+    if (analytics && logEvent) {
+      logEvent(analytics, 'question_answered', {
+        question_category: category,
+        is_correct: isCorrect,
+        time_to_answer_seconds: Math.round(timeSpent / 1000),
+        is_cme_eligible: questionSlide.dataset.cmeEligible === "true",
+        is_bookmarked: questionSlide.dataset.bookmarked === "true",
+        question_source: currentQuizType === 'cme' ? 'cme_module' : 'regular_quiz',
+        quiz_position: currentQuestion + 1,
+        user_tier: window.authState?.accessTier || 'free_guest'
+      });
+  }
+
+    // Get peer statistics and update the display
+    const peerStats = await getPeerStats(qId);
+
+    options.forEach(option => {
+        option.disabled = true;
+        const optionLetter = option.getAttribute('data-option');
+
+        // Add the .correct or .incorrect class for styling the border and text
+        if (optionLetter === correct) {
+            option.classList.add('correct');
+        }
+        if (optionLetter === selected && !isCorrect) {
+            option.classList.add('incorrect');
         }
 
-          options.forEach(option => {
-              option.disabled = true;
-              if (option.getAttribute('data-option') === correct) {
-                  option.classList.add('correct');
-              }
-          });
+        // Add peer percentage display if stats are available
+        if (peerStats && peerStats.totalResponses > 0) {
+            const choiceCount = peerStats[`choice${optionLetter}`] || 0;
+            const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
+
+            // 1. Create and add the background bar
+            const backgroundBar = document.createElement('div');
+            backgroundBar.className = 'peer-stat-bar';
+            backgroundBar.style.width = percentage + '%';
+
+            if (optionLetter === correct) {
+                backgroundBar.classList.add('bar-correct');
+            } else if (optionLetter === selected) {
+                backgroundBar.classList.add('bar-incorrect');
+            } else {
+                backgroundBar.classList.add('bar-neutral');
+            }
+            option.prepend(backgroundBar); // Adds the bar behind the text
+
+            // 2. Create and add the percentage text
+            const percentageSpan = document.createElement('span');
+            percentageSpan.className = 'peer-percentage';
+            percentageSpan.textContent = `${percentage}%`;
+            option.appendChild(percentageSpan); // Adds the percentage to the button
+        }
+    });
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
           console.log("Found hint element:", hint); // Debug log
@@ -1332,7 +1368,21 @@ async function recordFinalAnswer(qId, category, isCorrect, timeSpent) {
 }
 // --- End of recordFinalAnswer Helper Function ---
 
-// quiz.js - ADD THIS AT THE VERY BOTTOM (or merge with existing export)
+// Function to get peer statistics for a question
+async function getPeerStats(questionId) {
+  try {
+    const choiceStatsRef = doc(db, 'choiceStats', questionId);
+    const statsDoc = await getDoc(choiceStatsRef);
+    
+    if (statsDoc.exists()) {
+      return statsDoc.data();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching peer stats:", error);
+    return null;
+  }
+}
 
 export {
   loadQuestions,

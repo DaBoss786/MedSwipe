@@ -1208,6 +1208,40 @@ await setDoc(userDocRef, {
   }
 }
 
+// Function to record which choice was selected for peer statistics
+async function recordChoiceSelection(questionId, selectedChoice) {
+  if (!auth.currentUser || !db) return;
+  
+  try {
+    const choiceStatsRef = doc(db, 'choiceStats', questionId);
+    const choiceField = `choice${selectedChoice}`;
+    
+    await runTransaction(db, async (transaction) => {
+      const statsDoc = await transaction.get(choiceStatsRef);
+      
+      if (statsDoc.exists()) {
+        const currentCount = statsDoc.data()[choiceField] || 0;
+        const currentTotal = statsDoc.data().totalResponses || 0;
+        transaction.update(choiceStatsRef, {
+          [choiceField]: currentCount + 1,
+          totalResponses: currentTotal + 1
+        });
+      } else {
+        transaction.set(choiceStatsRef, {
+          choiceA: selectedChoice === 'A' ? 1 : 0,
+          choiceB: selectedChoice === 'B' ? 1 : 0,
+          choiceC: selectedChoice === 'C' ? 1 : 0,
+          choiceD: selectedChoice === 'D' ? 1 : 0,
+          choiceE: selectedChoice === 'E' ? 1 : 0,
+          totalResponses: 1
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error recording choice selection:", error);
+  }
+}
+
 export {
   fetchPersistentAnsweredIds,
   recordAnswer,
@@ -1228,5 +1262,6 @@ export {
   updateSpacedRepetitionData,
   fetchSpacedRepetitionData,
   recordCmeAnswer, // <<<--- Make sure to include the CME function we added!
-  saveOnboardingSelections
+  saveOnboardingSelections,
+  recordChoiceSelection
 };
