@@ -5336,7 +5336,7 @@ html, body {
 /* Colors for the background bar */
 .bar-correct { background-color: #28a745; } /* Green */
 .bar-incorrect { background-color: #dc3545; } /* Red */
-.bar-neutral { background-color: #e0e0e0; } /* Gray */
+.bar-neutral { background-color: #cccccc; } /* Gray */
 
 /* This is the percentage text span we create with JS */
 .peer-percentage {
