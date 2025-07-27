@@ -743,9 +743,10 @@
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const fromLanding = urlParams.get('from') === 'landing';
+  const shouldRegister = urlParams.get('register') === 'true';
   
-  // Only redirect if explicitly coming to root page and not from landing
-  if (!location.hash && !fromLanding) {
+  // Only redirect if explicitly coming to root page and not from landing AND not trying to register
+  if (!location.hash && !fromLanding && !shouldRegister) {
     
     // Hide ALL content immediately for potential redirects
     document.body.classList.add('hide-for-redirect');
@@ -1595,20 +1596,32 @@
 <!-- ========================================= -->
 
 <script>
-  // Check URL parameters on page load
+  // Check if we should show registration form
   window.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
       
-      // Check if we should show registration
-      if (urlParams.get('register') === 'true' || urlParams.get('action') === 'register') {
-          // Wait a moment for everything to initialize
+      if (urlParams.get('register') === 'true') {
+          // Wait for auth and app to initialize
           setTimeout(function() {
-              if (typeof showRegisterForm === 'function') {
-                  showRegisterForm();
-              } else if (typeof window.showRegisterForm === 'function') {
-                  window.showRegisterForm();
+              // Remove the hide-for-redirect class if it was added
+              document.body.classList.remove('hide-for-redirect');
+              
+              // Show the welcome screen first
+              const welcomeScreen = document.getElementById('welcomeScreen');
+              if (welcomeScreen) {
+                  welcomeScreen.style.display = 'flex';
+                  welcomeScreen.style.opacity = '1';
               }
-          }, 1000);
+              
+              // Then show the registration form
+              setTimeout(function() {
+                  if (typeof showRegisterForm === 'function') {
+                      showRegisterForm();
+                  } else if (typeof window.showRegisterForm === 'function') {
+                      window.showRegisterForm();
+                  }
+              }, 500);
+          }, 1500);
       }
   });
   </script>
