@@ -524,13 +524,15 @@ async function initializeQuiz(questions, quizType = 'regular') {
     loop: false,
     mousewheel: true,
     touchReleaseOnEdges: true,
-    allowSlideNext: false,  // Start locked
-    allowSlidePrev: true,   // Allow going back
+    allowSlideNext: false,
+    allowSlidePrev: true,
     
-    // The on:init logic for scrolling/locking has been removed.
+    // ADD THESE OPTIONS
+    nested: true,  // Allows nested scrolling
+    // This tells Swiper to only capture swipes when the nested content can't scroll
+    
     on: {
       init: function () {
-        // We still need this to exist, but the complex logic is gone.
         console.log("Swiper 'init' event fired. Page is ready.");
       }
     }

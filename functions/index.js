@@ -401,11 +401,33 @@ exports.generateCmeCertificate = onCall(
         // --- Handle checkout.session.completed ---
         if (event.type === "checkout.session.completed") {
           const session = dataObject;
-          const uid = session.client_reference_id;
-          const tier = session.metadata?.tier || "unknown";
-          const planName = session.metadata?.planName || "Subscription";
-          const paid = session.payment_status === "paid";
-          const custId = session.customer;
+          let uid = session.client_reference_id;
+const tier = session.metadata?.tier || "unknown";
+const planName = session.metadata?.planName || "Subscription";
+const paid = session.payment_status === "paid";
+const custId = session.customer;
+const customerEmail = session.customer_email || session.customer_details?.email;
+
+// If no UID, try to find user by email
+if (!uid && customerEmail) {
+  // Normalize email to lowercase for consistent matching
+  const normalizedEmail = customerEmail.toLowerCase().trim();
+  logger.info(`No UID provided, attempting to find user with email: ${normalizedEmail}`);
+  
+  const usersQuery = await admin.firestore()
+    .collection('users')
+    .where('email', '==', normalizedEmail)
+    .limit(1)
+    .get();
+  
+  if (!usersQuery.empty) {
+    uid = usersQuery.docs[0].id;
+    console.log(`Found user ${uid} with email ${normalizedEmail}`);
+  } else {
+    console.error(`No user found with email ${normalizedEmail}`);
+    return res.status(200).send("No user found with provided email");
+  }
+}
     
           logger.info(`➡️ checkout.session.completed: ${session.id} | tier=${tier} | mode=${session.mode} | uid=${uid} | paid=${paid}`);
     
@@ -423,6 +445,54 @@ exports.generateCmeCertificate = onCall(
           };
     
           let newAccessTier = "free_guest"; // Default, will be updated
+
+          // Handle one-time payment for 2-week CME free trial
+if (session.mode === "payment") {
+  const lineItems = await stripeClient.checkout.sessions.listLineItems(session.id, { limit: 1 });
+  const firstItem = lineItems.data?.[0];
+  
+  // Check if this is YOUR SPECIFIC CME trial price ID
+  if (firstItem?.price?.id === "price_1RpNIGJDkW3cIYXu6OeJF8QE") { // <-- Replace with your actual price ID
+    logger.info("Processing 2-week CME free trial (one-time payment)");
+    
+    // Calculate end date as 2 weeks from now
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 14);
+    
+    const startTS = admin.firestore.Timestamp.fromDate(startDate);
+    const endTS = admin.firestore.Timestamp.fromDate(endDate);
+    
+    Object.assign(updates, {
+      // CME Annual settings
+      cmeSubscriptionActive: true,
+      cmeSubscriptionPlan: "2 Week Free Trial",
+      cmeSubscriptionStartDate: startTS,
+      cmeSubscriptionEndDate: endTS,
+      cmeSubscriptionTrialEndDate: endTS,
+      cmeSubscriptionId: null,
+      
+      // CME Annual ALSO includes Board Review
+      boardReviewActive: true,
+      boardReviewTier: "Granted by CME Trial",
+      boardReviewSubscriptionStartDate: startTS,
+      boardReviewSubscriptionEndDate: endTS,
+      boardReviewTrialEndDate: endTS,
+      
+      // Trial flags
+      hasActiveTrial: true,
+      trialType: "cme_annual_2week_free"
+    });
+    
+    newAccessTier = "cme_annual";
+    
+    // Update Firestore and return early
+    updates.accessTier = newAccessTier;
+    await userRef.set(updates, { merge: true });
+    logger.info(`✅ Firestore updated for ${uid} - 2 week CME trial activated`);
+    return res.status(200).send("OK (CME trial activated)");
+  }
+}
     
           if (session.mode === "subscription") {
             const subId = session.subscription;
@@ -1268,7 +1338,7 @@ exports.finalizeRegistration = onCall(
     // 3. Prepare the data to be updated
     const updateData = {
       username: username,
-      email: email, // Trust the email from the auth token
+      email: email.toLowerCase().trim(), // <-- Add toLowerCase() here
       isRegistered: true, // Safely set by the backend
       marketingOptIn: marketingOptIn,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
