@@ -263,6 +263,33 @@ if (analytics && event.detail.accessTier) {
   if (!event.detail.isLoading) {
     // Hide splash screen after 2 seconds
     setTimeout(function() {
+      // --- START: New logic to handle direct registration link ---
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('register') === 'true') {
+    console.log("Direct registration link detected. Showing registration form.");
+    
+    // Hide the splash screen immediately
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen) {
+        splashScreen.style.display = 'none';
+    }
+    
+    // Ensure all other main screens are hidden
+    if (typeof ensureAllScreensHidden === 'function') {
+        ensureAllScreensHidden(); 
+    }
+    
+    // Show the registration form
+    if (typeof showRegisterForm === 'function') {
+        showRegisterForm();
+    } else if (typeof window.showRegisterForm === 'function') {
+        window.showRegisterForm();
+    }
+    
+    // IMPORTANT: Stop further execution to prevent the welcome screen from showing
+    return; 
+}
+// --- END: New logic ---
       const splashScreen = document.getElementById('splashScreen');
       if (splashScreen) {
         splashScreen.classList.add('fade-out');
