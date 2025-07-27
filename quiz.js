@@ -524,12 +524,8 @@ async function initializeQuiz(questions, quizType = 'regular') {
     loop: false,
     mousewheel: true,
     touchReleaseOnEdges: true,
-    allowSlideNext: false,
-    allowSlidePrev: true,
-    
-    // ADD THESE OPTIONS
-    nested: true,  // Allows nested scrolling
-    // This tells Swiper to only capture swipes when the nested content can't scroll
+    allowSlideNext: false,  // Start locked
+    allowSlidePrev: true,   // Allow going back
     
     on: {
       init: function () {
