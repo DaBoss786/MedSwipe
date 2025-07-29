@@ -5370,3 +5370,28 @@ html, body {
 .option-btn:disabled {
   cursor: not-allowed;
 }
+
+/* === FINAL, SIMPLE, & RELIABLE SCROLLING FIX === */
+
+/* 
+  Targets only the explanation/answer slides (the even-numbered ones).
+*/
+.swiper-wrapper .swiper-slide:nth-child(even) .card {
+  /* 
+    1. Set a max-height relative to the viewport. 75vh is a good value.
+       This ensures the card never grows taller than the screen.
+  */
+  max-height: 75vh;
+
+  /* 
+    2. Make the entire card scrollable if its content overflows.
+       This is the key part. The user can now touch anywhere on the
+       card to initiate a scroll.
+  */
+  overflow-y: auto;
+
+  /* 
+    3. Add momentum-based scrolling for a smooth, native feel on iOS.
+  */
+  -webkit-overflow-scrolling: touch;
+}
