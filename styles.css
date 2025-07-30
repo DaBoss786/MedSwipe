@@ -673,25 +673,24 @@ html, body {
 .answer-card {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 140px); /* Exact height accounting for toolbars */
   padding: 15px;
-  max-height: calc(100vh - 140px); /* Account for all toolbars */
+  overflow: hidden; /* Prevent any overflow */
 }
 
 /* Explanation Container with Fixed Height */
 .explanation-container {
-  flex: 1;
-  min-height: 0; /* Important for Firefox */
+  flex: 0 1 auto; /* Don't grow infinitely */
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
-  max-height: calc(100vh - 300px); /* Leave room for toolbars + difficulty buttons */
+  margin-bottom: 10px;
+  max-height: 50%; /* Take up maximum 50% of card height */
 }
 
 /* Answer Content Box */
 .answer-content {
   position: relative;
-  max-height: 200px; /* Fixed height for explanation area */
+  height: 150px; /* Fixed smaller height */
   overflow: hidden;
   background: #f8f9fa;
   border-radius: 8px;
@@ -702,7 +701,8 @@ html, body {
 
 /* Expanded state - becomes scrollable */
 .answer-content.expanded {
-  max-height: calc(100vh - 350px); /* Dynamic based on viewport minus toolbars and buttons */
+  height: auto;
+  max-height: calc(50vh - 140px); /* Half viewport minus toolbars */
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
@@ -753,6 +753,7 @@ html, body {
   border: 1px solid #0C72D3;
   transition: all 0.2s ease;
   font-size: 0.85rem;
+  align-self: center; /* Center the button */
 }
 
 .more-button:hover {
@@ -762,11 +763,26 @@ html, body {
 
 /* Bottom Actions Container - Always Visible */
 .answer-bottom-actions {
-  margin-top: auto; /* Push to bottom */
-  padding-top: 15px;
+  flex-shrink: 0; /* Never shrink */
+  padding-top: 10px;
   border-top: 1px solid #e9ecef;
-  flex-shrink: 0; /* Prevent shrinking */
-  min-height: 120px; /* Ensure space for difficulty buttons + action button */
+  margin-top: auto; /* Push to bottom */
+}
+
+/* Ensure difficulty buttons container doesn't overflow */
+.difficulty-buttons {
+  margin-bottom: 10px;
+}
+
+.difficulty-prompt {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.swipe-next-hint {
+  font-size: 0.85rem;
+  margin-top: 10px;
+  text-align: center;
 }
 
 /* --- NEW --- CME Eligible Tag Styles */
