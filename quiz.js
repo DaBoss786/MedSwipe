@@ -837,9 +837,31 @@ function addOptionListeners() {
                           explanationContainer.appendChild(moreButton);
                           
                           moreButton.addEventListener('click', function() {
-                              answerContent.classList.add('expanded');
-                              moreButton.style.display = 'none';
-                          });
+                            answerContent.classList.add('expanded');
+                            finalAnswerCard.classList.add('has-expanded-content');
+                            moreButton.style.display = 'none';
+                            
+                            // Force a reflow to ensure scrolling works
+                            answerContent.scrollTop = 0;
+                            
+                            // Prevent swiper from intercepting touch events
+                            if (window.mySwiper) {
+                                // Store the original state
+                                const originalTouchMove = window.mySwiper.allowTouchMove;
+                                
+                                // Disable swiper touch while scrolling
+                                answerContent.addEventListener('touchstart', function(e) {
+                                    window.mySwiper.allowTouchMove = false;
+                                }, { passive: true });
+                                
+                                // Re-enable when touch ends outside the content area
+                                document.addEventListener('touchend', function(e) {
+                                    if (!answerContent.contains(e.target)) {
+                                        window.mySwiper.allowTouchMove = originalTouchMove;
+                                    }
+                                }, { passive: true });
+                            }
+                        });
                       }
                   }, 100); // Small delay to ensure DOM is rendered
                   
@@ -1022,9 +1044,31 @@ function addOptionListeners() {
                                             explanationContainer.appendChild(moreButton);
                                             
                                             moreButton.addEventListener('click', function() {
-                                                answerContent.classList.add('expanded');
-                                                moreButton.style.display = 'none';
-                                            });
+                                              answerContent.classList.add('expanded');
+                                              answerCard.classList.add('has-expanded-content');
+                                              moreButton.style.display = 'none';
+                                              
+                                              // Force a reflow to ensure scrolling works
+                                              answerContent.scrollTop = 0;
+                                              
+                                              // Prevent swiper from intercepting touch events
+                                              if (window.mySwiper) {
+                                                  // Store the original state
+                                                  const originalTouchMove = window.mySwiper.allowTouchMove;
+                                                  
+                                                  // Disable swiper touch while scrolling
+                                                  answerContent.addEventListener('touchstart', function(e) {
+                                                      window.mySwiper.allowTouchMove = false;
+                                                  }, { passive: true });
+                                                  
+                                                  // Re-enable when touch ends outside the content area
+                                                  document.addEventListener('touchend', function(e) {
+                                                      if (!answerContent.contains(e.target)) {
+                                                          window.mySwiper.allowTouchMove = originalTouchMove;
+                                                      }
+                                                  }, { passive: true });
+                                              }
+                                          });
                                         }
                                     }, 100); // Small delay to ensure DOM is rendered
                                     

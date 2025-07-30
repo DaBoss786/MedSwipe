@@ -690,21 +690,28 @@ html, body {
 /* Answer Content Box */
 .answer-content {
   position: relative;
-  flex: 1; /* Take available space in container */
-  max-height: 400px; /* Reasonable max height for explanations */
+  max-height: 250px; /* Fixed max height */
   overflow: hidden;
   background: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
+  padding-bottom: 25px; /* Extra padding at bottom to account for fade */
   border: 1px solid #e9ecef;
   transition: max-height 0.3s ease;
 }
 
 /* Expanded state - becomes scrollable */
 .answer-content.expanded {
-  overflow-y: auto;
+  max-height: 350px; /* Fixed expanded height */
+  overflow-y: scroll; /* Force scroll even for shorter content */
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  padding-bottom: 15px; /* Normal padding when expanded */
+}
+
+/* Prevent scroll from triggering swipe */
+.answer-content.expanded {
+  touch-action: pan-y; /* Only allow vertical scrolling */
 }
 
 /* Custom scrollbar for expanded content */
@@ -726,15 +733,30 @@ html, body {
   background: #555;
 }
 
-/* Gradient overlay for truncated content */
+/* Prevent swipe gestures on expanded content */
+.answer-card.has-expanded-content {
+  touch-action: none; /* Disable touch on the card */
+}
+
+.answer-card.has-expanded-content .answer-content.expanded {
+  touch-action: pan-y; /* But allow scrolling in the content box */
+}
+
+/* Ensure more button doesn't interfere with text */
+.more-button {
+  position: relative;
+  z-index: 10;
+}
+
+/* Gradient overlay for truncated content - more subtle */
 .answer-content:not(.expanded)::after {
   content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 50px;
-  background: linear-gradient(to bottom, rgba(248, 249, 250, 0), rgba(248, 249, 250, 1));
+  height: 30px; /* Reduced from 50px */
+  background: linear-gradient(to bottom, rgba(248, 249, 250, 0), rgba(248, 249, 250, 0.9));
   pointer-events: none;
   border-radius: 0 0 8px 8px;
 }
