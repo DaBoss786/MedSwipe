@@ -5492,3 +5492,39 @@ html, body {
 .option-btn:disabled {
   cursor: not-allowed;
 }
+
+/* Swiper Container Height Fix */
+.swiper {
+  height: calc(100vh - 140px) !important; /* Account for all toolbars */
+}
+
+.swiper-wrapper {
+  height: 100% !important;
+}
+
+.swiper-slide {
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ensure cards don't overflow */
+.swiper-slide .card {
+  max-height: calc(100vh - 160px) !important; /* Slightly less than container for margins */
+  height: calc(100vh - 160px) !important;
+  margin: 10px auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Specific fix for answer cards to ensure bottom stays visible */
+.swiper-slide .card.answer-card {
+  padding-bottom: 20px !important; /* Add extra padding at bottom */
+}
+
+/* Adjust the explanation content box to be more reasonable */
+.answer-content {
+  max-height: 300px; /* Reduce from 400px to 300px */
+}
