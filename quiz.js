@@ -796,29 +796,63 @@ function addOptionListeners() {
 
 
                   // --- Set up the final explanation slide content ---
-                  answerSlide.querySelector('.card').innerHTML = `
-                      <div class="answer">
-                          <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                          Correct Answer: ${correct}<br>
-                          ${explanation}
-                      </div>
-                      <div class="difficulty-buttons">
-                          <p class="difficulty-prompt">How difficult was this question?</p>
-                          <div class="difficulty-btn-container">
-                              <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-                              <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-                              <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                  const finalAnswerCard = answerSlide.querySelector('.card');
+                  finalAnswerCard.classList.add('answer-card'); // Add class for answer card styling
+                  
+                  finalAnswerCard.innerHTML = `
+                      <div class="explanation-container">
+                          <div class="answer-content">
+                              <div class="answer">
+                                  <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                                  Correct Answer: ${correct}<br>
+                                  ${explanation}
+                              </div>
                           </div>
                       </div>
-                      <!-- No "Swipe next" hint or "Loading Summary" button here initially -->
+                      <div class="answer-bottom-actions">
+                          <div class="difficulty-buttons">
+                              <p class="difficulty-prompt">How difficult was this question?</p>
+                              <div class="difficulty-btn-container">
+                                  <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                                  <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                                  <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                              </div>
+                          </div>
+                      </div>
                   `;
+                  
+                  // Check if content is truncated and add "more" button if needed
+                  setTimeout(() => {
+                      const answerContent = finalAnswerCard.querySelector('.answer-content');
+                      const answer = answerContent.querySelector('.answer');
+                      
+                      if (answer.scrollHeight > answerContent.clientHeight) {
+                          // Content is truncated, add "more" button
+                          const moreButton = document.createElement('button');
+                          moreButton.className = 'more-button';
+                          moreButton.textContent = '...more';
+                          
+                          // Insert the more button in the explanation container
+                          const explanationContainer = finalAnswerCard.querySelector('.explanation-container');
+                          explanationContainer.appendChild(moreButton);
+                          
+                          moreButton.addEventListener('click', function() {
+                              answerContent.classList.add('expanded');
+                              moreButton.style.display = 'none';
+                          });
+                      }
+                  }, 100); // Small delay to ensure DOM is rendered
+                  
                   // Add difficulty button listeners for the last question
-                  addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper function
+                  addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper
+
+                  // Add the action button to the bottom actions container
+                  const bottomActions = finalAnswerCard.querySelector('.answer-bottom-actions');
 
 
                                    // --- Add the correct FINAL ACTION BUTTON based on quiz type ---
                                    const lastCard = answerSlide.querySelector('.card');
-                                   if (lastCard) {
+                                   if (bottomActions) {
                                        if (currentQuizType === 'cme') {
                                            // --- CME Quiz End Action --- (No Change Here)
                                            const returnButton = document.createElement('button');
@@ -831,7 +865,7 @@ function addOptionListeners() {
                                            returnButton.style.width = "180px";
                                            returnButton.style.fontSize = "0.9rem";
                                            returnButton.style.padding = "10px 15px";
-                                           lastCard.appendChild(returnButton);
+                                           bottomActions.appendChild(returnButton);
                                            returnButton.addEventListener('click', function() {
                                              restoreBodyScroll();
                                                console.log("Return to CME Dashboard button clicked.");
@@ -861,7 +895,7 @@ function addOptionListeners() {
                                            continueButton.textContent = "Continue";
                                            continueButton.style.display = "block";
                                            continueButton.style.margin = "20px auto";
-                                           lastCard.appendChild(continueButton);
+                                           bottomActions.appendChild(continueButton);
                                            continueButton.addEventListener('click', function() {
                                              restoreBodyScroll();
                                                console.log("Onboarding continue button clicked.");
@@ -898,7 +932,7 @@ function addOptionListeners() {
                                            returnToAppButton.textContent = "Explore the App";
                                            returnToAppButton.style.display = "block";
                                            returnToAppButton.style.margin = "20px auto";
-                                           lastCard.appendChild(returnToAppButton);
+                                           bottomActions.appendChild(returnToAppButton);
                  
                                            returnToAppButton.addEventListener('click', function() {
                                                restoreBodyScroll();
@@ -934,7 +968,7 @@ function addOptionListeners() {
                                            summaryButton.textContent = "Loading Summary...";
                                            summaryButton.style.display = "block";
                                            summaryButton.style.margin = "20px auto";
-                                           lastCard.appendChild(summaryButton);
+                                           bottomActions.appendChild(summaryButton);
                                            if (typeof prepareSummary === 'function') {
                                                setTimeout(() => {
                                                    prepareSummary();
@@ -942,33 +976,65 @@ function addOptionListeners() {
                                            }
                                            // --- End Regular Action ---
                                        }
-                                   } // end if(lastCard)
+                                      } // end if(bottomActions)
 
-              } else {
-                  // --- Logic for NON-last questions ---
-                  answerSlide.querySelector('.card').innerHTML = `
-                      <div class="answer">
-                          <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
-                          Correct Answer: ${correct}<br>
-                          ${explanation}
-                      </div>
-                      <div class="difficulty-buttons">
-                         <p class="difficulty-prompt">How difficult was this question?</p>
-                         <div class="difficulty-btn-container">
-                           <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
-                           <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
-                           <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
-                         </div>
-                       </div>
-                      <p class="swipe-next-hint">Swipe up for next question</p>
-                  `;
-                  // Add difficulty listeners
-                  addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper
-
-                  // Process the answer for non-last questions
-                  currentQuestion++;
-                  if (isCorrect) { score++; }
-                  updateProgress();
+                                  } else {
+                                    // --- Logic for NON-last questions ---
+                                    const answerCard = answerSlide.querySelector('.card');
+                                    answerCard.classList.add('answer-card'); // Add class for answer card styling
+                                    
+                                    answerCard.innerHTML = `
+                                        <div class="explanation-container">
+                                            <div class="answer-content">
+                                                <div class="answer">
+                                                    <strong>You got it ${isCorrect ? "Correct" : "Incorrect"}</strong><br>
+                                                    Correct Answer: ${correct}<br>
+                                                    ${explanation}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="answer-bottom-actions">
+                                            <div class="difficulty-buttons">
+                                                <p class="difficulty-prompt">How difficult was this question?</p>
+                                                <div class="difficulty-btn-container">
+                                                    <button class="difficulty-btn easy-btn" data-difficulty="easy">Easy</button>
+                                                    <button class="difficulty-btn medium-btn" data-difficulty="medium">Medium</button>
+                                                    <button class="difficulty-btn hard-btn" data-difficulty="hard">Hard</button>
+                                                </div>
+                                            </div>
+                                            <p class="swipe-next-hint">Swipe up for next question</p>
+                                        </div>
+                                    `;
+                                    
+                                    // Check if content is truncated and add "more" button if needed
+                                    setTimeout(() => {
+                                        const answerContent = answerCard.querySelector('.answer-content');
+                                        const answer = answerContent.querySelector('.answer');
+                                        
+                                        if (answer.scrollHeight > answerContent.clientHeight) {
+                                            // Content is truncated, add "more" button
+                                            const moreButton = document.createElement('button');
+                                            moreButton.className = 'more-button';
+                                            moreButton.textContent = '...more';
+                                            
+                                            // Insert the more button in the explanation container
+                                            const explanationContainer = answerCard.querySelector('.explanation-container');
+                                            explanationContainer.appendChild(moreButton);
+                                            
+                                            moreButton.addEventListener('click', function() {
+                                                answerContent.classList.add('expanded');
+                                                moreButton.style.display = 'none';
+                                            });
+                                        }
+                                    }, 100); // Small delay to ensure DOM is rendered
+                                    
+                                    // Add difficulty listeners
+                                    addDifficultyListeners(answerSlide, qId, isCorrect); // Use helper
+                  
+                                    // Process the answer for non-last questions
+                                    currentQuestion++;
+                                    if (isCorrect) { score++; }
+                                    updateProgress();
 
                   // --- Record the answer ---
                   if (currentQuizType === 'cme') { // Dedicated CME Module Flow - No Change Here

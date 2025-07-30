@@ -669,6 +669,106 @@ html, body {
   text-align: center;
 }
 
+/* Answer Card Layout */
+.answer-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 15px;
+  max-height: calc(100vh - 140px); /* Account for all toolbars */
+}
+
+/* Explanation Container with Fixed Height */
+.explanation-container {
+  flex: 1;
+  min-height: 0; /* Important for Firefox */
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+  max-height: calc(100vh - 300px); /* Leave room for toolbars + difficulty buttons */
+}
+
+/* Answer Content Box */
+.answer-content {
+  position: relative;
+  max-height: 200px; /* Fixed height for explanation area */
+  overflow: hidden;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+  transition: max-height 0.3s ease;
+}
+
+/* Expanded state - becomes scrollable */
+.answer-content.expanded {
+  max-height: calc(100vh - 350px); /* Dynamic based on viewport minus toolbars and buttons */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Custom scrollbar for expanded content */
+.answer-content.expanded::-webkit-scrollbar {
+  width: 6px;
+}
+
+.answer-content.expanded::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.answer-content.expanded::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.answer-content.expanded::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Gradient overlay for truncated content */
+.answer-content:not(.expanded)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(to bottom, rgba(248, 249, 250, 0), rgba(248, 249, 250, 1));
+  pointer-events: none;
+  border-radius: 0 0 8px 8px;
+}
+
+/* More button styling */
+.more-button {
+  display: inline-block;
+  color: #0C72D3;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid #0C72D3;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+}
+
+.more-button:hover {
+  background-color: #0C72D3;
+  color: white;
+}
+
+/* Bottom Actions Container - Always Visible */
+.answer-bottom-actions {
+  margin-top: auto; /* Push to bottom */
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+  flex-shrink: 0; /* Prevent shrinking */
+  min-height: 120px; /* Ensure space for difficulty buttons + action button */
+}
+
 /* --- NEW --- CME Eligible Tag Styles */
 .cme-tag {
   position: absolute; /* Position relative to the card */
