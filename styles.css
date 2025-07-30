@@ -5493,38 +5493,54 @@ html, body {
   cursor: not-allowed;
 }
 
-/* Swiper Container Height Fix */
+/* Fix Swiper container to account for toolbars */
 .swiper {
   height: calc(100vh - 140px) !important; /* Account for all toolbars */
 }
 
-.swiper-wrapper {
-  height: 100% !important;
-}
-
+/* Keep question cards at their normal size - don't stretch them */
 .swiper-slide {
-  height: 100% !important;
-  overflow: hidden !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: flex;
+  align-items: flex-start; /* Align to top instead of center */
+  justify-content: center;
+  padding-top: 20px; /* Add some padding from top */
 }
 
-/* Ensure cards don't overflow */
-.swiper-slide .card {
-  max-height: calc(100vh - 160px) !important; /* Slightly less than container for margins */
-  height: calc(100vh - 160px) !important;
-  margin: 10px auto !important;
-  display: flex !important;
-  flex-direction: column !important;
+/* Ensure answer cards fit within viewport with all content visible */
+.card.answer-card {
+  max-height: calc(100vh - 180px) !important; /* Extra space for safety */
+  height: auto !important; /* Don't force full height */
+  display: flex;
+  flex-direction: column;
+  overflow: visible !important; /* Allow content to be visible */
 }
 
-/* Specific fix for answer cards to ensure bottom stays visible */
-.swiper-slide .card.answer-card {
-  padding-bottom: 20px !important; /* Add extra padding at bottom */
+/* Adjust the explanation container to leave more room for buttons */
+.answer-card .explanation-container {
+  flex: 0 1 auto; /* Don't grow too much */
+  max-height: 45%; /* Limit to 45% of card height */
 }
 
-/* Adjust the explanation content box to be more reasonable */
-.answer-content {
-  max-height: 300px; /* Reduce from 400px to 300px */
+/* Make the answer content box smaller */
+.answer-card .answer-content {
+  max-height: 250px; /* Smaller max height */
+  height: auto; /* Natural height */
+}
+
+/* Ensure bottom actions are always visible with proper spacing */
+.answer-card .answer-bottom-actions {
+  flex-shrink: 0;
+  min-height: 150px; /* Ensure minimum space for buttons */
+  padding: 20px 10px 30px 10px; /* More padding, especially at bottom */
+  margin-top: 10px;
+}
+
+/* Add margin to difficulty buttons container */
+.difficulty-buttons {
+  margin-bottom: 20px;
+}
+
+/* Ensure the action buttons have proper spacing */
+.start-quiz-btn {
+  margin-top: 15px !important;
 }
