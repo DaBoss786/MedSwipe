@@ -663,7 +663,7 @@ html, body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   max-width: 600px;
   width: 100%;
-  max-height: 80vh;
+  max-height: calc(100vh - 140px); /* Add this line - accounts for all toolbars */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   text-align: center;
@@ -673,24 +673,25 @@ html, body {
 .answer-card {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px); /* Exact height accounting for toolbars */
+  height: 100%; /* Use full height of parent card */
   padding: 15px;
-  overflow: hidden; /* Prevent any overflow */
+  overflow: hidden; /* Prevent overflow */
 }
 
-/* Explanation Container with Fixed Height */
+/* Explanation Container */
 .explanation-container {
-  flex: 0 1 auto; /* Don't grow infinitely */
+  flex: 1; /* Take available space */
   display: flex;
   flex-direction: column;
-  margin-bottom: 10px;
-  max-height: 50%; /* Take up maximum 50% of card height */
+  margin-bottom: 15px;
+  min-height: 0; /* Important for Firefox flex children */
 }
 
 /* Answer Content Box */
 .answer-content {
   position: relative;
-  height: 150px; /* Fixed smaller height */
+  flex: 1; /* Take available space in container */
+  max-height: 400px; /* Reasonable max height for explanations */
   overflow: hidden;
   background: #f8f9fa;
   border-radius: 8px;
@@ -701,8 +702,6 @@ html, body {
 
 /* Expanded state - becomes scrollable */
 .answer-content.expanded {
-  height: auto;
-  max-height: calc(50vh - 140px); /* Half viewport minus toolbars */
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
@@ -764,25 +763,32 @@ html, body {
 /* Bottom Actions Container - Always Visible */
 .answer-bottom-actions {
   flex-shrink: 0; /* Never shrink */
-  padding-top: 10px;
+  padding-top: 15px;
   border-top: 1px solid #e9ecef;
   margin-top: auto; /* Push to bottom */
 }
 
-/* Ensure difficulty buttons container doesn't overflow */
+/* Ensure proper spacing for elements */
 .difficulty-buttons {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .difficulty-prompt {
   font-size: 0.9rem;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .swipe-next-hint {
   font-size: 0.85rem;
   margin-top: 10px;
   text-align: center;
+  color: #666;
+}
+
+/* Swiper height fix */
+.swiper-slide {
+  height: calc(100vh - 140px) !important; /* Force height to account for toolbars */
+  overflow: hidden;
 }
 
 /* --- NEW --- CME Eligible Tag Styles */
