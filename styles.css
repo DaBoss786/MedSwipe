@@ -5562,7 +5562,7 @@ html, body {
   margin-bottom: 20px;
 }
 
-/* Ensure the action buttons have proper spacing */
-.start-quiz-btn {
+/* Ensure the action buttons have proper spacing ONLY in answer cards */
+.answer-card .start-quiz-btn {
   margin-top: 15px !important;
 }
