@@ -1297,6 +1297,7 @@ exports.initializeNewUser = onDocumentCreated("users/{userId}", async (event) =>
     cmeSubscriptionEndDate: null,
     cmeCreditsAvailable: 0,
     stripeCustomerId: null,
+    mailerLiteSubscriberId: null,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
