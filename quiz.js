@@ -822,11 +822,12 @@ function addOptionListeners() {
                   `;
                   
                   // Check if content is truncated and add "more" button if needed
-                  setTimeout(() => {
-                      const answerContent = finalAnswerCard.querySelector('.answer-content');
-                      const answer = answerContent.querySelector('.answer');
-                      
-                      if (answer.scrollHeight > answerContent.clientHeight) {
+setTimeout(() => {
+  const answerContent = finalAnswerCard.querySelector('.answer-content');
+  const answer = answerContent.querySelector('.answer');
+  
+  // Add 30px buffer to account for the gradient overlay
+  if (answer.scrollHeight > answerContent.clientHeight - 30) {
                           // Content is truncated, add "more" button
                           const moreButton = document.createElement('button');
                           moreButton.className = 'more-button';
@@ -1029,11 +1030,12 @@ function addOptionListeners() {
                                     `;
                                     
                                     // Check if content is truncated and add "more" button if needed
-                                    setTimeout(() => {
-                                        const answerContent = answerCard.querySelector('.answer-content');
-                                        const answer = answerContent.querySelector('.answer');
-                                        
-                                        if (answer.scrollHeight > answerContent.clientHeight) {
+setTimeout(() => {
+  const answerContent = answerCard.querySelector('.answer-content');
+  const answer = answerContent.querySelector('.answer');
+  
+  // Add 30px buffer to account for the gradient overlay
+  if (answer.scrollHeight > answerContent.clientHeight - 30) {
                                             // Content is truncated, add "more" button
                                             const moreButton = document.createElement('button');
                                             moreButton.className = 'more-button';
