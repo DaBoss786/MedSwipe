@@ -353,8 +353,7 @@ function getCurrentUser() {
   return window.authState.user;
 }
 
-// ----------------------------------------------------
-// Direct email/password registration (not upgrade)
+// In auth.js - NEW version of registerUser
 async function registerUser(email, password, username) {
   if (!finalizeRegistrationFunction) {
     throw new Error('Registration service is not available. Please try again later.');
@@ -368,7 +367,6 @@ async function registerUser(email, password, username) {
     await updateProfile(user, { displayName: username });
 
     // Step 3: Create the "slim" user document in Firestore.
-    // The onCreate trigger will then add the sensitive defaults.
     const userDocRef = doc(db, 'users', user.uid);
     await setDoc(userDocRef, {
         username,
@@ -378,18 +376,17 @@ async function registerUser(email, password, username) {
 
     // Step 4: Call the secure Cloud Function to finalize the registration fields.
     const marketingOptIn = document.getElementById('marketingOptIn')?.checked || false;
-    await finalizeRegistrationFunction({ username, marketingOptIn });
+    const result = await finalizeRegistrationFunction({ username, marketingOptIn });
 
-    // The onAuthStateChanged listener will handle the rest.
-    return user;
+    // The onAuthStateChanged listener will handle the rest, but we return the result.
+    return result;
   } catch (err) {
     console.error('registerUser error:', err);
     throw err;
   }
 }
 
-// ----------------------------------------------------
-// Upgrade currently anonymous user to permanent account
+// In auth.js - NEW version of upgradeAnonymousUser
 async function upgradeAnonymousUser(email, password, username) {
   const anonUser = auth.currentUser;
 
@@ -403,7 +400,7 @@ async function upgradeAnonymousUser(email, password, username) {
   console.log(`Linking anonymous UID ${anonUser.uid} to ${email}…`);
 
   try {
-    // Step 1: Link the auth credential. This turns the anonymous account into a permanent one.
+    // Step 1: Link the auth credential.
     const cred = EmailAuthProvider.credential(email, password);
     const { user: upgradedUser } = await linkWithCredential(anonUser, cred);
 
@@ -412,12 +409,11 @@ async function upgradeAnonymousUser(email, password, username) {
 
     // Step 3: Call the secure Cloud Function to update the Firestore document.
     const marketingOptIn = document.getElementById('marketingOptIn')?.checked || false;
-    await finalizeRegistrationFunction({ username, marketingOptIn });
+    const result = await finalizeRegistrationFunction({ username, marketingOptIn });
 
-    // The onAuthStateChanged listener will automatically pick up the new state
-    // (isRegistered: true) from the backend and update the UI.
-
-    return upgradedUser;
+    // The onAuthStateChanged listener will automatically pick up the new state,
+    // but we return the result from the function call.
+    return result;
   } catch (err) {
     console.error('upgradeAnonymousUser error:', err);
     throw err;

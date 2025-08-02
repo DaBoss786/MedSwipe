@@ -1313,19 +1313,21 @@ exports.initializeNewUser = onDocumentCreated("users/{userId}", async (event) =>
   }
 });
 
-// This function is called by the client when an anonymous user finalizes their registration.
-// It safely updates the user's profile with their chosen username and marketing preference.
+
+// This function is called by the client when a user finalizes their registration.
+// It now includes logic to check for and apply promotional access.
 exports.finalizeRegistration = onCall(
-  { region: "us-central1", memory: "256MiB" },
+  { region: "us-central1", memory: "512MiB" }, // Increased memory slightly for safety
   async (request) => {
-    // 1. Authentication check
+    // 1. Authentication check (as before)
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Please log in to register.");
     }
     const uid = request.auth.uid;
-    const email = request.auth.token.email; // Get email from the verified token
+    // Normalize email to prevent issues with capitalization
+    const email = request.auth.token.email.toLowerCase().trim();
 
-    // 2. Input validation
+    // 2. Input validation (as before)
     const { username, marketingOptIn } = request.data;
     if (!username || typeof username !== 'string' || username.trim().length < 3) {
       throw new HttpsError("invalid-argument", "A valid username is required.");
@@ -1334,24 +1336,91 @@ exports.finalizeRegistration = onCall(
       throw new HttpsError("invalid-argument", "A valid marketing preference is required.");
     }
 
-    logger.info(`Finalizing registration for UID: ${uid} with username: ${username}`);
+    logger.info(`Finalizing registration for UID: ${uid} with email: ${email}`);
 
-    // 3. Prepare the data to be updated
+    // 3. --- NEW: Check for an available promotion ---
+    const promotionsRef = db.collection('promotions');
+    const promoQuery = promotionsRef
+      .where('email', '==', email)
+      .where('status', '==', 'available')
+      .limit(1);
+
+    const promoSnapshot = await promoQuery.get();
+    const promoDoc = promoSnapshot.empty ? null : promoSnapshot.docs[0];
+
+    // 4. Prepare the base user data for Firestore
     const updateData = {
       username: username,
-      email: email.toLowerCase().trim(), // <-- Add toLowerCase() here
-      isRegistered: true, // Safely set by the backend
+      email: email,
+      isRegistered: true,
       marketingOptIn: marketingOptIn,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    // 4. Update the user document and sync to MailerLite
+    // 5. --- NEW: If a promotion was found, add subscription fields ---
+    if (promoDoc) {
+      const promoData = promoDoc.data();
+      logger.info(`Found available promotion ${promoDoc.id} for user ${uid}.`);
+
+      const now = new Date();
+      // Calculate the end date by adding the duration days
+      const endDate = new Date(now.getTime() + promoData.durationDays * 24 * 60 * 60 * 1000);
+      const endDateTimestamp = admin.firestore.Timestamp.fromDate(endDate);
+
+      // Set the user's access tier based on the promotion
+      updateData.accessTier = promoData.accessTier;
+
+      // Add the specific subscription fields based on the tier
+      if (promoData.accessTier === 'cme_annual') {
+        updateData.cmeSubscriptionActive = true;
+        updateData.cmeSubscriptionEndDate = endDateTimestamp;
+        // CME Annual also grants Board Review access
+        updateData.boardReviewActive = true;
+        updateData.boardReviewSubscriptionEndDate = endDateTimestamp;
+        updateData.boardReviewTier = `Promotional Access (${promoData.durationDays} days)`;
+      } else if (promoData.accessTier === 'board_review') {
+        updateData.boardReviewActive = true;
+        updateData.boardReviewSubscriptionEndDate = endDateTimestamp;
+        updateData.boardReviewTier = `Promotional Access (${promoData.durationDays} days)`;
+      }
+      
+      // Add a note to the user's document for your records
+      updateData.notes = `Promotional access granted via promo ID: ${promoDoc.id}`;
+    }
+
+    // 6. Update Firestore documents
     try {
       const userRef = db.collection('users').doc(uid);
-      await userRef.update(updateData);
-      logger.info(`Successfully finalized registration for user: ${uid}`);
 
-      // --- START: New MailerLite Sync Logic (v3 - Field Trigger) ---
+      if (promoDoc) {
+        // --- Use a Transaction to safely claim the promotion ---
+        // This ensures the promotion can't be claimed by two people at once.
+        const promoRef = promoDoc.ref;
+        await db.runTransaction(async (transaction) => {
+          // First, re-read the promotion inside the transaction to ensure it's still available
+          const freshPromoDoc = await transaction.get(promoRef);
+          if (!freshPromoDoc.exists || freshPromoDoc.data().status !== 'available') {
+            // If someone else claimed it in the last millisecond, throw an error.
+            throw new Error("This promotional offer is no longer available.");
+          }
+
+          // If it's still available, update both the user and the promotion document
+          transaction.set(userRef, updateData, { merge: true });
+          transaction.update(promoRef, {
+            status: 'claimed',
+            claimedByUid: uid,
+            claimedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        logger.info(`Successfully finalized registration for user ${uid} WITH promotional access.`);
+
+      } else {
+        // No promotion found, just update the user document as normal
+        await userRef.set(updateData, { merge: true });
+        logger.info(`Successfully finalized registration for user ${uid} (standard access).`);
+      }
+
+      // --- START: Full MailerLite Sync Logic ---
       const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
 
       if (mailerLiteApiKey) {
@@ -1381,11 +1450,17 @@ exports.finalizeRegistration = onCall(
           logger.error(`Failed to set initial fields for new user ${email}.`, apiError.response?.data || apiError.message);
         }
       }
-      // --- END: New MailerLite Sync Logic ---
+      // --- END: Full MailerLite Sync Logic ---
 
-      return { success: true, message: "Registration complete!" };
+      // Return success, a message, and whether a promotion was applied.
+      return { success: true, message: "Registration complete!", promoApplied: !!promoDoc };
+
     } catch (error) {
       logger.error(`Error finalizing registration for ${uid}:`, error);
+      // Provide a more specific error message if the promo was already claimed
+      if (error.message.includes("promotional offer is no longer available")) {
+          throw new HttpsError("already-exists", error.message);
+      }
       throw new HttpsError("internal", "Failed to update your profile. Please try again.");
     }
   }

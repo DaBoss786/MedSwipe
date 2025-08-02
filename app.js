@@ -304,97 +304,93 @@ if (urlParams.get('register') === 'true') {
           const newPaywallScreen = document.getElementById('newPaywallScreen'); // Get paywall
 
           // --- START: MODIFIED ROUTING LOGIC ---
-          if (event.detail.isRegistered) {
-            const accessTier = event.detail.accessTier; // Get accessTier from the event
-            console.log(`Registered user. Access Tier: ${accessTier}. Routing...`);
+          // In app.js, inside the authStateChanged listener's setTimeout - NEW if/else block
+if (event.detail.isRegistered) {
+  // --- This is the new, smarter routing logic ---
 
-            if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
-                // Paying user or user with active credits
-                console.log('User has a paying tier or active credits. Showing main dashboard.');
-                if (mainOptions) {
-                    mainOptions.style.display = 'flex';
-                    // Use the enhanced initialization with a slightly longer delay
-                    setTimeout(() => {
-                        if (typeof forceReinitializeDashboard === 'function') {
-                            forceReinitializeDashboard();
-                        } else if (typeof initializeDashboard === 'function') {
-                            initializeDashboard();
-                        }
-                        if (typeof window.updateUserXP === 'function') window.updateUserXP(); 
-                    }, 100);
-                } else {
-                    console.error("Main options element not found for paying user!");
-                }
-              } else { // accessTier is "free_guest" (or potentially undefined, treat as free_guest)
-                console.log('Registered user is "free_guest". Checking for pending redirect...');
-                
-                // Check if there's a pending redirect after registration
-                const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
-                
-                if (pendingRedirect === 'cme_info') {
-                    console.log('Redirecting to CME Info Screen after registration.');
-                    sessionStorage.removeItem('pendingRedirectAfterRegistration');
-                    const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-                    if (cmeInfoScreen) {
-                        cmeInfoScreen.style.display = "flex";
-                        const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
-                        if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
-                    } else {
-                        console.error("CME Info Screen not found after registration redirect!");
-                        if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
-                    }
-                  } else if (pendingRedirect === 'board_review_pricing') {
-                    console.log('Redirecting to Board Review Pricing Screen after registration.');
-                    sessionStorage.removeItem('pendingRedirectAfterRegistration');
-                    const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-                    if (boardReviewPricingScreen) {
-                        boardReviewPricingScreen.style.display = 'flex';
-                        const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
-                        if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
-                        if (typeof updateBoardReviewPricingView === 'function') {
-                            updateBoardReviewPricingView('annual');
-                        }
-                    } else {
-                        console.error("Board Review Pricing Screen not found after registration redirect!");
-                        if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
-                    }
-                
-                } else if (pendingRedirect === 'cme_pricing') {
-                    console.log('Redirecting to CME Pricing Screen after registration.');
-                    sessionStorage.removeItem('pendingRedirectAfterRegistration');
-                    ensureAllScreensHidden(); // Ensure other screens are hidden
-                    const cmePricingScreen = document.getElementById("cmePricingScreen");
-                    if (cmePricingScreen) {
-                        cmePricingScreen.style.display = 'flex';
-                    } else {
-                        console.error("CME Pricing Screen not found after registration redirect!");
-                        if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
-                    }
-    
-                } else {
-                    console.log('No pending redirect. Showing main paywall screen.');
-                    if (newPaywallScreen) {
-                        newPaywallScreen.style.display = 'flex';
-                    } else {
-                        console.error("New paywall screen element not found for free_guest user!");
-                        if (welcomeScreen) {
-                            welcomeScreen.style.display = 'flex';
-                            welcomeScreen.style.opacity = '1';
-                        } else if (mainOptions) {
-                            mainOptions.style.display = 'flex';
-                        }
-                    }
-                }
-            }
-        } else { // User is not registered (i.e., anonymous guest at this point)
-            console.log('User is anonymous guest. Showing welcome screen.');
-            if (welcomeScreen) {
-                welcomeScreen.style.display = 'flex';
-                welcomeScreen.style.opacity = '1';
-            } else {
-                console.error("Welcome screen element not found for anonymous user!");
-            }
-        }
+  // 1. Check if a promotion was just successfully applied.
+  const promoApplied = sessionStorage.getItem('promoApplied');
+  if (promoApplied) {
+      alert('Congratulations! Your promotional access has been successfully applied.');
+      sessionStorage.removeItem('promoApplied'); // Clean up the flag
+  }
+
+  const accessTier = event.detail.accessTier;
+  console.log(`Registered user detected. Access Tier: [${accessTier}]. Routing...`);
+
+  // 2. If the user has a paid or promotional tier, always show the main dashboard.
+  if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+      console.log('User has a premium tier. Showing main dashboard.');
+      ensureAllScreensHidden();
+      if (mainOptions) {
+          mainOptions.style.display = 'flex';
+          // Initialize dashboard components
+          setTimeout(() => {
+              if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
+              else if (typeof initializeDashboard === 'function') initializeDashboard();
+          }, 100);
+      }
+  } else {
+      // 3. If the user is a new "free_guest", check for a pending redirect "note".
+      const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
+      console.log(`User is free_guest. Checking for pending redirect note: [${pendingRedirect}]`);
+
+      // IMPORTANT: Clean up the note immediately after reading it.
+      if (pendingRedirect) {
+          sessionStorage.removeItem('pendingRedirectAfterRegistration');
+      }
+
+      // Use the note to decide where to go.
+      switch (pendingRedirect) {
+          case 'board_review_pricing':
+              console.log('Redirecting to Board Review Pricing screen.');
+              ensureAllScreensHidden();
+              const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+              if (boardReviewPricingScreen) {
+                  boardReviewPricingScreen.style.display = 'flex';
+                  if (typeof updateBoardReviewPricingView === 'function') {
+                      updateBoardReviewPricingView('annual');
+                  }
+              }
+              break;
+
+          case 'cme_pricing':
+              console.log('Redirecting to CME Pricing screen.');
+              ensureAllScreensHidden();
+              const cmePricingScreen = document.getElementById("cmePricingScreen");
+              if (cmePricingScreen) {
+                  cmePricingScreen.style.display = 'flex';
+              }
+              break;
+
+          case 'cme_info':
+              console.log('Redirecting to CME Info screen.');
+              ensureAllScreensHidden();
+              const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+              if (cmeInfoScreen) {
+                  cmeInfoScreen.style.display = "flex";
+              }
+              break;
+
+          default:
+              // 4. If there's no note, show the main paywall as the default for new users.
+              console.log('No pending redirect note found. Showing main paywall screen.');
+              ensureAllScreensHidden();
+              if (newPaywallScreen) {
+                  newPaywallScreen.style.display = 'flex';
+              }
+              break;
+      }
+  }
+} else {
+  // This part remains the same: if user is not registered, show the welcome screen.
+  console.log('User is anonymous guest. Showing welcome screen.');
+  ensureAllScreensHidden();
+  if (welcomeScreen) {
+      welcomeScreen.style.display = 'flex';
+      welcomeScreen.style.opacity = '1';
+  }
+}
         // --- END: MODIFIED ROUTING LOGIC ---
 
           // --- ALWAYS CALL updateUserMenu AFTER ROUTING DECISION AND UI UPDATE ---
@@ -1335,12 +1331,20 @@ newForm.addEventListener('submit', async function(e) {
         postRegLoadingScreen.style.display = 'flex';
     }
 
-    // Step 1: Call the appropriate registration function and WAIT for it to complete.
-    // This now includes the call to the 'finalizeRegistration' Cloud Function.
+    // We now capture the full result from the Cloud Function via our auth.js functions
+    let result;
     if (window.authState.user && window.authState.user.isAnonymous) {
-        await window.authFunctions.upgradeAnonymousUser(email, password, username);
+        result = await window.authFunctions.upgradeAnonymousUser(email, password, username);
     } else {
-        await window.authFunctions.registerUser(email, password, username);
+        result = await window.authFunctions.registerUser(email, password, username);
+    }
+
+    // Check the result for the 'promoApplied' flag.
+    // The data from a callable function is nested under `result.data`.
+    if (result && result.data && result.data.promoApplied) {
+        console.log("Promotion was successfully applied! Setting flag for welcome message.");
+        // We use sessionStorage so the message only shows once.
+        sessionStorage.setItem('promoApplied', 'true');
     }
 
     // Log GA event after successful registration
@@ -1349,55 +1353,16 @@ newForm.addEventListener('submit', async function(e) {
         console.log("GA Event: sign_up");
     }
 
-    // Step 2: Manually handle the redirect now that we know the backend is finished.
-    // We add a small delay for a smoother user experience.
+    // The 'authStateChanged' listener will now handle all routing.
+    // We just wait here for a moment to show the "Finalizing..." screen.
     setTimeout(() => {
         if (postRegLoadingScreen) {
             postRegLoadingScreen.style.display = 'none';
         }
-
-        // Hide all other screens to be safe
-        ensureAllScreensHidden();
-
-        switch (currentNextStep) {
-            case 'board_review_pricing':
-                console.log('Registration complete. Manually redirecting to Board Review Pricing.');
-                const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-                if (boardReviewPricingScreen) {
-                    boardReviewPricingScreen.style.display = 'flex';
-                    if (typeof updateBoardReviewPricingView === 'function') {
-                        updateBoardReviewPricingView('annual');
-                    }
-                }
-                break;
-            case 'cme_pricing':
-                console.log('Registration complete. Manually redirecting to CME Pricing.');
-                const cmePricingScreen = document.getElementById("cmePricingScreen");
-                if (cmePricingScreen) {
-                    cmePricingScreen.style.display = 'flex';
-                }
-                break;
-            case 'cme_info':
-                console.log('Registration complete. Manually redirecting to CME Info.');
-                const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-                if (cmeInfoScreen) {
-                    cmeInfoScreen.style.display = "flex";
-                }
-                break;
-            default:
-                console.log('Registration complete. Manually redirecting to main dashboard.');
-                const mainOptions = document.getElementById('mainOptions');
-                if (mainOptions) {
-                    mainOptions.style.display = 'flex';
-                }
-                break;
-        }
-    }, 1000); // 1-second delay to show "Finalizing..."
+    }, 1500);
 
 } catch (error) {
     console.error("Full registration error object:", error);
-    console.error("Error code:", error.code);
-    console.error("Error message:", error.message);
     if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
 
     // Hide loading screen on error
