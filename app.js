@@ -243,279 +243,46 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
 window.addEventListener('authStateChanged', function(event) {
   console.log('Auth state changed in app.js:', event.detail);
   window.authState = event.detail; 
-  // Log the accessTier received from the event
-  console.log('Access Tier from event.detail:', event.detail.accessTier);
 
-if (analytics && event.detail.accessTier) {
-  setUserProperties(analytics, {
-    access_tier: event.detail.accessTier 
-  });
-  console.log(`GA User Property 'access_tier' set to: ${event.detail.accessTier}`);
-}
+  if (analytics && event.detail.accessTier) {
+    setUserProperties(analytics, {
+      access_tier: event.detail.accessTier 
+    });
+  }
 
   if (event.detail.user && event.detail.user.isAnonymous && !event.detail.isRegistered) {
-    // This condition might need review. If a user logs out, they become anonymous.
-    // cleanupOnLogout() is good here.
     cleanupOnLogout();
   }
   
-  // Once authentication is initialized and not loading (isLoading is false)
-  if (!event.detail.isLoading) {
-    // Hide splash screen after 2 seconds
+  // Only proceed once auth is fully loaded
+  const isRegistrationInProgress = document.getElementById('postRegistrationLoadingScreen')?.style.display === 'flex';
+  if (!event.detail.isLoading && !isRegistrationInProgress) {
+    
+    // This outer timeout handles the splash screen fade-out
     setTimeout(function() {
-      // --- START: New logic to handle direct registration link ---
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('register') === 'true') {
-    console.log("Direct registration link detected. Showing registration form.");
-    
-    // Hide the splash screen immediately
-    const splashScreen = document.getElementById('splashScreen');
-    if (splashScreen) {
-        splashScreen.style.display = 'none';
-    }
-    
-    // Ensure all other main screens are hidden
-    if (typeof ensureAllScreensHidden === 'function') {
-        ensureAllScreensHidden(); 
-    }
-    
-    // Show the registration form
-    if (typeof showRegisterForm === 'function') {
-        showRegisterForm();
-    } else if (typeof window.showRegisterForm === 'function') {
-        window.showRegisterForm();
-    }
-    
-    // IMPORTANT: Stop further execution to prevent the welcome screen from showing
-    return; 
-}
-// --- END: New logic ---
       const splashScreen = document.getElementById('splashScreen');
       if (splashScreen) {
         splashScreen.classList.add('fade-out');
-        
-        setTimeout(function() {
-          splashScreen.style.display = 'none';
-          
-          ensureAllScreensHidden(); // Make sure all other primary screens are hidden
-          
-          const mainOptions = document.getElementById('mainOptions');
-          const welcomeScreen = document.getElementById('welcomeScreen');
-          const newPaywallScreen = document.getElementById('newPaywallScreen'); // Get paywall
-
-          // --- START: MODIFIED ROUTING LOGIC ---
-          // In app.js, inside the authStateChanged listener's setTimeout - NEW if/else block
-if (event.detail.isRegistered) {
-  // --- This is the new, smarter routing logic ---
-
-  // 1. Check if a promotion was just successfully applied.
-  const promoApplied = sessionStorage.getItem('promoApplied');
-  if (promoApplied) {
-      alert('Congratulations! Your promotional access has been successfully applied.');
-      sessionStorage.removeItem('promoApplied'); // Clean up the flag
-  }
-
-  const accessTier = event.detail.accessTier;
-  console.log(`Registered user detected. Access Tier: [${accessTier}]. Routing...`);
-
-  // 2. If the user has a paid or promotional tier, always show the main dashboard.
-  if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
-      console.log('User has a premium tier. Showing main dashboard.');
-      ensureAllScreensHidden();
-      if (mainOptions) {
-          mainOptions.style.display = 'flex';
-          // Initialize dashboard components
-          setTimeout(() => {
-              if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
-              else if (typeof initializeDashboard === 'function') initializeDashboard();
-          }, 100);
+        setTimeout(() => {
+          if (splashScreen) splashScreen.style.display = 'none';
+        }, 500);
       }
-  } else {
-      // 3. If the user is a new "free_guest", check for a pending redirect "note".
-      const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
-      console.log(`User is free_guest. Checking for pending redirect note: [${pendingRedirect}]`);
-
-      // IMPORTANT: Clean up the note immediately after reading it.
-      if (pendingRedirect) {
-          sessionStorage.removeItem('pendingRedirectAfterRegistration');
-      }
-
-      // Use the note to decide where to go.
-      switch (pendingRedirect) {
-          case 'board_review_pricing':
-              console.log('Redirecting to Board Review Pricing screen.');
-              ensureAllScreensHidden();
-              const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-              if (boardReviewPricingScreen) {
-                  boardReviewPricingScreen.style.display = 'flex';
-                  if (typeof updateBoardReviewPricingView === 'function') {
-                      updateBoardReviewPricingView('annual');
-                  }
-              }
-              break;
-
-          case 'cme_pricing':
-              console.log('Redirecting to CME Pricing screen.');
-              ensureAllScreensHidden();
-              const cmePricingScreen = document.getElementById("cmePricingScreen");
-              if (cmePricingScreen) {
-                  cmePricingScreen.style.display = 'flex';
-              }
-              break;
-
-          case 'cme_info':
-              console.log('Redirecting to CME Info screen.');
-              ensureAllScreensHidden();
-              const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-              if (cmeInfoScreen) {
-                  cmeInfoScreen.style.display = "flex";
-              }
-              break;
-
-          default:
-              // 4. If there's no note, show the main paywall as the default for new users.
-              console.log('No pending redirect note found. Showing main paywall screen.');
-              ensureAllScreensHidden();
-              if (newPaywallScreen) {
-                  newPaywallScreen.style.display = 'flex';
-              }
-              break;
-      }
-  }
-} else {
-  // This part remains the same: if user is not registered, show the welcome screen.
-  console.log('User is anonymous guest. Showing welcome screen.');
-  ensureAllScreensHidden();
-  if (welcomeScreen) {
-      welcomeScreen.style.display = 'flex';
-      welcomeScreen.style.opacity = '1';
-  }
-}
-        // --- END: MODIFIED ROUTING LOGIC ---
-
-          // --- ALWAYS CALL updateUserMenu AFTER ROUTING DECISION AND UI UPDATE ---
-          // This ensures the menu reflects the latest state, including accessTier.
-          console.log('Calling updateUserMenu after UI routing decision.');
-          if (typeof window.updateUserMenu === 'function') {
-            window.updateUserMenu();
-          } else {
-            console.warn('updateUserMenu function not found on window.');
-            // If updateUserMenu is directly imported and used in app.js, you might call it directly:
-            // if (typeof updateUserMenu === 'function') updateUserMenu();
-          }
-          // Also, ensure other UI elements that depend on auth state are updated
-          if (typeof window.updateUserXP === 'function') { // If updateUserXP also updates some UI
-             window.updateUserXP();
-          }
-
-
-        }, 500); // Matches the transition duration in CSS
-      } else {
-        // If splashScreen is not found, but auth is loaded, proceed with routing and menu update
-        ensureAllScreensHidden();
-        const mainOptions = document.getElementById('mainOptions');
-        const welcomeScreen = document.getElementById('welcomeScreen');
-        const newPaywallScreen = document.getElementById('newPaywallScreen');
-
-        // --- START: DUPLICATED MODIFIED ROUTING LOGIC (for no splash screen path) ---
-        if (event.detail.isRegistered) {
-          const accessTier = event.detail.accessTier;
-          console.log(`Registered user (no splash). Access Tier: ${accessTier}. Routing...`);
-
-          if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
-              console.log('User has a paying tier (no splash). Showing main dashboard.');
-              if (mainOptions) {
-                  mainOptions.style.display = 'flex';
-                  setTimeout(() => {
-                      if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
-                      else if (typeof initializeDashboard === 'function') initializeDashboard();
-                  }, 100);
-              }
-            } else { // accessTier is "free_guest"
-              console.log('Registered user is "free_guest" (no splash). Checking for pending redirect...');
-              
-              // Check if there's a pending redirect after registration
-              const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
-              
-              if (pendingRedirect === 'cme_info') {
-                  console.log('Redirecting to CME Info Screen after registration (no splash).');
-                  sessionStorage.removeItem('pendingRedirectAfterRegistration');
-                  const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-                  if (cmeInfoScreen) {
-                      cmeInfoScreen.style.display = "flex";
-                      const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
-                      if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
-                  } else {
-                      console.error("CME Info Screen not found after registration redirect (no splash)!");
-                      if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
-                  }
-              } else if (pendingRedirect === 'board_review_pricing') {
-                  console.log('Redirecting to Board Review Pricing Screen after registration (no splash).');
-                  sessionStorage.removeItem('pendingRedirectAfterRegistration');
-                  const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-                  if (boardReviewPricingScreen) {
-                      boardReviewPricingScreen.style.display = 'flex';
-                      const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
-                      if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
-                      if (typeof updateBoardReviewPricingView === 'function') {
-                          updateBoardReviewPricingView('annual');
-                      }
-                  } else {
-                      console.error("Board Review Pricing Screen not found after registration redirect (no splash)!");
-                      if (newPaywallScreen) newPaywallScreen.style.display = 'flex';
-                  }
-              } else if (pendingRedirect === 'cme_pricing') { // <<<--- MODIFICATION STARTS HERE
-                  console.log('Redirecting to CME Pricing Screen after registration (no splash).');
-                  sessionStorage.removeItem('pendingRedirectAfterRegistration');
-                  ensureAllScreensHidden(); // Ensure other screens are hidden
-                  const cmePricingScreen = document.getElementById("cmePricingScreen");
-                  if (cmePricingScreen) {
-                      cmePricingScreen.style.display = 'flex'; // Or 'block' based on your CSS
-                      // Optional: if you have a function to set the default tab for CME pricing
-                      // if (typeof updateCmePricingTabView === 'function') {
-                      //     updateCmePricingTabView('annual'); // Or your desired default
-                      // }
-                  } else {
-                      console.error("CME Pricing Screen not found after registration redirect (no splash)!");
-                      // Fallback if pricing screen is missing
-                      if (newPaywallScreen) {
-                          newPaywallScreen.style.display = 'flex';
-                      } else if (mainOptions) { // Assuming mainOptions is defined in this scope
-                          mainOptions.style.display = 'flex';
-                      }
-                  }
-              } else { // <<<--- MODIFICATION ENDS HERE (original else continues)
-                  console.log('No pending redirect (no splash). Showing main paywall screen.');
-                  if (newPaywallScreen) {
-                      newPaywallScreen.style.display = 'flex';
-                  } else {
-                       if (welcomeScreen) { // Assuming welcomeScreen is defined in this scope
-                          welcomeScreen.style.display = 'flex';
-                          welcomeScreen.style.opacity = '1';
-                      }
-                  }
-              }
-          }
-      } else { // User is not registered (anonymous)
-          console.log('User is anonymous guest (no splash). Showing welcome screen.');
-          if (welcomeScreen) { // Assuming welcomeScreen is defined in this scope
-              welcomeScreen.style.display = 'flex';
-              welcomeScreen.style.opacity = '1';
-          }
-      }
-    // --- END: DUPLICATED MODIFIED ROUTING LOGIC ---
-        
-        console.log('Calling updateUserMenu (no splash screen path).');
-        if (typeof window.updateUserMenu === 'function') {
-            window.updateUserMenu();
+      
+      // Handle direct ?register=true link
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('register') === 'true') {
+        console.log("Direct registration link detected. Showing registration form.");
+        ensureAllScreensHidden(); 
+        if (typeof showRegisterForm === 'function') {
+            showRegisterForm();
         }
-         if (typeof window.updateUserXP === 'function') {
-             window.updateUserXP();
-          }
+        return; // Stop further execution
       }
-    }, 2000); // Delay for splash screen
-  } else {
-    console.log('Auth state still loading or event.detail.isLoading is true.');
+      
+      // For all other normal page loads and auth changes, use our centralized router
+      handleUserRouting(event.detail);
+      
+    }, 2000); // 2-second delay for splash screen
   }
 });
   
@@ -1312,67 +1079,104 @@ if (form) {
 const newForm = form.cloneNode(true);
 form.parentNode.replaceChild(newForm, form);
 
+// In app.js, inside attachRegisterFormListeners - This is the final version
+
 newForm.addEventListener('submit', async function(e) {
   e.preventDefault();
-  const currentNextStep = modalElement.dataset.nextStep || initialNextStep;
-
+  
   const username = newForm.querySelector('#registerUsername').value;
   const email = newForm.querySelector('#registerEmail').value;
   const password = newForm.querySelector('#registerPassword').value;
-  // Experience is no longer read from here
-
+  const errorElement = modalElement.querySelector('#registerError');
+  
   if (errorElement) errorElement.textContent = '';
-
+  
   try {
-    // Show the loading screen immediately after hiding the modal
+    // Show loading screen
     modalElement.style.display = 'none';
     const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
     if (postRegLoadingScreen) {
-        postRegLoadingScreen.style.display = 'flex';
+      postRegLoadingScreen.style.display = 'flex';
     }
-
-    // We now capture the full result from the Cloud Function via our auth.js functions
+    
+    // Register the user
     let result;
     if (window.authState.user && window.authState.user.isAnonymous) {
-        result = await window.authFunctions.upgradeAnonymousUser(email, password, username);
+      result = await window.authFunctions.upgradeAnonymousUser(email, password, username);
     } else {
-        result = await window.authFunctions.registerUser(email, password, username);
+      result = await window.authFunctions.registerUser(email, password, username);
     }
-
-    // Check the result for the 'promoApplied' flag.
-    // The data from a callable function is nested under `result.data`.
+    
+    // Check if promotion was applied
     if (result && result.data && result.data.promoApplied) {
-        console.log("Promotion was successfully applied! Setting flag for welcome message.");
-        // We use sessionStorage so the message only shows once.
-        sessionStorage.setItem('promoApplied', 'true');
+      console.log("Promotion was successfully applied! Setting flag for welcome message.");
+      sessionStorage.setItem('promoApplied', 'true');
     }
-
-    // Log GA event after successful registration
+    
+    // Log analytics
     if (analytics) {
-        logEvent(analytics, 'sign_up', { method: 'email_password' });
-        console.log("GA Event: sign_up");
+      logEvent(analytics, 'sign_up', { method: 'email_password' });
     }
-
-    // The 'authStateChanged' listener will now handle all routing.
-    // We just wait here for a moment to show the "Finalizing..." screen.
-    setTimeout(() => {
+    
+    // CRITICAL: Wait a moment for Firestore to be fully updated
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Now manually fetch the fresh user data
+    console.log("Fetching fresh user data after registration...");
+    const currentUser = auth.currentUser;
+    
+    if (currentUser) {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const freshUserData = userDocSnap.data();
+        
+        // Build a complete authState object with fresh data
+        const freshAuthState = {
+          user: currentUser,
+          isRegistered: true,
+          isLoading: false,
+          accessTier: freshUserData.accessTier || 'free_guest',
+          boardReviewActive: freshUserData.boardReviewActive || false,
+          boardReviewSubscriptionEndDate: freshUserData.boardReviewSubscriptionEndDate || null,
+          cmeSubscriptionActive: freshUserData.cmeSubscriptionActive || false,
+          cmeSubscriptionEndDate: freshUserData.cmeSubscriptionEndDate || null,
+          cmeCreditsAvailable: freshUserData.cmeCreditsAvailable || 0
+        };
+        
+        // Hide loading screen
         if (postRegLoadingScreen) {
-            postRegLoadingScreen.style.display = 'none';
+          postRegLoadingScreen.style.display = 'none';
         }
-    }, 1500);
-
-} catch (error) {
+        
+        // Use our new, centralized routing function with the fresh data
+        handleUserRouting(freshAuthState);
+        
+        // Also update the global authState for consistency
+        window.authState = freshAuthState;
+        
+      } else {
+        console.error("User document not found after registration!");
+        if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
+        modalElement.style.display = 'flex';
+      }
+    } else {
+      console.error("No current user after registration!");
+      if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
+      modalElement.style.display = 'flex';
+    }
+    
+  } catch (error) {
     console.error("Full registration error object:", error);
     if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
-
-    // Hide loading screen on error
+    
     const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
     if (postRegLoadingScreen) {
-        postRegLoadingScreen.style.display = 'none';
+      postRegLoadingScreen.style.display = 'none';
     }
-    // Show the modal again so the user can correct their input
     modalElement.style.display = 'flex';
-}
+  }
 });
 }
 
@@ -4131,6 +3935,103 @@ function getResetErrorMessage(error) {
       return 'Network error. Please check your connection.';
     default:
       return error.message || 'An error occurred. Please try again.';
+  }
+}
+
+
+function handleUserRouting(authState) {
+  console.log("handleUserRouting called with authState:", authState);
+
+  // Get references to all the screens
+  const mainOptions = document.getElementById('mainOptions');
+  const welcomeScreen = document.getElementById('welcomeScreen');
+  const newPaywallScreen = document.getElementById('newPaywallScreen');
+
+  // First, ensure all screens are hidden to prevent flashes of content
+  ensureAllScreensHidden();
+
+  if (authState.isRegistered) {
+    // 1. Check if a promotion was just successfully applied.
+    const promoApplied = sessionStorage.getItem('promoApplied');
+    if (promoApplied) {
+        alert('Congratulations! Your promotional access has been successfully applied.');
+        sessionStorage.removeItem('promoApplied'); // Clean up the flag
+    }
+
+    const accessTier = authState.accessTier;
+    console.log(`Routing registered user. Access Tier: [${accessTier}].`);
+
+    // 2. If the user has a paid or promotional tier, always show the main dashboard.
+    if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+        console.log('User has a premium tier. Showing main dashboard.');
+        if (mainOptions) {
+            mainOptions.style.display = 'flex';
+            setTimeout(() => {
+                if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
+                else if (typeof initializeDashboard === 'function') initializeDashboard();
+            }, 100);
+        }
+    } else {
+        // 3. If the user is a new "free_guest", check for a pending redirect "note".
+        const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
+        console.log(`User is free_guest. Checking for pending redirect note: [${pendingRedirect}]`);
+
+        if (pendingRedirect) {
+            sessionStorage.removeItem('pendingRedirectAfterRegistration');
+        }
+
+        switch (pendingRedirect) {
+            case 'board_review_pricing':
+                console.log('Redirecting to Board Review Pricing screen.');
+                const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
+                if (boardReviewPricingScreen) {
+                    boardReviewPricingScreen.style.display = 'flex';
+                    if (typeof updateBoardReviewPricingView === 'function') {
+                        updateBoardReviewPricingView('annual');
+                    }
+                }
+                break;
+
+            case 'cme_pricing':
+                console.log('Redirecting to CME Pricing screen.');
+                const cmePricingScreen = document.getElementById("cmePricingScreen");
+                if (cmePricingScreen) {
+                    cmePricingScreen.style.display = 'flex';
+                }
+                break;
+
+            case 'cme_info':
+                console.log('Redirecting to CME Info screen.');
+                const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+                if (cmeInfoScreen) {
+                    cmeInfoScreen.style.display = "flex";
+                }
+                break;
+
+            default:
+                // 4. If there's no note, show the main paywall as the default for new users.
+                console.log('No pending redirect note found. Showing main paywall screen.');
+                if (newPaywallScreen) {
+                    newPaywallScreen.style.display = 'flex';
+                }
+                break;
+        }
+    }
+  } else {
+    // If user is not registered (anonymous), show the welcome screen.
+    console.log('User is anonymous guest. Showing welcome screen.');
+    if (welcomeScreen) {
+        welcomeScreen.style.display = 'flex';
+        welcomeScreen.style.opacity = '1';
+    }
+  }
+  
+  // Always update the UI elements after routing
+  if (typeof window.updateUserMenu === 'function') {
+    window.updateUserMenu();
+  }
+  if (typeof window.updateUserXP === 'function') {
+    window.updateUserXP();
   }
 }
 
