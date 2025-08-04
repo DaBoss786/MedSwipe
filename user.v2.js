@@ -169,19 +169,29 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         const diffDays = Math.round((normalizedCurrent - normalizedLast) / (1000 * 60 * 60 * 24));
         
         if (diffDays === 1) {
+          // User came back the next day, increment the streak
           streaks.currentStreak += 1;
           streakUpdated = true;
         } else if (diffDays > 1) {
+          // User missed one or more days, reset the current streak
           streaks.currentStreak = 1;
           streakUpdated = true;
         }
+        // If diffDays is 0, they are answering on the same day, so we do nothing to the streak.
         
-        streaks.lastAnsweredDate = currentDate.toISOString();
-        
+        // ** THE FIX IS HERE **
+        // We now check if the (potentially newly updated) current streak is greater than the longest streak.
+        // This check happens *after* we've determined the new current streak.
+        // This ensures the longest streak is ONLY updated when a new record is set.
         if (streaks.currentStreak > streaks.longestStreak) {
           streaks.longestStreak = streaks.currentStreak;
         }
+        
+        // Always update the last answered date
+        streaks.lastAnsweredDate = currentDate.toISOString();
+
       } else {
+        // This is the user's first answer ever.
         streaks.lastAnsweredDate = currentDate.toISOString();
         streaks.currentStreak = 1;
         streaks.longestStreak = 1;
