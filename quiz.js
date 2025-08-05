@@ -108,10 +108,10 @@ async function loadQuestions(options = {}) {
         return; // Stop execution
       }
 
-      // 2. Filter questions by the selected procedure
-      let procedureQuestions = allQuestionsData.filter(q =>
-        q.procedure && q.procedure.trim().toLowerCase() === options.procedure.trim().toLowerCase()
-      );
+            // 2. Filter questions by the selected procedure
+            let procedureQuestions = allQuestionsData.filter(q =>
+              q.Procedures && q.Procedures.trim().toLowerCase() === options.procedure.trim().toLowerCase()
+            );
       console.log(`Found ${procedureQuestions.length} questions for '${options.procedure}'.`);
 
       // 3. Handle "Coming Soon" message
