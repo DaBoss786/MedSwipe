@@ -350,11 +350,15 @@
 <!-- Dashboard View with Fixed Spacing and Centered Button -->
 <div id="mainOptions" class="dashboard-container">
   <!-- Modified margin-top to move button down so it's fully visible -->
-  <div class="dashboard-start-section" style="display: flex; justify-content: center; flex-wrap: wrap; width: 100%; margin-top: 55px;">
-    <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
-    <button id="cmeModuleBtn" class="start-quiz-btn">CME Module</button>
-    <button id="casePrepBtn" class="dashboard-start-btn">Case Prep</button>
-  </div>
+    <!-- START: Corrected Button Layout -->
+    <div class="dashboard-start-section" style="display: flex; justify-content: center; width: 100%; margin-top: 55px;">
+      <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
+      <button id="cmeModuleBtn" class="start-quiz-btn">CME Module</button>
+    </div>
+    <div class="dashboard-start-section" style="display: flex; justify-content: center; width: 100%; margin-top: -10px;">
+      <button id="casePrepBtn" class="dashboard-start-btn">Case Prep</button>
+    </div>
+    <!-- END: Corrected Button Layout -->
   
   <!-- First Row: Progress and Stats Cards -->
   <div class="dashboard-cards-row">
