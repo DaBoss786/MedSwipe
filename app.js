@@ -909,29 +909,42 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
     if (casePrepBtn) {
       casePrepBtn.addEventListener("click", async () => {
         console.log("Case Prep button clicked.");
-        if (!auth.currentUser || auth.currentUser.isAnonymous) {
-          alert("Please log in or create an account to use Case Prep.");
+
+        // This check is important to make sure Firebase is ready.
+        if (!auth.currentUser) {
+          console.warn("Auth is not ready yet, please wait a moment.");
           return;
         }
 
-        try {
-          const userDocRef = doc(db, 'users', auth.currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+        // NEW LOGIC: Handle anonymous and registered users differently.
+        if (auth.currentUser.isAnonymous) {
+          // --- ANONYMOUS USER FLOW ---
+          // They can't have a saved flag, so always show the intro.
+          console.log("Anonymous user detected. Showing intro modal directly.");
+          if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+        } else {
+          // --- REGISTERED USER FLOW (Original Logic) ---
+          // Check Firestore to see if they've seen the intro before.
+          console.log("Registered user detected. Checking Firestore for intro flag.");
+          try {
+            const userDocRef = doc(db, 'users', auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
 
-          if (userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen) {
-            // User has seen the intro, show the setup modal directly
-            console.log("User has seen intro. Showing setup modal.");
-            populateProcedureDropdown();
-            if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
-          } else {
-            // First time user, show the intro modal
-            console.log("First time user. Showing intro modal.");
+            if (userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen) {
+              // User has seen the intro, show the setup modal directly.
+              console.log("User has seen intro. Showing setup modal.");
+              populateProcedureDropdown();
+              if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
+            } else {
+              // First-time registered user, show the intro modal.
+              console.log("First-time registered user. Showing intro modal.");
+              if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+            }
+          } catch (error) {
+            console.error("Error checking for case prep intro flag:", error);
+            // Fallback to showing the intro modal on any error.
             if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
           }
-        } catch (error) {
-          console.error("Error checking for case prep intro flag:", error);
-          // Fallback to showing the intro modal on error
-          if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
         }
       });
     }
