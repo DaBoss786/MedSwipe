@@ -5566,3 +5566,24 @@ html, body {
 .answer-card .start-quiz-btn {
   margin-top: 15px !important;
 }
+
+/* =================================== */
+/* == Case Prep Feature Styles      == */
+/* =================================== */
+
+/* Ensures the Case Prep button on the dashboard has the correct spacing */
+#casePrepBtn {
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+/* Styling for the disabled/locked options in the procedure dropdown */
+#casePrepProcedureSelect option:disabled {
+  color: #adb5bd; /* Light grey text for disabled options */
+  background-color: #e9ecef; /* A slightly different background */
+}
+
+/* Style for the intro modal to ensure it looks like other pop-up modals */
+#casePrepIntroModal .modal-content {
+  max-width: 500px; /* A good width for an intro message */
+}

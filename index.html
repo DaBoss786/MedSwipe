@@ -354,6 +354,12 @@
     <button id="startQuizBtn" class="dashboard-start-btn">Start Quiz</button>
     <button id="cmeModuleBtn" class="start-quiz-btn">CME Module</button>
   </div>
+
+    <!-- START: New Case Prep Button Section -->
+    <div class="dashboard-start-section" style="display: flex; justify-content: center; width: 100%; margin-top: 5px; margin-bottom: 10px;">
+      <button id="casePrepBtn" class="dashboard-start-btn" style="width: 100%; max-width: 450px;">Case Prep</button>
+    </div>
+    <!-- END: New Case Prep Button Section -->
   
   <!-- First Row: Progress and Stats Cards -->
   <div class="dashboard-cards-row">
@@ -549,6 +555,54 @@
     <button id="modalCancelQuiz" class="cancel">Cancel</button>
   </div>
 </div>
+
+<!-- START: New Case Prep Modals -->
+
+<!-- One-Time Intro Modal -->
+<div id="casePrepIntroModal" class="modal" style="display: none; z-index: 2110;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Welcome to Case Prep</h2>
+      <span id="closeCasePrepIntroBtn" class="close-modal">×</span>
+    </div>
+    <div class="modal-body">
+      <p style="line-height: 1.6; font-size: 1rem;">
+        This section helps you quickly review surgical anatomy, steps, complications, and common intraoperative ‘pimp’ questions that attendings may ask. Designed for ENT residents prepping for the OR.
+      </p>
+      <div class="auth-buttons" style="margin-top: 25px;">
+        <button id="continueCasePrepBtn" class="auth-primary-btn">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Case Prep Setup Modal -->
+<div id="casePrepSetupModal" class="modalForm" style="display: none; z-index: 2100;">
+  <h2>Case Prep Setup</h2>
+  <div class="formGroup">
+    <label for="casePrepProcedureSelect">Select a Procedure</label>
+    <select id="casePrepProcedureSelect">
+      <!-- Options will be populated by JavaScript -->
+      <option value="">--Please choose a procedure--</option>
+    </select>
+  </div>
+  <div class="formGroup">
+    <label for="casePrepNumQuestions">Number of Questions</label>
+    <input type="number" id="casePrepNumQuestions" min="1" value="10">
+  </div>
+  <div class="formGroup">
+    <label>
+      <input type="checkbox" id="casePrepIncludeAnswered">
+      Include already answered questions
+    </label>
+  </div>
+  <div class="btnRow">
+    <button id="startCasePrepBtn">Start Prep</button>
+    <button id="cancelCasePrepBtn" class="cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- END: New Case Prep Modals -->
   
   <!-- Remaining HTML is unchanged -->
   <!-- Swiper Container for Quiz -->

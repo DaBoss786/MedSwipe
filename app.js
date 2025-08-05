@@ -836,6 +836,159 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
             }
         });
     }
+
+        // ==================================================
+    // == START: Case Prep Feature Logic
+    // ==================================================
+
+    // --- Get references to all new Case Prep elements ---
+    const casePrepBtn = document.getElementById("casePrepBtn");
+    const casePrepIntroModal = document.getElementById("casePrepIntroModal");
+    const closeCasePrepIntroBtn = document.getElementById("closeCasePrepIntroBtn");
+    const continueCasePrepBtn = document.getElementById("continueCasePrepBtn");
+    const casePrepSetupModal = document.getElementById("casePrepSetupModal");
+    const startCasePrepBtn = document.getElementById("startCasePrepBtn");
+    const cancelCasePrepBtn = document.getElementById("cancelCasePrepBtn");
+    const procedureSelect = document.getElementById("casePrepProcedureSelect");
+
+    /**
+     * Populates the procedure dropdown based on the user's access tier.
+     */
+    function populateProcedureDropdown() {
+      if (!procedureSelect) return;
+
+      // Clear existing options
+      procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
+
+      const accessTier = window.authState?.accessTier || 'free_guest';
+      const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
+
+      const procedures = [
+        { name: "Thyroidectomy", premium: false },
+        { name: "Parotidectomy", premium: false },
+        { name: "Neck Dissection", premium: true },
+        { name: "Endoscopic Sinus Surgery", premium: true },
+        { name: "Mastoidectomy", premium: true },
+        { name: "Submandibular Gland Excision", premium: true },
+        { name: "Tracheostomy", premium: true },
+        { name: "Laryngectomy", premium: true },
+        { name: "Skull Base Surgery", premium: true }
+      ];
+
+      procedures.forEach(proc => {
+        const option = document.createElement('option');
+        option.value = proc.name;
+        option.textContent = proc.name;
+
+        if (proc.premium && !hasPremiumAccess) {
+          option.disabled = true;
+          option.textContent += " (Subscription Required)";
+        }
+        
+        procedureSelect.appendChild(option);
+      });
+    }
+
+    /**
+     * Sets a flag in Firestore indicating the user has seen the Case Prep intro.
+     */
+    async function setCasePrepIntroSeen() {
+      if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+      try {
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userDocRef, {
+          casePrepIntroSeen: true
+        });
+        console.log("Firestore updated: casePrepIntroSeen set to true.");
+      } catch (error) {
+        console.error("Error setting casePrepIntroSeen flag:", error);
+      }
+    }
+
+    // --- Event Listener for the main "Case Prep" button on the dashboard ---
+    if (casePrepBtn) {
+      casePrepBtn.addEventListener("click", async () => {
+        console.log("Case Prep button clicked.");
+        if (!auth.currentUser || auth.currentUser.isAnonymous) {
+          alert("Please log in or create an account to use Case Prep.");
+          return;
+        }
+
+        try {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen) {
+            // User has seen the intro, show the setup modal directly
+            console.log("User has seen intro. Showing setup modal.");
+            populateProcedureDropdown();
+            if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
+          } else {
+            // First time user, show the intro modal
+            console.log("First time user. Showing intro modal.");
+            if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+          }
+        } catch (error) {
+          console.error("Error checking for case prep intro flag:", error);
+          // Fallback to showing the intro modal on error
+          if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+        }
+      });
+    }
+
+    // --- Event Listeners for the Intro Modal ---
+    if (continueCasePrepBtn) {
+      continueCasePrepBtn.addEventListener("click", () => {
+        if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
+        populateProcedureDropdown();
+        if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
+        setCasePrepIntroSeen(); // Mark as seen in Firestore
+      });
+    }
+    if (closeCasePrepIntroBtn) {
+      closeCasePrepIntroBtn.addEventListener("click", () => {
+        if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
+      });
+    }
+
+    // --- Event Listeners for the Setup Modal ---
+    if (startCasePrepBtn) {
+      startCasePrepBtn.addEventListener("click", () => {
+        const selectedProcedure = procedureSelect.value;
+        const numQuestions = parseInt(document.getElementById("casePrepNumQuestions").value) || 10;
+        const includeAnswered = document.getElementById("casePrepIncludeAnswered").checked;
+
+        if (!selectedProcedure) {
+          alert("Please select a procedure to begin.");
+          return;
+        }
+
+        if (casePrepSetupModal) casePrepSetupModal.style.display = "none";
+        
+        // We will add the logic for this in the next step (quiz.js)
+        console.log(`Starting Case Prep with options:`, {
+            quizType: 'case_prep',
+            procedure: selectedProcedure,
+            num: numQuestions,
+            includeAnswered: includeAnswered
+        });
+
+        loadQuestions({
+            quizType: 'case_prep',
+            procedure: selectedProcedure,
+            num: numQuestions,
+            includeAnswered: includeAnswered
+        });
+      });
+    }
+    if (cancelCasePrepBtn) {
+      cancelCasePrepBtn.addEventListener("click", () => {
+        if (casePrepSetupModal) casePrepSetupModal.style.display = "none";
+      });
+    }
+    // ==================================================
+    // == END: Case Prep Feature Logic
+    // ==================================================
     showMainToolbarInfo();
 });
 

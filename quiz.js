@@ -63,7 +63,7 @@ async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
   window.isOnboardingQuiz = options.isOnboarding || false;
 
-  // ADD THIS: Track quiz start
+  // Track quiz start
   if (analytics && logEvent) {
     const accessTier = window.authState?.accessTier || 'free_guest';
     const isGuest = !auth.currentUser || auth.currentUser.isAnonymous;
@@ -71,6 +71,7 @@ async function loadQuestions(options = {}) {
     logEvent(analytics, 'quiz_start', {
       quiz_type: options.quizType || 'regular',
       category: options.category || 'all_categories',
+      procedure: options.procedure || null, // Add procedure for tracking
       num_questions: options.num || 10,
       user_tier: accessTier,
       is_guest: isGuest,
@@ -83,196 +84,199 @@ async function loadQuestions(options = {}) {
     const allQuestionsData = await fetchQuestionBank();
     console.log("Total questions fetched from bank:", allQuestionsData.length);
 
-    let filteredQuestions = allQuestionsData; // Start with all questions
+    let filteredQuestions = []; // Initialize as empty
+    const accessTier = window.authState?.accessTier || 'free_guest';
 
-    // --- 0. Get User's Specialty (NEW) ---
-    let userSpecialty = null;
-    if (auth.currentUser) {
-      try {
-        const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists() && userDocSnap.data().specialty) {
-          userSpecialty = userDocSnap.data().specialty;
-          console.log(`User specialty found: '${userSpecialty}'`);
-        } else {
-          console.log(`User document for ${auth.currentUser.uid} exists but no specialty field, or doc doesn't exist yet. Will include all specialties or unassigned.`);
-        }
-      } catch (error) {
-        console.error("Error fetching user specialty:", error);
+    // ==================================================
+    // == START: NEW CASE PREP LOGIC
+    // ==================================================
+    if (options.quizType === 'case_prep' && options.procedure) {
+      console.log(`Case Prep mode activated for procedure: '${options.procedure}'`);
+
+      const premiumProcedures = [
+        "Neck Dissection", "Endoscopic Sinus Surgery", "Mastoidectomy",
+        "Submandibular Gland Excision", "Tracheostomy", "Laryngectomy", "Skull Base Surgery"
+      ];
+
+      const isPremiumProcedure = premiumProcedures.includes(options.procedure);
+      const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
+
+      // 1. Enforce Tier Access for Premium Procedures
+      if (isPremiumProcedure && !hasPremiumAccess) {
+        alert("You need a subscription to access this procedure. Please upgrade your plan.");
+        document.getElementById("mainOptions").style.display = "flex";
+        return; // Stop execution
       }
-    } else {
-      console.log("No current user for specialty fetching (likely very early app load).");
-    }
 
-    let relevantAnsweredIdsForCurrentYear = [];
+      // 2. Filter questions by the selected procedure
+      let procedureQuestions = allQuestionsData.filter(q =>
+        q.procedure && q.procedure.trim().toLowerCase() === options.procedure.trim().toLowerCase()
+      );
+      console.log(`Found ${procedureQuestions.length} questions for '${options.procedure}'.`);
 
-    // --- NEW: Handle "Review Incorrect CME Only" Mode ---
-    if (options.quizType === 'cme' && options.reviewIncorrectCmeOnly === true && options.incorrectCmeQuestionIds) {
-        console.log("Review Incorrect CME mode: Filtering for specific incorrect question IDs.");
-        filteredQuestions = filteredQuestions.filter(q =>
-            options.incorrectCmeQuestionIds.includes(q["Question"]?.trim())
-        );
-        // In this mode, we don't need to filter by "answered" status further,
-        // as we explicitly want to re-attempt these.
-        // Category filtering might still apply if the user selected one in a future enhancement.
-        // For now, this mode loads ALL incorrect questions passed.
-        console.log("Questions after filtering for incorrectCmeQuestionIds:", filteredQuestions.length);
-
-    } else { // --- Existing Logic for other quiz types or standard CME quiz ---
-        if (options.quizType === 'cme' && !options.includeAnswered) {
-            let currentCmeYear = window.clientActiveCmeYearId;
-            if (!currentCmeYear) {
-                if (typeof window.getActiveCmeYearIdFromFirestore === 'function') {
-                    currentCmeYear = await window.getActiveCmeYearIdFromFirestore();
-                    if (currentCmeYear && typeof window.setActiveCmeYearClientSide === 'function') {
-                        window.setActiveCmeYearClientSide(currentCmeYear);
-                    }
-                } else {
-                    console.error("getActiveCmeYearIdFromFirestore function is not available on window object!");
-                }
-            }
-
-            if (currentCmeYear && auth.currentUser && !auth.currentUser.isAnonymous) {
-                const uid = auth.currentUser.uid;
-                const cmeAnswersForYearRef = collection(db, 'users', uid, 'cmeAnswers');
-                const q = query(cmeAnswersForYearRef,
-                                where('__name__', ">=", `${currentCmeYear}_`),
-                                where('__name__', "<", `${currentCmeYear}_\uffff`));
-                try {
-                    const querySnapshot = await getDocs(q);
-                    querySnapshot.forEach((docSnap) => {
-                        if (docSnap.data().originalQuestionId) {
-                            relevantAnsweredIdsForCurrentYear.push(docSnap.data().originalQuestionId.trim());
-                        }
-                    });
-                    console.log(`Fetched ${relevantAnsweredIdsForCurrentYear.length} answered CME questions for year ${currentCmeYear}.`);
-                } catch (e) {
-                    console.error(`Error fetching CME answers for year ${currentCmeYear}:`, e);
-                }
-            } else if (options.quizType === 'cme') {
-                console.warn("Cannot fetch year-specific CME answers: No active CME year determined or user not authenticated for filtering.");
-                alert("Could not determine the current CME year to filter out answered questions. Please answer at least one CME question in this session to sync the active year, or try checking 'Include answered questions'.");
-                const cmeDash = document.getElementById("cmeDashboardView");
-                if(cmeDash && typeof showCmeDashboard === 'function') showCmeDashboard();
-                else if(cmeDash) cmeDash.style.display = "block";
-                else {
-                    const mainOpts = document.getElementById("mainOptions");
-                    if(mainOpts) mainOpts.style.display = "flex";
-                }
-                return;
-            }
-        } else if (!options.bookmarksOnly && !options.includeAnswered) {
-            relevantAnsweredIdsForCurrentYear = await fetchPersistentAnsweredIds();
+      // 3. Handle "Coming Soon" message
+      if (procedureQuestions.length === 0 && isPremiumProcedure && hasPremiumAccess) {
+        alert("Coming soon. This procedure is not yet available.");
+        document.getElementById("mainOptions").style.display = "flex";
+        return; // Stop execution
+      }
+      
+      // 4. Filter out answered questions if requested
+      if (!options.includeAnswered) {
+        const answeredIds = await fetchPersistentAnsweredIds();
+        if (answeredIds.length > 0) {
+          procedureQuestions = procedureQuestions.filter(q =>
+            !answeredIds.includes(q["Question"]?.trim())
+          );
+          console.log(`Questions after 'Include Answered=false' filter for Case Prep:`, procedureQuestions.length);
         }
+      }
+      
+      filteredQuestions = procedureQuestions; // Assign the final filtered list
 
-        const accessTier = window.authState?.accessTier;
+    } else {
+      // ==================================================
+      // == START: EXISTING QUIZ LOGIC (REGULAR, CME, ETC.)
+      // ==================================================
+      filteredQuestions = allQuestionsData; // Start with all questions
+
+      let userSpecialty = null;
+      if (auth.currentUser) {
+        try {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists() && userDocSnap.data().specialty) {
+            userSpecialty = userDocSnap.data().specialty;
+          }
+        } catch (error) {
+          console.error("Error fetching user specialty:", error);
+        }
+      }
+
+      let relevantAnsweredIdsForCurrentYear = [];
+
+      if (options.quizType === 'cme' && options.reviewIncorrectCmeOnly === true && options.incorrectCmeQuestionIds) {
+        filteredQuestions = filteredQuestions.filter(q =>
+          options.incorrectCmeQuestionIds.includes(q["Question"]?.trim())
+        );
+      } else {
+        if (options.quizType === 'cme' && !options.includeAnswered) {
+          let currentCmeYear = window.clientActiveCmeYearId;
+          if (!currentCmeYear) {
+            if (typeof window.getActiveCmeYearIdFromFirestore === 'function') {
+              currentCmeYear = await window.getActiveCmeYearIdFromFirestore();
+              if (currentCmeYear && typeof window.setActiveCmeYearClientSide === 'function') {
+                window.setActiveCmeYearClientSide(currentCmeYear);
+              }
+            }
+          }
+          if (currentCmeYear && auth.currentUser && !auth.currentUser.isAnonymous) {
+            const uid = auth.currentUser.uid;
+            const cmeAnswersForYearRef = collection(db, 'users', uid, 'cmeAnswers');
+            const q = query(cmeAnswersForYearRef, where('__name__', ">=", `${currentCmeYear}_`), where('__name__', "<", `${currentCmeYear}_\uffff`));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((docSnap) => {
+              if (docSnap.data().originalQuestionId) {
+                relevantAnsweredIdsForCurrentYear.push(docSnap.data().originalQuestionId.trim());
+              }
+            });
+          }
+        } else if (!options.bookmarksOnly && !options.includeAnswered) {
+          relevantAnsweredIdsForCurrentYear = await fetchPersistentAnsweredIds();
+        }
 
         if (accessTier === "free_guest") {
-            console.log("User is free_guest, filtering for 'Free: true' questions.");
-            filteredQuestions = filteredQuestions.filter(q => q.Free === true);
+          filteredQuestions = filteredQuestions.filter(q => q.Free === true);
         }
-        console.log("Questions after Free tier filter (if applied):", filteredQuestions.length);
 
         const currentSpecialtyForFilter = options.isOnboarding ? window.selectedSpecialty : userSpecialty;
         if (currentSpecialtyForFilter) {
-            console.log(`Applying specialty filter for: '${currentSpecialtyForFilter}'`);
-            filteredQuestions = filteredQuestions.filter(q => {
-                const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
-                if (!questionSpecialty) return true;
-                return questionSpecialty.toLowerCase() === currentSpecialtyForFilter.toLowerCase();
-            });
-            console.log("Questions after Specialty filter:", filteredQuestions.length);
-        } else {
-            console.log("No user specialty defined or it's an onboarding quiz before specialty selection, skipping specialty filter. All specialties included.");
+          filteredQuestions = filteredQuestions.filter(q => {
+            const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
+            if (!questionSpecialty) return true;
+            return questionSpecialty.toLowerCase() === currentSpecialtyForFilter.toLowerCase();
+          });
         }
 
         if ((accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") && options.boardReviewOnly === true) {
-            console.log("Board Review Only selected by eligible user, filtering for 'Board Review: true' questions.");
-            filteredQuestions = filteredQuestions.filter(q => q["Board Review"] === true);
+          filteredQuestions = filteredQuestions.filter(q => q["Board Review"] === true);
         }
-        console.log("Questions after Board Review Only filter (if applied):", filteredQuestions.length);
 
         if (options.quizType === 'cme') {
-            filteredQuestions = filteredQuestions.filter(q => {
-                const cmeEligibleValue = q["CME Eligible"];
-                return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
-                       (typeof cmeEligibleValue === 'string' && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
-            });
-            console.log("Questions after CME Eligible filter (for CME quiz type):", filteredQuestions.length);
+          filteredQuestions = filteredQuestions.filter(q => {
+            const cmeEligibleValue = q["CME Eligible"];
+            return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
+                   (typeof cmeEligibleValue === 'string' && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
+          });
         }
 
         if (options.bookmarksOnly) {
-            const bookmarks = await getBookmarks();
-            if (bookmarks.length === 0) {
-                alert("You don't have any bookmarks yet. Star questions you want to review later!");
-                document.getElementById("mainOptions").style.display = "flex";
-                return;
-            }
-            filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"]?.trim()));
-            console.log("Questions after Bookmark filter:", filteredQuestions.length);
-        }
-        else if (options.category && options.category !== "") {
-            filteredQuestions = filteredQuestions.filter(q =>
-                q["Category"] && q["Category"].trim() === options.category
-            );
-            console.log(`Questions after Category filter ('${options.category}'):`, filteredQuestions.length);
+          const bookmarks = await getBookmarks();
+          if (bookmarks.length === 0) {
+            alert("You don't have any bookmarks yet. Star questions you want to review later!");
+            document.getElementById("mainOptions").style.display = "flex";
+            return;
+          }
+          filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"]?.trim()));
+        } else if (options.category && options.category !== "") {
+          filteredQuestions = filteredQuestions.filter(q =>
+            q["Category"] && q["Category"].trim() === options.category
+          );
         }
 
         if (!options.bookmarksOnly && !options.includeAnswered) {
-            if (relevantAnsweredIdsForCurrentYear.length > 0) {
-                filteredQuestions = filteredQuestions.filter(q =>
-                    !relevantAnsweredIdsForCurrentYear.includes(q["Question"]?.trim())
-                );
-                console.log(`Questions after 'Include Answered=false' filter (using ${options.quizType === 'cme' ? 'year-specific' : 'overall'} list):`, filteredQuestions.length);
-            }
+          if (relevantAnsweredIdsForCurrentYear.length > 0) {
+            filteredQuestions = filteredQuestions.filter(q =>
+              !relevantAnsweredIdsForCurrentYear.includes(q["Question"]?.trim())
+            );
+          }
         }
-    } // --- End of existing logic block ---
+      }
+      // ==================================================
+      // == END: EXISTING QUIZ LOGIC
+      // ==================================================
+    }
 
-
+    // --- Common logic for ALL quiz types ---
     if (filteredQuestions.length === 0) {
-        let message = "No questions found matching your criteria.";
-        if (options.reviewIncorrectCmeOnly) {
-            message = "No incorrect CME questions found to review for the current year. Great job!";
-        } else if (accessTier === "free_guest") {
-            if (options.category && options.category !== "") {
-                message = `No free questions found in the '${options.category}' category matching your criteria. Try 'All Categories' or including answered questions.`;
-            } else {
-                message = "No free questions found matching your current criteria. Consider upgrading for full access to all questions!";
-            }
-        } else if (options.boardReviewOnly === true) {
-             message = "No Board Review questions found matching your criteria. Try adjusting filters or unchecking 'Board Review Questions Only'.";
-        } else if (options.quizType === 'cme') {
-            message = "No CME questions found matching your criteria for the current year. Try adjusting the category or checking 'Include answered questions'.";
-        } else if (options.bookmarksOnly) {
-            message = "No bookmarked questions found matching your criteria.";
-        } else if (options.category && options.category !== "") {
-            message = `No unanswered questions left in the '${options.category}' category. Try including answered questions.`;
-        }
-        alert(message);
+      let message = "No questions found matching your criteria.";
+      if (options.quizType === 'case_prep') {
+        message = `No unanswered questions found for '${options.procedure}'. Try including answered questions.`;
+      } else if (options.reviewIncorrectCmeOnly) {
+        message = "No incorrect CME questions found to review for the current year. Great job!";
+      } else if (accessTier === "free_guest") {
+        message = "No free questions found matching your current criteria. Consider upgrading for full access!";
+      } else if (options.boardReviewOnly === true) {
+        message = "No Board Review questions found matching your criteria.";
+      } else if (options.quizType === 'cme') {
+        message = "No CME questions found matching your criteria for the current year.";
+      } else if (options.bookmarksOnly) {
+        message = "No bookmarked questions found matching your criteria.";
+      } else if (options.category && options.category !== "") {
+        message = `No unanswered questions left in the '${options.category}' category.`;
+      }
+      alert(message);
 
-        // Navigate back appropriately
-        if (options.quizType === 'cme' || options.reviewIncorrectCmeOnly) {
-             const cmeDash = document.getElementById("cmeDashboardView");
-             if(cmeDash && typeof showCmeDashboard === 'function') showCmeDashboard();
-             else if(cmeDash) cmeDash.style.display = "block";
-        } else {
-             const mainOpts = document.getElementById("mainOptions");
-             if(mainOpts) mainOpts.style.display = "flex";
-        }
-        return;
+      if (options.quizType === 'cme' || options.reviewIncorrectCmeOnly) {
+        const cmeDash = document.getElementById("cmeDashboardView");
+        if(cmeDash && typeof showCmeDashboard === 'function') showCmeDashboard();
+        else if(cmeDash) cmeDash.style.display = "block";
+      } else {
+        const mainOpts = document.getElementById("mainOptions");
+        if(mainOpts) mainOpts.style.display = "flex";
+      }
+      return;
     }
 
     let selectedQuestions = shuffleArray(filteredQuestions);
-    // For "reviewIncorrectCmeOnly", options.num is already set to the count of incorrect questions.
-    // For other modes, use options.num or default.
     const numQuestionsToLoad = options.reviewIncorrectCmeOnly ? selectedQuestions.length : (options.num || 10);
 
     if (selectedQuestions.length > numQuestionsToLoad) {
-        selectedQuestions = selectedQuestions.slice(0, numQuestionsToLoad);
+      selectedQuestions = selectedQuestions.slice(0, numQuestionsToLoad);
     }
     console.log("Final selected questions count:", selectedQuestions.length);
 
-    initializeQuiz(selectedQuestions, options.quizType === 'cme' ? 'cme' : (options.isOnboarding ? 'onboarding' : 'regular'));
+    initializeQuiz(selectedQuestions, options.quizType || 'regular');
 
   } catch (error) {
     console.error("Error loading questions:", error);
