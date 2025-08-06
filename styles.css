@@ -5627,14 +5627,15 @@ html, body {
 /* Styling for the visual placeholders */
 .onboarding-visual {
   max-width: 80%;
-  max-height: 40vh;
-  margin-top: 40px; /* Use margin-top since it's now below the text */
+  max-height: 45vh; /* Increased from 40vh to make images slightly larger */
+  margin-top: 40px; /* Keeps the space between text and image */
+  /* The dotted border and padding have been removed */
 }
 
 .onboarding-visual-logo {
   max-width: 50%;
   max-height: 30vh;
-  margin-top: 40px; /* Use margin-top */
+  margin-bottom: 40px; /* Use margin-bottom to create space below the logo */
 }
 
 /* The .onboarding-visual-flex and .onboarding-visual-half rules are no longer needed and have been removed. */
