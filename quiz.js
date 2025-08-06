@@ -913,41 +913,25 @@ setTimeout(() => {
                                            });
                                            // --- End CME Action ---
                  
-                                       } else if (window.isOnboardingQuiz) {
-                                           // --- Onboarding Quiz End Action --- (No Change Here)
-                                           console.log("Onboarding quiz finished.");
-                                           const continueButton = document.createElement('button');
-                                           continueButton.id = "onboardingContinueBtn";
-                                           continueButton.className = "start-quiz-btn";
-                                           continueButton.textContent = "Continue";
-                                           continueButton.style.display = "block";
-                                           continueButton.style.margin = "20px auto";
-                                           bottomActions.appendChild(continueButton);
-                                           continueButton.addEventListener('click', function() {
-                                             restoreBodyScroll();
-                                               console.log("Onboarding continue button clicked.");
-                                               const swiperElement = document.querySelector(".swiper");
-                                               const bottomToolbar = document.getElementById("bottomToolbar");
-                                               const iconBar = document.getElementById("iconBar");
-                                               if (swiperElement) swiperElement.style.display = "none";
-                                               if (bottomToolbar) bottomToolbar.style.display = "none";
-                                               if (iconBar) iconBar.style.display = "none";
-                                                                         // Hide quiz elements
-                                           const mainOptions = document.getElementById("mainOptions"); // Get main options
-                                           if (mainOptions) mainOptions.style.display = "none"; // Ensure main options are hidden
-                 
-                                           // Show the new paywall screen
-                                           const newPaywallScreen = document.getElementById("newPaywallScreen");
-                                           if (newPaywallScreen) {
-                                               newPaywallScreen.style.display = "flex"; // Or "block" if you prefer
-                                               console.log("Showing new paywall screen after onboarding.");
-                                           } else {
-                                               console.error("New paywall screen element not found!");
-                                               // Fallback: show main options if paywall is missing
-                                               if (mainOptions) mainOptions.style.display = "flex";
-                                           }
-                                           });
-                                           // --- End Onboarding Action ---
+                                          } else if (window.isOnboardingQuiz) {
+                                            // --- Onboarding Quiz End Action ---
+                                            // Create a button that will trigger the onboarding summary screen.
+                                            const summaryButton = document.createElement('button');
+                                            summaryButton.id = "viewOnboardingSummaryBtn"; // Use a new ID
+                                            summaryButton.className = "start-quiz-btn";
+                                            summaryButton.textContent = "Loading Summary..."; // Initial text
+                                            summaryButton.style.display = "block";
+                                            summaryButton.style.margin = "20px auto";
+                                            bottomActions.appendChild(summaryButton);
+                                        
+                                            // Prepare the summary data in the background.
+                                            // This is similar to the regular quiz flow but calls a new function.
+                                            if (typeof prepareOnboardingSummary === 'function') {
+                                                setTimeout(() => {
+                                                    prepareOnboardingSummary();
+                                                }, 500); // A small delay to ensure UI updates.
+                                            }
+                                            // --- End Onboarding Action ---
                  
                                        // --- START OF NEW CODE ---
                                        } else if (currentQuizType === 'deep_link') {
@@ -1495,6 +1479,95 @@ async function getPeerStats(questionId) {
   } catch (error) {
     console.error("Error fetching peer stats:", error);
     return null;
+  }
+}
+
+// Prepares the data for the onboarding summary screen
+async function prepareOnboardingSummary() {
+  console.log("Preparing onboarding summary...");
+
+  try {
+    // Calculate accuracy percentage
+    const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+
+    // Store summary data globally for the next function to use
+    window.onboardingSummaryData = {
+      accuracy: accuracy,
+      score: score,
+      totalQuestions: totalQuestions
+    };
+
+    // Update the button to be clickable and change its text
+    const viewSummaryBtn = document.getElementById('viewOnboardingSummaryBtn');
+    if (viewSummaryBtn) {
+      viewSummaryBtn.textContent = "Continue";
+      // Add a click listener to show the summary screen
+      viewSummaryBtn.addEventListener('click', showOnboardingSummary);
+      console.log("Onboarding summary button updated and ready");
+    }
+  } catch (error) {
+    console.error("Error preparing onboarding summary:", error);
+    // Fallback in case of an error
+    const viewSummaryBtn = document.getElementById('viewOnboardingSummaryBtn');
+    if (viewSummaryBtn) {
+      viewSummaryBtn.textContent = "Continue";
+      viewSummaryBtn.addEventListener('click', showOnboardingSummary);
+    }
+  }
+}
+
+// Creates and displays the onboarding summary slide
+function showOnboardingSummary() {
+  console.log("Showing onboarding summary...");
+
+  // Use the data prepared in the previous step
+  const data = window.onboardingSummaryData || {
+    accuracy: 0,
+    score: 0,
+    totalQuestions: 3
+  };
+
+  // Create a new slide for the summary
+  const summarySlide = document.createElement("div");
+  summarySlide.className = "swiper-slide";
+
+  // Populate the slide with the summary card HTML.
+  // This mirrors the regular summary but has a single "Continue" button.
+  summarySlide.innerHTML = `
+    <div class="card quiz-summary-card">
+      <div class="summary-header">
+        <h2>Quiz Complete!</h2>
+      </div>
+      
+      <div class="summary-score">
+        <div class="score-circle" style="background: conic-gradient(#28a745 ${data.accuracy}%, #f0f0f0 0);">
+          <span>${data.accuracy}%</span>
+        </div>
+        <div class="score-text">
+          <p><strong>${data.score} / ${data.totalQuestions}</strong> correct</p>
+          <p>Great start! Let's get you familiar with the app.</p>
+        </div>
+      </div>
+      
+      <div class="summary-buttons">
+        <button id="onboardingSummaryContinueBtn" class="start-quiz-btn">Continue</button>
+      </div>
+    </div>
+  `;
+
+  // Add an event listener for the new "Continue" button.
+  // This will call the function in app.js to launch the carousel.
+  const continueBtn = document.getElementById("onboardingSummaryContinueBtn");
+  if (continueBtn) {
+    continueBtn.addEventListener("click", function() {
+      console.log("Onboarding summary 'Continue' clicked! Launching carousel...");
+      // Check if the function exists on the window object before calling
+      if (typeof window.startOnboardingCarousel === 'function') {
+        window.startOnboardingCarousel();
+      } else {
+        console.error("startOnboardingCarousel function not found!");
+      }
+    });
   }
 }
 

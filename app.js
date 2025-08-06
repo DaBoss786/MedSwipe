@@ -452,6 +452,99 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
     });
   }
 
+  // ==================================================
+// == NEW: Onboarding Carousel Logic
+// ==================================================
+
+// Make this function globally accessible so quiz.js can call it
+window.startOnboardingCarousel = function() {
+  const quizSwiper = document.querySelector(".swiper");
+  const bottomToolbar = document.getElementById("bottomToolbar");
+  const iconBar = document.getElementById("iconBar");
+  const carouselContainer = document.getElementById("onboardingCarousel");
+
+  // 1. Hide the quiz interface elements
+  if (quizSwiper) quizSwiper.style.display = "none";
+  if (bottomToolbar) bottomToolbar.style.display = "none";
+  if (iconBar) iconBar.style.display = "none";
+
+  // 2. Show the carousel container with a fade-in effect
+  if (carouselContainer) {
+    carouselContainer.style.display = "block";
+    setTimeout(() => {
+      carouselContainer.style.opacity = "1";
+    }, 50); // A tiny delay ensures the transition is applied
+  }
+
+  // 3. Initialize a new Swiper instance for the onboarding carousel
+  const onboardingSwiper = new Swiper('.onboarding-swiper-container', {
+    // Optional parameters
+    direction: 'horizontal',
+    loop: false,
+
+    // Pagination dots
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+
+    // Event listener for when the slide changes
+    on: {
+      slideChange: function () {
+        const nextBtn = document.getElementById('onboardingNextBtn');
+        // Check if it's the last slide
+        if (this.isEnd) {
+          nextBtn.textContent = 'Continue'; // Change button text
+        } else {
+          nextBtn.textContent = 'Next';
+        }
+      },
+    },
+  });
+
+  // 4. Add event listeners for the navigation buttons
+  const nextBtn = document.getElementById('onboardingNextBtn');
+  const skipBtn = document.getElementById('onboardingSkipBtn');
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function() {
+      // If it's the last slide, finish onboarding. Otherwise, go to the next slide.
+      if (onboardingSwiper.isEnd) {
+        finishOnboarding();
+      } else {
+        onboardingSwiper.slideNext();
+      }
+    });
+  }
+
+  if (skipBtn) {
+    skipBtn.addEventListener('click', function() {
+      finishOnboarding(); // Skip button also finishes the onboarding
+    });
+  }
+};
+
+// This function handles the final transition from the carousel to the paywall
+function finishOnboarding() {
+  const carouselContainer = document.getElementById("onboardingCarousel");
+  const paywallScreen = document.getElementById("newPaywallScreen");
+
+  console.log("Finishing onboarding, showing paywall.");
+
+  // Fade out the carousel
+  if (carouselContainer) {
+    carouselContainer.style.opacity = "0";
+    setTimeout(() => {
+      carouselContainer.style.display = "none";
+    }, 500); // Wait for the fade-out transition to complete
+  }
+
+  // Show the paywall
+  if (paywallScreen) {
+    paywallScreen.style.display = "flex";
+  }
+}
+
   window.startOnboardingQuiz = startOnboardingQuiz; // Make global if defined locally
 
 // --- Event Listener for New Paywall "Continue as Guest" Button ---
