@@ -5644,13 +5644,18 @@ html, body {
 .onboarding-headline {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #0C72D3; /* MedSwipe blue */
   margin-bottom: 15px;
+  /* The following lines create the gradient text effect */
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent; /* Fallback for browsers that don't support the effect */
 }
 
 /* Subtext styling */
 .onboarding-text {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #555;
   line-height: 1.6;
   max-width: 350px; /* Keep text lines from getting too long */
