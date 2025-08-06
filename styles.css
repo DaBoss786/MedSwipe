@@ -5616,10 +5616,10 @@ html, body {
 .onboarding-slide-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start; /* Align content to the top */
   align-items: center;
   text-align: center;
-  padding: 20px 30px 120px 30px; /* Bottom padding to avoid overlap with button */
+  padding: 8vh 30px 120px 30px; /* Add top padding and keep bottom padding */
   box-sizing: border-box;
   height: 100%;
 }
@@ -5628,34 +5628,16 @@ html, body {
 .onboarding-visual {
   max-width: 80%;
   max-height: 40vh;
-  margin-bottom: 40px;
-  border: 1px dashed #ccc; /* Simple placeholder border */
-  padding: 10px;
+  margin-top: 40px; /* Use margin-top since it's now below the text */
 }
 
 .onboarding-visual-logo {
   max-width: 50%;
   max-height: 30vh;
-  margin-bottom: 40px;
+  margin-top: 40px; /* Use margin-top */
 }
 
-/* Flex container for side-by-side images */
-.onboarding-visual-flex {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  max-width: 400px;
-  margin-bottom: 40px;
-}
-
-.onboarding-visual-half {
-  width: 45%;
-  height: auto;
-  border: 1px dashed #ccc;
-  padding: 5px;
-}
+/* The .onboarding-visual-flex and .onboarding-visual-half rules are no longer needed and have been removed. */
 
 /* Headline styling */
 .onboarding-headline {
