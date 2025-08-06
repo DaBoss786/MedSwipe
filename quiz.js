@@ -1527,13 +1527,16 @@ function showOnboardingSummary() {
     totalQuestions: 3
   };
 
-  // Create a new slide for the summary
-  const summarySlide = document.createElement("div");
-  summarySlide.className = "swiper-slide";
+  // Find the VERY LAST slide in the swiper, which is the empty answer slide.
+  const lastSlide = window.mySwiper.slides[window.mySwiper.slides.length - 1];
 
-  // Populate the slide with the summary card HTML.
-  // This mirrors the regular summary but has a single "Continue" button.
-  summarySlide.innerHTML = `
+  if (!lastSlide) {
+    console.error("Could not find the last slide to show the summary.");
+    return;
+  }
+
+  // Instead of creating a new slide, we will inject our summary HTML into this last slide.
+  lastSlide.innerHTML = `
     <div class="card quiz-summary-card">
       <div class="summary-header">
         <h2>Quiz Complete!</h2>
@@ -1554,6 +1557,10 @@ function showOnboardingSummary() {
       </div>
     </div>
   `;
+
+  // We don't need to add a new slide or update the swiper instance.
+  // We just need to make sure the user sees this last slide.
+  window.mySwiper.slideTo(window.mySwiper.slides.length - 1);
 
   // Add an event listener for the new "Continue" button.
   // This will call the function in app.js to launch the carousel.
