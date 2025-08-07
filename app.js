@@ -503,19 +503,18 @@ window.startOnboardingCarousel = function() {
   setTimeout(() => {
     console.log("Initializing new Swiper for carousel...");
     
-    // Initialize Swiper as a global variable with initialSlide set to 0
+    // Initialize Swiper as a global variable
     window.onboardingSwiper = new Swiper('.onboarding-swiper-container', {
       direction: 'horizontal',
       loop: false,
-      initialSlide: 0,  // ← EXPLICITLY SET TO START AT FIRST SLIDE
+      initialSlide: 0,
       pagination: {
         el: '.swiper-pagination',
-        clickable: true,
+        clickable: true,  // Re-enable this since you said it works
       },
       on: {
-        init: function() {  // ← ADD INIT EVENT
+        init: function() {
           console.log("Swiper initialized. Starting at slide:", this.activeIndex);
-          // Set initial button text
           const nextBtn = document.getElementById('onboardingNextBtn');
           if (nextBtn) {
             nextBtn.textContent = 'Next';
@@ -539,114 +538,109 @@ window.startOnboardingCarousel = function() {
     console.log("✓ Onboarding Swiper created successfully");
     console.log("Total slides:", window.onboardingSwiper.slides.length);
     console.log("Current active slide:", window.onboardingSwiper.activeIndex);
-    
-    // FORCE SLIDE TO 0 IF IT'S NOT ALREADY THERE
-    if (window.onboardingSwiper.activeIndex !== 0) {
-      console.log("⚠ Swiper not at slide 0, forcing it to slide 0");
-      window.onboardingSwiper.slideTo(0, 0); // Go to slide 0 with no animation
-      console.log("✓ Forced to slide 0, now at:", window.onboardingSwiper.activeIndex);
-    }
 
-    // Set up Next button
-    const nextBtn = document.getElementById('onboardingNextBtn');
-    const skipBtn = document.getElementById('onboardingSkipBtn');
+    // WAIT A BIT MORE before attaching button listeners
+    // This ensures the DOM is fully settled
+    setTimeout(() => {
+      console.log("Attaching button listeners...");
+      
+      // Set up Next button - DON'T replace it, just remove old listeners
+      const nextBtn = document.getElementById('onboardingNextBtn');
+      const skipBtn = document.getElementById('onboardingSkipBtn');
 
-    if (nextBtn) {
-      console.log("Found Next button, attaching listener...");
-      
-      // Remove any existing listeners by replacing the button
-      const newNextBtn = nextBtn.cloneNode(true);
-      nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
-      
-      newNextBtn.addEventListener('click', function() {
-        console.log("=== NEXT BUTTON CLICKED ===");
-        console.log("Swiper exists?", !!window.onboardingSwiper);
+      if (nextBtn) {
+        console.log("Found Next button, attaching NEW listener...");
         
-        if (window.onboardingSwiper) {
-          console.log("Current slide:", window.onboardingSwiper.activeIndex);
-          console.log("Is at end?", window.onboardingSwiper.isEnd);
-          console.log("Button text:", this.textContent);
+        // Create a named function for the click handler
+        const nextButtonHandler = function(e) {
+          e.preventDefault(); // Prevent any default behavior
+          e.stopPropagation(); // Stop event bubbling
           
-          if (window.onboardingSwiper.isEnd) {
-            console.log("→ At end, calling finishOnboarding()");
-            finishOnboarding();
+          console.log("=== NEXT BUTTON CLICKED (Handler) ===");
+          console.log("Event target:", e.target);
+          console.log("This element:", this);
+          console.log("Swiper exists?", !!window.onboardingSwiper);
+          
+          if (window.onboardingSwiper) {
+            console.log("Current slide:", window.onboardingSwiper.activeIndex);
+            console.log("Is at end?", window.onboardingSwiper.isEnd);
+            console.log("Button text:", this.textContent);
+            
+            if (window.onboardingSwiper.isEnd) {
+              console.log("→ At end, calling finishOnboarding()");
+              finishOnboarding();
+            } else {
+              console.log("→ Not at end, attempting to go to next slide");
+              try {
+                window.onboardingSwiper.slideNext();
+                console.log("✓ slideNext() called successfully");
+                console.log("New slide index:", window.onboardingSwiper.activeIndex);
+              } catch (error) {
+                console.error("❌ Error calling slideNext():", error);
+              }
+            }
           } else {
-            console.log("→ Not at end, going to next slide");
-            window.onboardingSwiper.slideNext();
-            console.log("New slide index:", window.onboardingSwiper.activeIndex);
+            console.error("❌ Onboarding Swiper instance not found!");
           }
-        } else {
-          console.error("❌ Onboarding Swiper instance not found!");
-        }
-      });
-      
-      console.log("✓ Next button listener attached");
-    } else {
-      console.error("❌ Next button not found!");
-    }
+        };
+        
+        // Remove ALL existing event listeners by cloning
+        const newNextBtn = nextBtn.cloneNode(true);
+        nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+        
+        // Add the new event listener to the fresh button
+        newNextBtn.addEventListener('click', nextButtonHandler);
+        
+        // Also try adding with capturing phase just in case
+        newNextBtn.addEventListener('click', nextButtonHandler, true);
+        
+        console.log("✓ Next button listener attached (double bound)");
+        
+        // TEST: Try clicking it programmatically to see if it works
+        setTimeout(() => {
+          console.log("TEST: Can we trigger the button programmatically?");
+          // Don't actually click it, just check if handler is there
+          const testBtn = document.getElementById('onboardingNextBtn');
+          if (testBtn) {
+            console.log("✓ Button still exists after listener attachment");
+          }
+        }, 100);
+        
+      } else {
+        console.error("❌ Next button not found!");
+      }
 
-    if (skipBtn) {
-      console.log("Found Skip button, attaching listener...");
+      if (skipBtn) {
+        console.log("Found Skip button, attaching listener...");
+        
+        const skipButtonHandler = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("=== SKIP BUTTON CLICKED ===");
+          finishOnboarding();
+        };
+        
+        // Remove old listeners by cloning
+        const newSkipBtn = skipBtn.cloneNode(true);
+        skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
+        
+        newSkipBtn.addEventListener('click', skipButtonHandler);
+        
+        console.log("✓ Skip button listener attached");
+      } else {
+        console.error("❌ Skip button not found!");
+      }
       
-      // Remove any existing listeners by replacing the button
-      const newSkipBtn = skipBtn.cloneNode(true);
-      skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
+      console.log("=== ALL BUTTON LISTENERS ATTACHED ===");
       
-      newSkipBtn.addEventListener('click', function() {
-        console.log("=== SKIP BUTTON CLICKED ===");
-        finishOnboarding();
-      });
-      
-      console.log("✓ Skip button listener attached");
-    } else {
-      console.error("❌ Skip button not found!");
-    }
+    }, 200); // Wait 200ms after Swiper init before attaching button listeners
     
     console.log("=== CAROUSEL SETUP COMPLETE ===");
     
-  }, 100); // Small delay to ensure DOM is ready
+  }, 100); // Initial delay to ensure DOM is ready
 };
 
-// Also update the finishOnboarding function with logs
-function finishOnboarding() {
-  console.log("=== FINISHING ONBOARDING ===");
-  
-  const carouselContainer = document.getElementById("onboardingCarousel");
-  const paywallScreen = document.getElementById("newPaywallScreen");
-
-  // Destroy the carousel Swiper when done
-  if (window.onboardingSwiper && typeof window.onboardingSwiper.destroy === 'function') {
-    console.log("✓ Destroying carousel Swiper instance");
-    window.onboardingSwiper.destroy(true, true);
-    window.onboardingSwiper = null;
-  } else {
-    console.log("⚠ No carousel Swiper to destroy");
-  }
-
-  // Fade out the carousel
-  if (carouselContainer) {
-    console.log("✓ Fading out carousel");
-    carouselContainer.style.opacity = "0";
-    setTimeout(() => {
-      carouselContainer.style.display = "none";
-      console.log("✓ Carousel hidden");
-    }, 500);
-  } else {
-    console.error("❌ Carousel container not found!");
-  }
-
-  // Show the paywall
-  if (paywallScreen) {
-    paywallScreen.style.display = "flex";
-    console.log("✓ Paywall screen shown");
-  } else {
-    console.error("❌ Paywall screen not found!");
-  }
-  
-  console.log("=== ONBOARDING COMPLETE ===");
-}
-
-// Also update the finishOnboarding function with logs
+// Keep the same finishOnboarding function
 function finishOnboarding() {
   console.log("=== FINISHING ONBOARDING ===");
   
