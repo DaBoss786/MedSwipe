@@ -452,49 +452,50 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
     });
   }
 
-  // ==================================================
+// ==================================================
 // == NEW: Onboarding Carousel Logic
 // ==================================================
 
 // Make this function globally accessible so quiz.js can call it
 window.startOnboardingCarousel = function() {
-  const quizSwiper = document.querySelector(".swiper");
+  const quizSwiperElement = document.querySelector(".swiper");
   const bottomToolbar = document.getElementById("bottomToolbar");
   const iconBar = document.getElementById("iconBar");
   const carouselContainer = document.getElementById("onboardingCarousel");
 
-  // 1. Hide the quiz interface elements
-  if (quizSwiper) quizSwiper.style.display = "none";
+  // FIX 1: Destroy the old quiz Swiper instance to prevent conflicts.
+  if (window.mySwiper && typeof window.mySwiper.destroy === 'function') {
+    console.log("Destroying previous quiz Swiper instance.");
+    window.mySwiper.destroy(true, true);
+    window.mySwiper = null; // Clear the global reference
+  }
+
+  // Hide the old quiz interface elements
+  if (quizSwiperElement) quizSwiperElement.style.display = "none";
   if (bottomToolbar) bottomToolbar.style.display = "none";
   if (iconBar) iconBar.style.display = "none";
 
-  // 2. Show the carousel container with a fade-in effect
+  // Show the carousel container with a fade-in effect
   if (carouselContainer) {
     carouselContainer.style.display = "block";
     setTimeout(() => {
       carouselContainer.style.opacity = "1";
-    }, 50); // A tiny delay ensures the transition is applied
+    }, 50);
   }
 
-  // 3. Initialize a new Swiper instance for the onboarding carousel
+  // Initialize a new Swiper instance for the onboarding carousel
   const onboardingSwiper = new Swiper('.onboarding-swiper-container', {
-    // Optional parameters
     direction: 'horizontal',
     loop: false,
-
-    // Pagination dots
     pagination: {
       el: '.swiper-pagination',
       clickable: true,
     },
-
-    // Event listener for when the slide changes
     on: {
       slideChange: function () {
         const nextBtn = document.getElementById('onboardingNextBtn');
-        // Check if it's the last slide
         if (this.isEnd) {
-          nextBtn.textContent = 'Continue'; // Change button text
+          nextBtn.textContent = 'Continue';
         } else {
           nextBtn.textContent = 'Next';
         }
@@ -502,13 +503,14 @@ window.startOnboardingCarousel = function() {
     },
   });
 
-  // 4. Add event listeners for the navigation buttons
+  // FIX 2: Ensure clean event listeners for the navigation buttons.
   const nextBtn = document.getElementById('onboardingNextBtn');
   const skipBtn = document.getElementById('onboardingSkipBtn');
 
   if (nextBtn) {
-    nextBtn.addEventListener('click', function() {
-      // If it's the last slide, finish onboarding. Otherwise, go to the next slide.
+    const newNextBtn = nextBtn.cloneNode(true);
+    nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+    newNextBtn.addEventListener('click', function() {
       if (onboardingSwiper.isEnd) {
         finishOnboarding();
       } else {
@@ -518,11 +520,14 @@ window.startOnboardingCarousel = function() {
   }
 
   if (skipBtn) {
-    skipBtn.addEventListener('click', function() {
-      finishOnboarding(); // Skip button also finishes the onboarding
+    const newSkipBtn = skipBtn.cloneNode(true);
+    skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
+    newSkipBtn.addEventListener('click', function() {
+      finishOnboarding();
     });
   }
 };
+
 
 // This function handles the final transition from the carousel to the paywall
 function finishOnboarding() {
