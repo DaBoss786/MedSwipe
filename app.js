@@ -499,29 +499,23 @@ window.startOnboardingCarousel = function() {
     return;
   }
 
-  // Wait a bit for DOM to be ready, then initialize
+  // Wait for DOM to be ready
   setTimeout(() => {
     console.log("Initializing new Swiper for carousel...");
     
-    // ADD A LOCK TO PREVENT AUTO-SLIDING
-    let isLocked = true;
-    let manualSlideRequested = false;
-    
-    // Initialize Swiper as a global variable
+    // Initialize Swiper - SIMPLE VERSION
     window.onboardingSwiper = new Swiper('.onboarding-swiper-container', {
       direction: 'horizontal',
       loop: false,
       initialSlide: 0,
-      allowSlideNext: false,  // START WITH SLIDING DISABLED
-      allowSlidePrev: false,   // START WITH SLIDING DISABLED
-      allowTouchMove: false,   // DISABLE TOUCH/SWIPE initially
       pagination: {
         el: '.swiper-pagination',
-        clickable: false,  // DISABLE pagination clicks initially
+        clickable: true,
       },
       on: {
         init: function() {
-          console.log("Swiper initialized. Starting at slide:", this.activeIndex);
+          console.log("Swiper initialized at slide:", this.activeIndex);
+          // Update button text
           const nextBtn = document.getElementById('onboardingNextBtn');
           if (nextBtn) {
             nextBtn.textContent = 'Next';
@@ -529,17 +523,8 @@ window.startOnboardingCarousel = function() {
           }
         },
         slideChange: function () {
-          console.log("Slide changed. Current index:", this.activeIndex, "Is at end?", this.isEnd);
-          console.log("Was this manual?", manualSlideRequested);
-          console.log("Is locked?", isLocked);
-          
-          // If we're locked and this wasn't a manual request, force back to 0
-          if (isLocked && !manualSlideRequested) {
-            console.log("⚠ BLOCKED: Unauthorized slide change! Forcing back to slide 0");
-            this.slideTo(0, 0); // Force back to slide 0 instantly
-            return;
-          }
-          
+          console.log("Slide changed to:", this.activeIndex, "Is at end?", this.isEnd);
+          // Update button text
           const nextBtn = document.getElementById('onboardingNextBtn');
           if (this.isEnd && nextBtn) {
             nextBtn.textContent = 'Continue';
@@ -548,119 +533,71 @@ window.startOnboardingCarousel = function() {
             nextBtn.textContent = 'Next';
             console.log("✓ Changed button text to 'Next'");
           }
-          
-          // Reset the manual flag
-          manualSlideRequested = false;
         },
       },
     });
     
-    console.log("✓ Onboarding Swiper created successfully");
+    console.log("✓ Onboarding Swiper created");
     console.log("Total slides:", window.onboardingSwiper.slides.length);
-    console.log("Current active slide:", window.onboardingSwiper.activeIndex);
+    
+    // Force to slide 0 just in case
+    window.onboardingSwiper.slideTo(0, 0);
+    console.log("Forced to slide 0, current:", window.onboardingSwiper.activeIndex);
 
-    // WAIT before attaching button listeners
+    // SIMPLE button setup - wait a bit for DOM to settle
     setTimeout(() => {
-      console.log("Attaching button listeners...");
+      console.log("Setting up buttons...");
       
-      // Set up Next button
+      // Get fresh references to buttons
       const nextBtn = document.getElementById('onboardingNextBtn');
       const skipBtn = document.getElementById('onboardingSkipBtn');
 
       if (nextBtn) {
-        console.log("Found Next button, attaching NEW listener...");
-        
-        // Create a named function for the click handler
-        const nextButtonHandler = function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          console.log("=== NEXT BUTTON CLICKED ===");
-          console.log("Current slide BEFORE action:", window.onboardingSwiper.activeIndex);
-          console.log("Is locked?", isLocked);
-          
-          if (window.onboardingSwiper) {
-            if (window.onboardingSwiper.isEnd) {
-              console.log("→ At end, calling finishOnboarding()");
-              finishOnboarding();
-            } else {
-              console.log("→ Attempting to go to next slide");
-              
-              // Mark this as a manual slide change
-              manualSlideRequested = true;
-              
-              // Temporarily enable sliding
-              window.onboardingSwiper.allowSlideNext = true;
-              
-              try {
-                window.onboardingSwiper.slideNext();
-                console.log("✓ slideNext() called");
-              } catch (error) {
-                console.error("❌ Error calling slideNext():", error);
-              }
-              
-              // Re-disable sliding after a short delay
-              setTimeout(() => {
-                window.onboardingSwiper.allowSlideNext = false;
-                manualSlideRequested = false;
-              }, 100);
-            }
-          } else {
-            console.error("❌ Onboarding Swiper instance not found!");
-          }
-        };
-        
-        // Remove ALL existing event listeners by cloning
+        // Remove any existing listeners by cloning
         const newNextBtn = nextBtn.cloneNode(true);
         nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
         
-        // Add the new event listener
-        newNextBtn.addEventListener('click', nextButtonHandler);
+        // Add simple click handler
+        newNextBtn.onclick = function() {
+          console.log("=== NEXT BUTTON CLICKED ===");
+          console.log("Current slide:", window.onboardingSwiper?.activeIndex);
+          
+          if (!window.onboardingSwiper) {
+            console.error("❌ No swiper instance!");
+            return;
+          }
+          
+          if (window.onboardingSwiper.isEnd) {
+            console.log("→ At end, finishing");
+            finishOnboarding();
+          } else {
+            console.log("→ Going to next slide");
+            window.onboardingSwiper.slideNext();
+          }
+        };
         
-        console.log("✓ Next button listener attached");
-        
-      } else {
-        console.error("❌ Next button not found!");
+        console.log("✓ Next button ready");
       }
 
       if (skipBtn) {
-        console.log("Found Skip button, attaching listener...");
+        // Remove any existing listeners by cloning
+        const newSkipBtn = skipBtn.cloneNode(true);
+        skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
         
-        const skipButtonHandler = function(e) {
-          e.preventDefault();
-          e.stopPropagation();
+        // Add simple click handler
+        newSkipBtn.onclick = function() {
           console.log("=== SKIP BUTTON CLICKED ===");
           finishOnboarding();
         };
         
-        const newSkipBtn = skipBtn.cloneNode(true);
-        skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
-        
-        newSkipBtn.addEventListener('click', skipButtonHandler);
-        
-        console.log("✓ Skip button listener attached");
+        console.log("✓ Skip button ready");
       }
       
-      console.log("=== ALL BUTTON LISTENERS ATTACHED ===");
+      console.log("=== CAROUSEL READY ===");
       
-      // UNLOCK after everything is set up (1 second total delay)
-      setTimeout(() => {
-        isLocked = false;
-        console.log("✅ CAROUSEL UNLOCKED - Ready for user interaction");
-        console.log("Final check - Current slide:", window.onboardingSwiper.activeIndex);
-        
-        // Double-check we're still at slide 0
-        if (window.onboardingSwiper.activeIndex !== 0) {
-          console.log("⚠ Not at slide 0! Forcing back...");
-          window.onboardingSwiper.slideTo(0, 0);
-        }
-      }, 500);
-      
-    }, 200); // Wait 200ms after Swiper init
+    }, 300); // Wait 300ms for DOM to fully settle
     
-    console.log("=== CAROUSEL SETUP COMPLETE ===");
-    
-  }, 100); // Initial delay
+  }, 100);
 };
 
 // Keep the same finishOnboarding function
