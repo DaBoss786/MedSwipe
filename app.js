@@ -503,15 +503,25 @@ window.startOnboardingCarousel = function() {
   setTimeout(() => {
     console.log("Initializing new Swiper for carousel...");
     
-    // Initialize Swiper as a global variable
+    // Initialize Swiper as a global variable with initialSlide set to 0
     window.onboardingSwiper = new Swiper('.onboarding-swiper-container', {
       direction: 'horizontal',
       loop: false,
+      initialSlide: 0,  // ← EXPLICITLY SET TO START AT FIRST SLIDE
       pagination: {
         el: '.swiper-pagination',
         clickable: true,
       },
       on: {
+        init: function() {  // ← ADD INIT EVENT
+          console.log("Swiper initialized. Starting at slide:", this.activeIndex);
+          // Set initial button text
+          const nextBtn = document.getElementById('onboardingNextBtn');
+          if (nextBtn) {
+            nextBtn.textContent = 'Next';
+            console.log("✓ Initial button text set to 'Next'");
+          }
+        },
         slideChange: function () {
           console.log("Slide changed. Current index:", this.activeIndex, "Is at end?", this.isEnd);
           const nextBtn = document.getElementById('onboardingNextBtn');
@@ -528,6 +538,14 @@ window.startOnboardingCarousel = function() {
     
     console.log("✓ Onboarding Swiper created successfully");
     console.log("Total slides:", window.onboardingSwiper.slides.length);
+    console.log("Current active slide:", window.onboardingSwiper.activeIndex);
+    
+    // FORCE SLIDE TO 0 IF IT'S NOT ALREADY THERE
+    if (window.onboardingSwiper.activeIndex !== 0) {
+      console.log("⚠ Swiper not at slide 0, forcing it to slide 0");
+      window.onboardingSwiper.slideTo(0, 0); // Go to slide 0 with no animation
+      console.log("✓ Forced to slide 0, now at:", window.onboardingSwiper.activeIndex);
+    }
 
     // Set up Next button
     const nextBtn = document.getElementById('onboardingNextBtn');
@@ -588,6 +606,45 @@ window.startOnboardingCarousel = function() {
     
   }, 100); // Small delay to ensure DOM is ready
 };
+
+// Also update the finishOnboarding function with logs
+function finishOnboarding() {
+  console.log("=== FINISHING ONBOARDING ===");
+  
+  const carouselContainer = document.getElementById("onboardingCarousel");
+  const paywallScreen = document.getElementById("newPaywallScreen");
+
+  // Destroy the carousel Swiper when done
+  if (window.onboardingSwiper && typeof window.onboardingSwiper.destroy === 'function') {
+    console.log("✓ Destroying carousel Swiper instance");
+    window.onboardingSwiper.destroy(true, true);
+    window.onboardingSwiper = null;
+  } else {
+    console.log("⚠ No carousel Swiper to destroy");
+  }
+
+  // Fade out the carousel
+  if (carouselContainer) {
+    console.log("✓ Fading out carousel");
+    carouselContainer.style.opacity = "0";
+    setTimeout(() => {
+      carouselContainer.style.display = "none";
+      console.log("✓ Carousel hidden");
+    }, 500);
+  } else {
+    console.error("❌ Carousel container not found!");
+  }
+
+  // Show the paywall
+  if (paywallScreen) {
+    paywallScreen.style.display = "flex";
+    console.log("✓ Paywall screen shown");
+  } else {
+    console.error("❌ Paywall screen not found!");
+  }
+  
+  console.log("=== ONBOARDING COMPLETE ===");
+}
 
 // Also update the finishOnboarding function with logs
 function finishOnboarding() {
