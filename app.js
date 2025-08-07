@@ -452,6 +452,7 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
     });
   }
 
+
 // ==================================================
 // == NEW: Onboarding Carousel Logic
 // ==================================================
