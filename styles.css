@@ -5669,6 +5669,7 @@ html, body {
   right: 0;
   padding: 0 20px;
   text-align: center;
+  z-index: 10; /* <-- ADD THIS LINE */
 }
 
 /* "Next/Continue" button styling (matches .start-quiz-btn) */
@@ -5701,6 +5702,7 @@ html, body {
   cursor: pointer;
   z-index: 10; /* Ensure it's above the slides */
   text-decoration: none;
+  z-index: 10; /* <-- ADD THIS LINE */
 }
 
 .onboarding-skip-btn:hover {
