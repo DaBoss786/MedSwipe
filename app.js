@@ -457,186 +457,102 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
 // == NEW: Onboarding Carousel Logic
 // ==================================================
 
+// ==================================================
+// == NEW: Onboarding Carousel Logic
+// ==================================================
+
+// Make this function globally accessible so quiz.js can call it
 window.startOnboardingCarousel = function() {
-  console.log("=== STARTING ONBOARDING CAROUSEL ===");
-  
   const quizSwiperElement = document.querySelector(".swiper");
   const bottomToolbar = document.getElementById("bottomToolbar");
   const iconBar = document.getElementById("iconBar");
   const carouselContainer = document.getElementById("onboardingCarousel");
 
-  // Destroy the old quiz Swiper instance
+  // FIX 1: Destroy the old quiz Swiper instance to prevent conflicts.
   if (window.mySwiper && typeof window.mySwiper.destroy === 'function') {
-    console.log("✓ Destroying previous quiz Swiper instance");
+    console.log("Destroying previous quiz Swiper instance.");
     window.mySwiper.destroy(true, true);
-    window.mySwiper = null;
-  } else {
-    console.log("⚠ No previous Swiper instance to destroy");
+    window.mySwiper = null; // Clear the global reference
   }
 
   // Hide the old quiz interface elements
-  if (quizSwiperElement) {
-    quizSwiperElement.style.display = "none";
-    console.log("✓ Hidden quiz swiper element");
-  }
-  if (bottomToolbar) {
-    bottomToolbar.style.display = "none";
-    console.log("✓ Hidden bottom toolbar");
-  }
-  if (iconBar) {
-    iconBar.style.display = "none";
-    console.log("✓ Hidden icon bar");
-  }
+  if (quizSwiperElement) quizSwiperElement.style.display = "none";
+  if (bottomToolbar) bottomToolbar.style.display = "none";
+  if (iconBar) iconBar.style.display = "none";
 
-  // Show the carousel container
+  // Show the carousel container with a fade-in effect
   if (carouselContainer) {
     carouselContainer.style.display = "block";
-    carouselContainer.offsetHeight; // Force browser to calculate layout
-    carouselContainer.style.opacity = "1";
-    console.log("✓ Carousel container shown");
-  } else {
-    console.error("❌ Carousel container not found!");
-    return;
+    setTimeout(() => {
+      carouselContainer.style.opacity = "1";
+    }, 50);
   }
 
-  // Wait for DOM to be ready
-  setTimeout(() => {
-    console.log("Initializing new Swiper for carousel...");
-    
-    // Initialize Swiper - SIMPLE VERSION
-    window.onboardingSwiper = new Swiper('.onboarding-swiper-container', {
-      direction: 'horizontal',
-      loop: false,
-      initialSlide: 0,
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
+  // Initialize a new Swiper instance for the onboarding carousel
+  const onboardingSwiper = new Swiper('.onboarding-swiper-container', {
+    direction: 'horizontal',
+    loop: false,
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    on: {
+      slideChange: function () {
+        const nextBtn = document.getElementById('onboardingNextBtn');
+        if (this.isEnd) {
+          nextBtn.textContent = 'Continue';
+        } else {
+          nextBtn.textContent = 'Next';
+        }
       },
-      on: {
-        init: function() {
-          console.log("Swiper initialized at slide:", this.activeIndex);
-          // Update button text
-          const nextBtn = document.getElementById('onboardingNextBtn');
-          if (nextBtn) {
-            nextBtn.textContent = 'Next';
-            console.log("✓ Initial button text set to 'Next'");
-          }
-        },
-        slideChange: function () {
-          console.log("Slide changed to:", this.activeIndex, "Is at end?", this.isEnd);
-          // Update button text
-          const nextBtn = document.getElementById('onboardingNextBtn');
-          if (this.isEnd && nextBtn) {
-            nextBtn.textContent = 'Continue';
-            console.log("✓ Changed button text to 'Continue'");
-          } else if (nextBtn) {
-            nextBtn.textContent = 'Next';
-            console.log("✓ Changed button text to 'Next'");
-          }
-        },
-      },
+    },
+  });
+
+  // FIX 2: Ensure clean event listeners for the navigation buttons.
+  const nextBtn = document.getElementById('onboardingNextBtn');
+  const skipBtn = document.getElementById('onboardingSkipBtn');
+
+  if (nextBtn) {
+    const newNextBtn = nextBtn.cloneNode(true);
+    nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+    newNextBtn.addEventListener('click', function() {
+      if (onboardingSwiper.isEnd) {
+        finishOnboarding();
+      } else {
+        onboardingSwiper.slideNext();
+      }
     });
-    
-    console.log("✓ Onboarding Swiper created");
-    console.log("Total slides:", window.onboardingSwiper.slides.length);
-    
-    // Force to slide 0 just in case
-    window.onboardingSwiper.slideTo(0, 0);
-    console.log("Forced to slide 0, current:", window.onboardingSwiper.activeIndex);
+  }
 
-    // SIMPLE button setup - wait a bit for DOM to settle
-    setTimeout(() => {
-      console.log("Setting up buttons...");
-      
-      // Get fresh references to buttons
-      const nextBtn = document.getElementById('onboardingNextBtn');
-      const skipBtn = document.getElementById('onboardingSkipBtn');
-
-      if (nextBtn) {
-        // Remove any existing listeners by cloning
-        const newNextBtn = nextBtn.cloneNode(true);
-        nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
-        
-        // Add simple click handler
-        newNextBtn.onclick = function() {
-          console.log("=== NEXT BUTTON CLICKED ===");
-          console.log("Current slide:", window.onboardingSwiper?.activeIndex);
-          
-          if (!window.onboardingSwiper) {
-            console.error("❌ No swiper instance!");
-            return;
-          }
-          
-          if (window.onboardingSwiper.isEnd) {
-            console.log("→ At end, finishing");
-            finishOnboarding();
-          } else {
-            console.log("→ Going to next slide");
-            window.onboardingSwiper.slideNext();
-          }
-        };
-        
-        console.log("✓ Next button ready");
-      }
-
-      if (skipBtn) {
-        // Remove any existing listeners by cloning
-        const newSkipBtn = skipBtn.cloneNode(true);
-        skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
-        
-        // Add simple click handler
-        newSkipBtn.onclick = function() {
-          console.log("=== SKIP BUTTON CLICKED ===");
-          finishOnboarding();
-        };
-        
-        console.log("✓ Skip button ready");
-      }
-      
-      console.log("=== CAROUSEL READY ===");
-      
-    }, 300); // Wait 300ms for DOM to fully settle
-    
-  }, 100);
+  if (skipBtn) {
+    const newSkipBtn = skipBtn.cloneNode(true);
+    skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
+    newSkipBtn.addEventListener('click', function() {
+      finishOnboarding();
+    });
+  }
 };
 
-// Keep the same finishOnboarding function
+
+// This function handles the final transition from the carousel to the paywall
 function finishOnboarding() {
-  console.log("=== FINISHING ONBOARDING ===");
-  
   const carouselContainer = document.getElementById("onboardingCarousel");
   const paywallScreen = document.getElementById("newPaywallScreen");
 
-  // Destroy the carousel Swiper when done
-  if (window.onboardingSwiper && typeof window.onboardingSwiper.destroy === 'function') {
-    console.log("✓ Destroying carousel Swiper instance");
-    window.onboardingSwiper.destroy(true, true);
-    window.onboardingSwiper = null;
-  } else {
-    console.log("⚠ No carousel Swiper to destroy");
-  }
+  console.log("Finishing onboarding, showing paywall.");
 
   // Fade out the carousel
   if (carouselContainer) {
-    console.log("✓ Fading out carousel");
     carouselContainer.style.opacity = "0";
     setTimeout(() => {
       carouselContainer.style.display = "none";
-      console.log("✓ Carousel hidden");
-    }, 500);
-  } else {
-    console.error("❌ Carousel container not found!");
+    }, 500); // Wait for the fade-out transition to complete
   }
 
   // Show the paywall
   if (paywallScreen) {
     paywallScreen.style.display = "flex";
-    console.log("✓ Paywall screen shown");
-  } else {
-    console.error("❌ Paywall screen not found!");
   }
-  
-  console.log("=== ONBOARDING COMPLETE ===");
 }
 
   window.startOnboardingQuiz = startOnboardingQuiz; // Make global if defined locally
