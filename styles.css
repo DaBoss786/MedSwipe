@@ -680,6 +680,7 @@ html, body {
 
 /* Explanation Container */
 .explanation-container {
+  position: relative;
   flex: 1; /* Take available space */
   display: flex;
   flex-direction: column;
@@ -761,20 +762,25 @@ html, body {
   border-radius: 0 0 8px 8px;
 }
 
-/* More button styling */
+/* More button styling - REVISED */
 .more-button {
-  display: inline-block;
-  color: #0C72D3;
-  cursor: pointer;
+  position: absolute;   /* Lifts the button out of the layout flow */
+  bottom: 5px;          /* Positions it 5px from the bottom of its container */
+  left: 50%;            /* Moves its left edge to the center */
+  transform: translateX(-50%); /* Shifts it left by half its own width to truly center it */
+  z-index: 10;          /* Ensures it appears on top of the fade effect */
+  
+  /* Styling adjustments to make it look good in its new position */
+  padding: 4px 12px;
+  font-size: 0.8rem;
   font-weight: 600;
-  margin-top: 8px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  background: white;
+  color: #0C72D3;
+  background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent background */
   border: 1px solid #0C72D3;
+  border-radius: 20px;
+  cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.85rem;
-  align-self: center; /* Center the button */
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1); /* Adds a subtle shadow */
 }
 
 .more-button:hover {
