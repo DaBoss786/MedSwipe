@@ -245,7 +245,7 @@ async function loadQuestions(options = {}) {
       } else if (options.reviewIncorrectCmeOnly) {
         message = "No incorrect CME questions found to review for the current year. Great job!";
       } else if (accessTier === "free_guest") {
-        message = "No free questions found matching your current criteria. Consider upgrading for full access!";
+        message = "You've completed all available free questions! Upgrade your account to access hundreds more questions and unlock premium features.";
       } else if (options.boardReviewOnly === true) {
         message = "No Board Review questions found matching your criteria.";
       } else if (options.quizType === 'cme') {
@@ -280,7 +280,16 @@ async function loadQuestions(options = {}) {
 
   } catch (error) {
     console.error("Error loading questions:", error);
-    alert("Error loading questions. Please check your connection and try again.");
+    
+    // Check if user is free tier and give them a better message
+    const accessTier = window.authState?.accessTier || 'free_guest';
+    let errorMessage = "Error loading questions. Please check your connection and try again.";
+    
+    if (accessTier === 'free_guest') {
+      errorMessage = "You've completed all available free questions! Upgrade your account to access hundreds more questions and unlock premium features.";
+    }
+    
+    alert(errorMessage);
     const mainOpts = document.getElementById("mainOptions");
     if(mainOpts) mainOpts.style.display = "flex";
   }
