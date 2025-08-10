@@ -4791,10 +4791,6 @@ html, body {
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-/* === FIX: Prevents awkward line break after italicized text in paywall list === */
-.paywall-option-card li i {
-  white-space: nowrap;
-}
 
 .paywall-option-card:hover {
     transform: translateY(-5px);
