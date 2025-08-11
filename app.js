@@ -974,8 +974,9 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
         { name: "Mastoidectomy", premium: true },
         { name: "Submandibular Gland Excision", premium: true },
         { name: "Tracheostomy", premium: true },
-        { name: "Laryngectomy", premium: true },
-        { name: "Skull Base Surgery", premium: true }
+        { name: "Mandible Fracture", premium: true },
+        { name: "Midface Trauma", premium: true },
+        { name: "Microlaryngoscopy", premium: true },
       ];
 
       procedures.forEach(proc => {

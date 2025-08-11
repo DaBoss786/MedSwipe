@@ -95,7 +95,7 @@ async function loadQuestions(options = {}) {
 
       const premiumProcedures = [
         "Neck Dissection", "Endoscopic Sinus Surgery", "Mastoidectomy",
-        "Submandibular Gland Excision", "Tracheostomy", "Laryngectomy", "Skull Base Surgery"
+        "Submandibular Gland Excision", "Tracheostomy", "Mandible Fracture", "Midface Trauma", "Microlaryngoscopy"
       ];
 
       const isPremiumProcedure = premiumProcedures.includes(options.procedure);
