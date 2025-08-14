@@ -973,6 +973,7 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
         { name: "Endoscopic Sinus Surgery", premium: true },
         { name: "Tonsillectomy", premium: true },
         { name: "Mastoidectomy", premium: true },
+        { name: "Stapedectomy", premium: true },
         { name: "Submandibular Gland Excision", premium: true },
         { name: "Tracheostomy", premium: true },
         { name: "Mandible Fracture", premium: true },
