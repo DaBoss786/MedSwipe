@@ -971,6 +971,7 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
         { name: "Parotidectomy", premium: false },
         { name: "Neck Dissection", premium: true },
         { name: "Endoscopic Sinus Surgery", premium: true },
+        { name: "Septoplasty", premium: true },
         { name: "Tonsillectomy", premium: true },
         { name: "Mastoidectomy", premium: true },
         { name: "Stapedectomy", premium: true },

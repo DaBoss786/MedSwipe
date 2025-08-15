@@ -94,7 +94,7 @@ async function loadQuestions(options = {}) {
       console.log(`Case Prep mode activated for procedure: '${options.procedure}'`);
 
       const premiumProcedures = [
-        "Neck Dissection", "Endoscopic Sinus Surgery", "Tonsillectomy", "Mastoidectomy", "Stapedectomy",
+        "Neck Dissection", "Endoscopic Sinus Surgery", "Septoplasty", "Tonsillectomy", "Mastoidectomy", "Stapedectomy",
         "Submandibular Gland Excision", "Tracheostomy", "Mandible Fracture", "Midface Trauma", "Microlaryngoscopy"
       ];
 
