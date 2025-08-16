@@ -963,26 +963,33 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
         // Clear existing options
         procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
   
-        // --- START: Get User's Specialty ---
-        let userSpecialty = null;
-        // Ensure there is a logged-in, non-anonymous user before fetching
-        if (auth.currentUser && !auth.currentUser.isAnonymous) {
-          try {
-            const userDocRef = doc(db, 'users', auth.currentUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists() && userDocSnap.data().specialty) {
-              userSpecialty = userDocSnap.data().specialty;
-              console.log(`User specialty found: ${userSpecialty}`);
-            } else {
-              console.log("User document or specialty not found.");
-            }
-          } catch (error) {
-            console.error("Error fetching user specialty for dropdown:", error);
+              // --- START: Get User's Specialty (Handles both Registered and Anonymous) ---
+      let userSpecialty = null;
+
+      // 1. Prioritize Firestore for registered users
+      if (auth.currentUser && !auth.currentUser.isAnonymous) {
+        try {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists() && userDocSnap.data().specialty) {
+            userSpecialty = userDocSnap.data().specialty;
+            console.log(`Registered user specialty found in Firestore: ${userSpecialty}`);
           }
-        } else {
-          console.log("Anonymous user, cannot filter procedures by specialty.");
+        } catch (error) {
+          console.error("Error fetching user specialty for dropdown:", error);
         }
-        // --- END: Get User's Specialty ---
+      }
+
+      // 2. Fallback to the window variable for anonymous users or if Firestore fails/is empty
+      if (!userSpecialty && window.selectedSpecialty) {
+        userSpecialty = window.selectedSpecialty;
+        console.log(`Using specialty from window (for anonymous/onboarding user): ${userSpecialty}`);
+      }
+
+      if (!userSpecialty) {
+          console.log("Could not determine user specialty from Firestore or window variable.");
+      }
+      // --- END: Get User's Specialty ---
   
         const accessTier = window.authState?.accessTier || 'free_guest';
         const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
