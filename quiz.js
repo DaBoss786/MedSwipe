@@ -93,6 +93,21 @@ async function loadQuestions(options = {}) {
     if (options.quizType === 'case_prep' && options.procedure) {
       console.log(`Case Prep mode activated for procedure: '${options.procedure}'`);
 
+      // --- START: Get User's Specialty ---
+      let userSpecialty = null;
+      if (auth.currentUser && !auth.currentUser.isAnonymous) {
+        try {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists() && userDocSnap.data().specialty) {
+            userSpecialty = userDocSnap.data().specialty;
+          }
+        } catch (error) {
+          console.error("Error fetching user specialty for Case Prep:", error);
+        }
+      }
+      // --- END: Get User's Specialty ---
+
       const premiumProcedures = [
         "Neck Dissection", "Endoscopic Sinus Surgery", "Septoplasty", "Rhinoplasty", "Tonsillectomy", "Mastoidectomy", "Stapedectomy",
         "Submandibular Gland Excision", "Tracheostomy", "Mandible Fracture", "Midface Trauma", "Microlaryngoscopy"
@@ -101,27 +116,38 @@ async function loadQuestions(options = {}) {
       const isPremiumProcedure = premiumProcedures.includes(options.procedure);
       const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
 
-      // 1. Enforce Tier Access for Premium Procedures
       if (isPremiumProcedure && !hasPremiumAccess) {
         alert("You need a subscription to access this procedure. Please upgrade your plan.");
         document.getElementById("mainOptions").style.display = "flex";
-        return; // Stop execution
+        return;
       }
 
-            // 2. Filter questions by the selected procedure
-            let procedureQuestions = allQuestionsData.filter(q =>
-              q.Procedures && q.Procedures.trim().toLowerCase() === options.procedure.trim().toLowerCase()
-            );
+      // Filter questions by the selected procedure
+      let procedureQuestions = allQuestionsData.filter(q =>
+        q.Procedures && q.Procedures.trim().toLowerCase() === options.procedure.trim().toLowerCase()
+      );
       console.log(`Found ${procedureQuestions.length} questions for '${options.procedure}'.`);
 
-      // 3. Handle "Coming Soon" message
+      // --- START: Filter by Specialty ---
+      if (userSpecialty) {
+        procedureQuestions = procedureQuestions.filter(q => {
+          const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
+          // A question without a specialty is considered available to all
+          if (!questionSpecialty) return true; 
+          // Otherwise, it must match the user's specialty
+          return questionSpecialty.toLowerCase() === userSpecialty.toLowerCase();
+        });
+        console.log(`Found ${procedureQuestions.length} questions after filtering for '${userSpecialty}' specialty.`);
+      }
+      // --- END: Filter by Specialty ---
+
+      // Handle "Coming Soon" message AFTER all filtering
       if (procedureQuestions.length === 0 && isPremiumProcedure && hasPremiumAccess) {
-        alert("Coming soon. This procedure is not yet available.");
+        alert("Coming soon. This procedure is not yet available for your specialty.");
         document.getElementById("mainOptions").style.display = "flex";
-        return; // Stop execution
+        return;
       }
       
-      // 4. Filter out answered questions if requested
       if (!options.includeAnswered) {
         const answeredIds = await fetchPersistentAnsweredIds();
         if (answeredIds.length > 0) {
@@ -132,7 +158,7 @@ async function loadQuestions(options = {}) {
         }
       }
       
-      filteredQuestions = procedureQuestions; // Assign the final filtered list
+      filteredQuestions = procedureQuestions;
 
     } else {
       // ==================================================

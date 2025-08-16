@@ -954,48 +954,77 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
     const cancelCasePrepBtn = document.getElementById("cancelCasePrepBtn");
     const procedureSelect = document.getElementById("casePrepProcedureSelect");
 
-    /**
-     * Populates the procedure dropdown based on the user's access tier.
+       /**
+     * Populates the procedure dropdown based on the user's access tier AND specialty.
      */
-    function populateProcedureDropdown() {
-      if (!procedureSelect) return;
-
-      // Clear existing options
-      procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
-
-      const accessTier = window.authState?.accessTier || 'free_guest';
-      const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
-
-      const procedures = [
-        { name: "Thyroidectomy", premium: false },
-        { name: "Parotidectomy", premium: false },
-        { name: "Neck Dissection", premium: true },
-        { name: "Endoscopic Sinus Surgery", premium: true },
-        { name: "Septoplasty", premium: true },
-        { name: "Rhinoplasty", premium: true },
-        { name: "Tonsillectomy", premium: true },
-        { name: "Mastoidectomy", premium: true },
-        { name: "Stapedectomy", premium: true },
-        { name: "Submandibular Gland Excision", premium: true },
-        { name: "Tracheostomy", premium: true },
-        { name: "Mandible Fracture", premium: true },
-        { name: "Midface Trauma", premium: true },
-        { name: "Microlaryngoscopy", premium: true },
-      ];
-
-      procedures.forEach(proc => {
-        const option = document.createElement('option');
-        option.value = proc.name;
-        option.textContent = proc.name;
-
-        if (proc.premium && !hasPremiumAccess) {
-          option.disabled = true;
-          option.textContent += " (Subscription Required)";
+       async function populateProcedureDropdown() { // <-- Made async
+        if (!procedureSelect) return;
+  
+        // Clear existing options
+        procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
+  
+        // --- START: Get User's Specialty ---
+        let userSpecialty = null;
+        // Ensure there is a logged-in, non-anonymous user before fetching
+        if (auth.currentUser && !auth.currentUser.isAnonymous) {
+          try {
+            const userDocRef = doc(db, 'users', auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists() && userDocSnap.data().specialty) {
+              userSpecialty = userDocSnap.data().specialty;
+              console.log(`User specialty found: ${userSpecialty}`);
+            } else {
+              console.log("User document or specialty not found.");
+            }
+          } catch (error) {
+            console.error("Error fetching user specialty for dropdown:", error);
+          }
+        } else {
+          console.log("Anonymous user, cannot filter procedures by specialty.");
         }
-        
-        procedureSelect.appendChild(option);
-      });
-    }
+        // --- END: Get User's Specialty ---
+  
+        const accessTier = window.authState?.accessTier || 'free_guest';
+        const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
+  
+        const procedures = [
+          { name: "Thyroidectomy", premium: false, specialty: "ENT" },
+          { name: "Parotidectomy", premium: false, specialty: "ENT" },
+          { name: "Neck Dissection", premium: true, specialty: "ENT" },
+          { name: "Endoscopic Sinus Surgery", premium: true, specialty: "ENT" },
+          { name: "Septoplasty", premium: true, specialty: "ENT" },
+          { name: "Rhinoplasty", premium: true, specialty: "ENT" },
+          { name: "Tonsillectomy", premium: true, specialty: "ENT" },
+          { name: "Mastoidectomy", premium: true, specialty: "ENT" },
+          { name: "Stapedectomy", premium: true, specialty: "ENT" },
+          { name: "Submandibular Gland Excision", premium: true, specialty: "ENT" },
+          { name: "Tracheostomy", premium: true, specialty: "ENT" },
+          { name: "Mandible Fracture", premium: true, specialty: "ENT" },
+          { name: "Midface Trauma", premium: true, specialty: "ENT" },
+          { name: "Microlaryngoscopy", premium: true, specialty: "ENT" },
+        ];
+  
+        // --- START: Filter Procedures by Specialty ---
+        // If a specialty is found, filter the list. Otherwise, show nothing.
+        const specialtyProcedures = userSpecialty
+          ? procedures.filter(proc => proc.specialty === userSpecialty)
+          : []; // Default to an empty array if no specialty is set
+        // --- END: Filter Procedures by Specialty ---
+  
+        // Use the filtered list to populate the dropdown
+        specialtyProcedures.forEach(proc => { // <-- Changed to specialtyProcedures
+          const option = document.createElement('option');
+          option.value = proc.name;
+          option.textContent = proc.name;
+  
+          if (proc.premium && !hasPremiumAccess) {
+            option.disabled = true;
+            option.textContent += " (Subscription Required)";
+          }
+          
+          procedureSelect.appendChild(option);
+        });
+      }
 
     /**
      * Sets a flag in Firestore indicating the user has seen the Case Prep intro.
