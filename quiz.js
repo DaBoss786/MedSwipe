@@ -109,7 +109,7 @@ async function loadQuestions(options = {}) {
       // --- END: Get User's Specialty ---
 
       const premiumProcedures = [
-        "Neck Dissection", "Endoscopic Sinus Surgery", "Septoplasty", "Rhinoplasty", "Tonsillectomy", "Mastoidectomy", "Stapedectomy",
+        "Neck Dissection", "Endoscopic Sinus Surgery", "Septoplasty", "Rhinoplasty", "Tonsillectomy", "Congenital Neck Masses", "Mastoidectomy", "Stapedectomy",
         "Submandibular Gland Excision", "Tracheostomy", "Mandible Fracture", "Midface Trauma", "Microlaryngoscopy"
       ];
 

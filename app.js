@@ -1002,6 +1002,7 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
           { name: "Septoplasty", premium: true, specialty: "ENT" },
           { name: "Rhinoplasty", premium: true, specialty: "ENT" },
           { name: "Tonsillectomy", premium: true, specialty: "ENT" },
+          { name: "Congenital Neck Masses", premium: true, specialty: "ENT" },
           { name: "Mastoidectomy", premium: true, specialty: "ENT" },
           { name: "Stapedectomy", premium: true, specialty: "ENT" },
           { name: "Submandibular Gland Excision", premium: true, specialty: "ENT" },
