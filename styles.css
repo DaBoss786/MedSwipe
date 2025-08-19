@@ -684,7 +684,7 @@ html, body {
   flex: 1; /* Take available space */
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   min-height: 0; /* Important for Firefox flex children */
 }
 
