@@ -791,7 +791,7 @@ html, body {
 /* Bottom Actions Container - Always Visible */
 .answer-bottom-actions {
   flex-shrink: 0; /* Never shrink */
-  padding-top: 15px;
+  padding-top: 5px;
   border-top: 1px solid #e9ecef;
   margin-top: auto; /* Push to bottom */
 }
