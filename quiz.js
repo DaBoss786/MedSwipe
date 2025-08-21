@@ -25,10 +25,62 @@ let sessionStartXP = 0;
 let questionStartTime = 0;
 let currentQuizType = 'regular';
 
-// Function to restore scrolling when exiting quiz
-function restoreBodyScroll() {
-  document.body.style.overflow = '';
-  document.body.classList.remove('scroll-lock');
+/**
+ * Applies a robust, mobile-first scroll lock to the page.
+ * This version uses position:fixed to be more effective on iOS.
+ */
+function lockBodyScroll() {
+  console.log("Applying robust scroll lock with position:fixed.");
+  const body = document.body;
+  
+  // Prevent the lock from being applied multiple times
+  if (body.classList.contains('scroll-lock')) {
+    return;
+  }
+  
+  // 1. Store the current scroll position so we can restore it later
+  const scrollY = window.scrollY || window.pageYOffset;
+  body.dataset.scrollY = scrollY; // Store it on the body element itself
+  
+  // 2. Add the state-tracking class
+  body.classList.add('scroll-lock');
+  
+  // 3. Apply the locking styles
+  document.documentElement.style.overflow = 'hidden'; // Lock the html element
+  body.style.overflow = 'hidden';
+  body.style.position = 'fixed'; // The key for iOS stability
+  body.style.top = `-${scrollY}px`; // Pin the body at the correct visual position
+  body.style.width = '100%';
+}
+
+/**
+ * Fully restores scrolling to the page after a robust lock.
+ */
+function unlockBodyScroll() {
+  console.log("Unlocking body scroll.");
+  const body = document.body;
+  
+  // Only run the unlock logic if a lock is active
+  if (!body.classList.contains('scroll-lock')) {
+    return;
+  }
+  
+  // 1. Get the stored scroll position
+  const scrollY = parseInt(body.dataset.scrollY || '0');
+  
+  // 2. Remove all the locking styles
+  body.classList.remove('scroll-lock');
+  document.documentElement.style.overflow = '';
+  body.style.overflow = '';
+  body.style.position = '';
+  body.style.top = '';
+  body.style.width = '';
+  
+  // 3. Clean up the stored data
+  delete body.dataset.scrollY;
+  
+  // 4. Restore the scroll position immediately
+  window.scrollTo(0, scrollY);
 }
 
 // Replace the OLD fetchQuestionBank function with this NEW one:
@@ -674,9 +726,7 @@ function addOptionListeners() {
         // If the scroll is not yet locked, lock it now.
           // This happens on the first answer click of the quiz.
           if (!document.body.classList.contains('scroll-lock')) {
-            console.log("First answer clicked. Locking body scroll now.");
-            document.body.style.overflow = 'hidden';
-            document.body.classList.add('scroll-lock');
+            lockBodyScroll();
           }
           const card = this.closest('.card');
     if (card.classList.contains('answered')) return;
@@ -929,7 +979,7 @@ setTimeout(() => {
                                            returnButton.style.padding = "10px 15px";
                                            bottomActions.appendChild(returnButton);
                                            returnButton.addEventListener('click', function() {
-                                             restoreBodyScroll();
+                                             unlockBodyScroll();
                                                console.log("Return to CME Dashboard button clicked.");
                                                const swiperElement = document.querySelector(".swiper");
                                                const bottomToolbar = document.getElementById("bottomToolbar");
@@ -981,7 +1031,7 @@ setTimeout(() => {
                                            bottomActions.appendChild(returnToAppButton);
                  
                                            returnToAppButton.addEventListener('click', function() {
-                                               restoreBodyScroll();
+                                               unlockBodyScroll();
                                                // Hide all quiz elements
                                                const swiperElement = document.querySelector(".swiper");
                                                const bottomToolbar = document.getElementById("bottomToolbar");
@@ -1328,7 +1378,7 @@ function showSummary() {
     const newStartNewQuizButton = startNewQuizButton.cloneNode(true);
     startNewQuizButton.parentNode.replaceChild(newStartNewQuizButton, startNewQuizButton);
     newStartNewQuizButton.addEventListener("click", function() {
-      restoreBodyScroll();
+      unlockBodyScroll();
         window.filterMode = "all"; // Assuming filterMode is a global or appropriately scoped variable
         document.getElementById("aboutView").style.display = "none";
         document.getElementById("faqView").style.display = "none";
@@ -1352,7 +1402,7 @@ function showSummary() {
         const newLeaderboardButton = leaderboardButton.cloneNode(true);
         leaderboardButton.parentNode.replaceChild(newLeaderboardButton, leaderboardButton);
         newLeaderboardButton.addEventListener("click", function() {
-          restoreBodyScroll();
+          unlockBodyScroll();
             document.getElementById("aboutView").style.display = "none";
             document.getElementById("faqView").style.display = "none";
             document.querySelector(".swiper").style.display = "none";
