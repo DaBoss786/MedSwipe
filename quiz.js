@@ -83,6 +83,8 @@ function unlockBodyScroll() {
   window.scrollTo(0, scrollY);
 }
 
+window.unlockBodyScroll = unlockBodyScroll;
+
 // Replace the OLD fetchQuestionBank function with this NEW one:
 async function fetchQuestionBank() {
   console.log("Fetching question bank from Firestore...");

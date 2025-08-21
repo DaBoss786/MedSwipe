@@ -2147,7 +2147,9 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     logoClick.addEventListener("click", function() {
       closeSideMenu();
       closeUserMenu();
-      document.body.style.overflow = '';
+      if (typeof window.unlockBodyScroll === 'function') {
+        window.unlockBodyScroll();
+      }
       
       const aboutView = document.getElementById("aboutView");
       if (aboutView) aboutView.style.display = "none";
