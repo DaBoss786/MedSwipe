@@ -5731,7 +5731,7 @@ html, body {
 .onboarding-testimonials {
   width: 100%;
   max-width: 400px; /* Adjust as needed */
-  margin-top: 20px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
   gap: 15px;
