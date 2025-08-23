@@ -1007,7 +1007,7 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
           { name: "Stapedectomy", premium: true, specialty: "ENT" },
           { name: "Submandibular Gland Excision", premium: true, specialty: "ENT" },
           { name: "Tracheostomy", premium: true, specialty: "ENT" },
-          { name: "Free Flaps", premium: false, specialty: "ENT" },
+          { name: "Free Flaps", premium: true, specialty: "ENT" },
           { name: "Mandible Fracture", premium: true, specialty: "ENT" },
           { name: "Midface Trauma", premium: true, specialty: "ENT" },
           { name: "Microlaryngoscopy", premium: true, specialty: "ENT" },
