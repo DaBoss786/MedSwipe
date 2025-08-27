@@ -1296,11 +1296,7 @@ async function saveProfileChanges() {
     document.getElementById('viewUsername').textContent = newUsername;
     document.getElementById('viewExperienceLevel').textContent = newExperienceLevel;
 
-    // Update the main user menu display
-    const usernameDisplay = document.getElementById('usernameDisplay');
-    if (usernameDisplay) {
-      usernameDisplay.textContent = newUsername;
-    }
+    updateUserMenu();
 
     // Show success message and switch back to view mode
     messageEl.textContent = 'Profile updated successfully!';
