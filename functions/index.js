@@ -1491,6 +1491,22 @@ exports.updateUserProfile = onCall(
     
     // 3. Validate input data
     const updateData = request.data || {};
+
+    // --- START: NEW VALIDATION BLOCK ---
+    // If a username is being updated, validate it.
+    if (updateData.username !== undefined) {
+      const newUsername = updateData.username;
+      if (typeof newUsername !== 'string' || newUsername.trim().length < 3) {
+        logger.warn(`User ${uid} tried to update with invalid username: "${newUsername}"`);
+        throw new HttpsError("invalid-argument", "Username must be at least 3 characters long.");
+      }
+      // Trim the username to save a clean version
+      updateData.username = newUsername.trim();
+    }
+    // You could add similar validation for experienceLevel if needed, e.g.,
+    // if (updateData.experienceLevel !== undefined && !['PGY-1', 'PGY-2', ...].includes(updateData.experienceLevel)) { ... }
+    // --- END: NEW VALIDATION BLOCK ---
+
     const invalidFields = Object.keys(updateData).filter(field => !allowedFields.includes(field));
     
     if (invalidFields.length > 0) {

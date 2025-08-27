@@ -1282,6 +1282,46 @@ html, body {
   background-color: #004a95;
 }
 
+/* =================================== */
+/* == Edit Profile Modal Styles     == */
+/* =================================== */
+
+/* Style for the text fields in View Mode */
+.profile-view-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Style for the "Change" links */
+.change-link {
+  font-size: 0.9rem;
+  color: #0C72D3;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.change-link:hover {
+  text-decoration: underline;
+}
+
+/* Ensure the message area has some space */
+#editProfileMessage {
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: 500;
+}
+
+#editProfileMessage.success {
+  color: #28a745; /* Green for success */
+}
+
 /* Modern Leaderboard Styles */
 #leaderboardView {
   max-width: 800px;

@@ -1252,6 +1252,84 @@ async function recordChoiceSelection(questionId, selectedChoice) {
   }
 }
 
+// NEW FUNCTION to save profile changes
+async function saveProfileChanges() {
+  // Get elements from the modal
+  const usernameInput = document.getElementById('editUsername');
+  const experienceSelect = document.getElementById('editExperienceLevel');
+  const saveButton = document.getElementById('saveProfileChangesBtn');
+  const messageEl = document.getElementById('editProfileMessage');
+
+  // Get the new values
+  const newUsername = usernameInput.value.trim();
+  const newExperienceLevel = experienceSelect.value;
+
+  // --- 1. Client-Side Validation ---
+  if (newUsername.length < 3) {
+    messageEl.textContent = 'Username must be at least 3 characters long.';
+    return;
+  }
+  if (!newExperienceLevel) {
+    messageEl.textContent = 'Please select your experience level.';
+    return;
+  }
+
+  // --- 2. Set UI to Loading State ---
+  saveButton.disabled = true;
+  saveButton.textContent = 'Saving...';
+  messageEl.textContent = '';
+  messageEl.classList.remove('success');
+
+  try {
+    // --- 3. Call the Secure Cloud Function ---
+    if (!updateUserProfileFunction) {
+      throw new Error("Profile update service is not available.");
+    }
+    
+    await updateUserProfileFunction({
+      username: newUsername,
+      experienceLevel: newExperienceLevel
+    });
+
+    // --- 4. Handle Success ---
+    // Update the "View Mode" fields with the new data
+    document.getElementById('viewUsername').textContent = newUsername;
+    document.getElementById('viewExperienceLevel').textContent = newExperienceLevel;
+
+    // Update the main user menu display
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    if (usernameDisplay) {
+      usernameDisplay.textContent = newUsername;
+    }
+
+    // Show success message and switch back to view mode
+    messageEl.textContent = 'Profile updated successfully!';
+    messageEl.classList.add('success');
+    
+    // Switch back to view mode after a short delay
+    setTimeout(() => {
+      document.getElementById('profileViewMode').style.display = 'block';
+      document.getElementById('profileEditMode').style.display = 'none';
+      document.getElementById('editProfileTitle').textContent = 'Your Profile';
+      // Clear the success message after another delay
+      setTimeout(() => {
+        messageEl.textContent = '';
+        messageEl.classList.remove('success');
+      }, 2000);
+    }, 1000);
+
+  } catch (error) {
+    // --- 5. Handle Errors ---
+    console.error("Error saving profile changes:", error);
+    messageEl.textContent = error.message || "An unknown error occurred.";
+    messageEl.classList.remove('success');
+  } finally {
+    // --- 6. Reset Button State ---
+    saveButton.disabled = false;
+    saveButton.textContent = 'Save Changes';
+  }
+}
+
 export {
   fetchPersistentAnsweredIds,
   recordAnswer,
@@ -1273,5 +1351,8 @@ export {
   fetchSpacedRepetitionData,
   recordCmeAnswer, // <<<--- Make sure to include the CME function we added!
   saveOnboardingSelections,
-  recordChoiceSelection
+  recordChoiceSelection,
+  saveProfileChanges
 };
+
+window.saveProfileChanges = saveProfileChanges;

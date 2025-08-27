@@ -4151,6 +4151,139 @@ function ensureForgotPasswordModalExists() {
   }
 }
 
+
+// This function controls the Edit Profile modal's logic
+async function showEditProfileModal() {
+  const modal = document.getElementById('editProfileModal');
+  const messageEl = document.getElementById('editProfileMessage');
+
+  // 1. AUTHENTICATION CHECK
+  // Ensure a registered user is logged in.
+  if (!auth.currentUser || auth.currentUser.isAnonymous) {
+    alert("Please log in to edit your profile.");
+    return;
+  }
+  const uid = auth.currentUser.uid;
+
+  // 2. RESET MODAL STATE
+  // Clear any previous messages and set to View Mode.
+  messageEl.textContent = '';
+  messageEl.className = 'auth-error'; // Reset to default error style
+  document.getElementById('profileViewMode').style.display = 'block';
+  document.getElementById('profileEditMode').style.display = 'none';
+  document.getElementById('editProfileTitle').textContent = 'Your Profile';
+
+  // 3. FETCH USER DATA FROM FIRESTORE
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data();
+      const currentUsername = userData.username || 'Not Set';
+      const currentExperience = userData.experienceLevel || 'Not Set';
+
+      // 4. POPULATE MODAL FIELDS
+      // Populate both the view and edit fields with the fetched data.
+      document.getElementById('viewUsername').textContent = currentUsername;
+      document.getElementById('viewExperienceLevel').textContent = currentExperience;
+      document.getElementById('editUsername').value = currentUsername;
+      document.getElementById('editExperienceLevel').value = currentExperience;
+
+      // 5. SHOW THE MODAL
+      modal.style.display = 'flex';
+
+    } else {
+      // This case is unlikely for a logged-in user but is good practice to handle.
+      console.error("User document not found for UID:", uid);
+      alert("Could not load your profile data. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    alert("An error occurred while fetching your profile.");
+  }
+}
+
+// This function sets up all the button clicks for the modal
+function setupEditProfileModalListeners() {
+  const modal = document.getElementById('editProfileModal');
+  if (!modal) return;
+
+  const viewMode = document.getElementById('profileViewMode');
+  const editMode = document.getElementById('profileEditMode');
+  const title = document.getElementById('editProfileTitle');
+  const messageEl = document.getElementById('editProfileMessage');
+
+  // Function to switch to Edit Mode
+  const switchToEditMode = () => {
+    viewMode.style.display = 'none';
+    editMode.style.display = 'block';
+    title.textContent = 'Edit Your Profile';
+    messageEl.textContent = ''; // Clear any previous messages
+  };
+
+  // Function to switch to View Mode
+  const switchToViewMode = () => {
+    viewMode.style.display = 'block';
+    editMode.style.display = 'none';
+    title.textContent = 'Your Profile';
+  };
+
+  // EVENT LISTENERS FOR BUTTONS
+  document.getElementById('changeUsernameLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    switchToEditMode();
+  });
+
+  document.getElementById('changeExperienceLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    switchToEditMode();
+  });
+
+  document.getElementById('cancelProfileChangesBtn').addEventListener('click', () => {
+    // Before switching, reset edit fields to their original values from the view fields
+    document.getElementById('editUsername').value = document.getElementById('viewUsername').textContent;
+    document.getElementById('editExperienceLevel').value = document.getElementById('viewExperienceLevel').textContent;
+    switchToViewMode();
+  });
+
+  document.getElementById('closeEditProfileModal').addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  document.getElementById('editProfileDoneBtn').addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  // Listener for the form submission (will call the function we create in Step 3)
+  document.getElementById('editProfileForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    // We will create this saveProfileChanges function in the next step.
+    // It will handle validation, saving, and updating the UI.
+    if (typeof saveProfileChanges === 'function') {
+      saveProfileChanges();
+    } else {
+      console.error("saveProfileChanges function not found!");
+    }
+  });
+}
+
+// Add event listeners when the page content is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Attach listener to the main menu item to open the modal
+  const editProfileMenuItem = document.getElementById('editProfileMenuItem');
+  if (editProfileMenuItem) {
+    editProfileMenuItem.addEventListener('click', () => {
+      showEditProfileModal();
+      closeUserMenu(); // Close the side menu when modal opens
+    });
+  }
+
+  // Set up the internal buttons of the modal
+  setupEditProfileModalListeners();
+});
+// --- End of new block ---
+
 // Show the forgot password modal
 function showForgotPasswordModal() {
   const modal = document.getElementById('forgotPasswordModal');
