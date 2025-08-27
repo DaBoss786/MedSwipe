@@ -1296,7 +1296,14 @@ async function saveProfileChanges() {
     document.getElementById('viewUsername').textContent = newUsername;
     document.getElementById('viewExperienceLevel').textContent = newExperienceLevel;
 
-    updateUserMenu();
+    // Manually trigger the username update in the user menu.
+    // We need to get the latest auth state to pass to the function.
+    if (window.authState && typeof updateUserMenuInfo === 'function') {
+      // We need to manually update the displayName in the authState object
+      // so that updateUserMenuInfo has the latest info to display.
+      window.authState.user.displayName = newUsername;
+      updateUserMenuInfo(window.authState);
+    }
 
     // Show success message and switch back to view mode
     messageEl.textContent = 'Profile updated successfully!';

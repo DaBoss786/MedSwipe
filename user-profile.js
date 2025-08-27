@@ -46,6 +46,7 @@ async function updateUserMenuInfo(authState) {
   // has been REMOVED from here. This will now be handled by updateUserMenu() in user.js.
   // The visibility of manageSubscriptionBtn will also be handled there.
 }
+window.updateUserMenuInfo = updateUserMenuInfo;
 
 // Listen for auth state changes and update UI
 window.addEventListener('authStateChanged', function(event) {
