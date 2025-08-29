@@ -1327,8 +1327,8 @@ exports.finalizeRegistration = onCall(
     // Normalize email to prevent issues with capitalization
     const email = request.auth.token.email.toLowerCase().trim();
 
-    // 2. Input validation (as before)
-    const { username, marketingOptIn } = request.data;
+    // 2. Input validation (as before, now including referrerId)
+    const { username, marketingOptIn, referrerId } = request.data;
     if (!username || typeof username !== 'string' || username.trim().length < 3) {
       throw new HttpsError("invalid-argument", "A valid username is required.");
     }
@@ -1356,6 +1356,14 @@ exports.finalizeRegistration = onCall(
       marketingOptIn: marketingOptIn,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
+
+    // --- START: New Referral Logic ---
+    // If a valid referrerId was passed from the client, add it to the data to be saved.
+    if (referrerId && typeof referrerId === 'string' && referrerId.trim().length > 0) {
+      logger.info(`User ${uid} was referred by ${referrerId}. Adding to document.`);
+      updateData.referredBy = referrerId;
+  }
+  // --- END: New Referral Logic ---
 
     // 5. --- NEW: If a promotion was found, add subscription fields ---
     if (promoDoc) {

@@ -1310,6 +1310,12 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
     <h2 id="registerModalTitle">${modalTitle}</h2>
     <div id="registerError" class="auth-error"></div>
+
+    <div id="referralOfferBanner" class="referral-offer-banner">
+      <p>🎁 A friend referred you! Sign up and start a trial to get an extra week for free.</p>
+    </div>
+    
+
     <form id="registerForm">
       <div class="form-group">
         <label for="registerUsername">Username (for Leaderboards)</label>
@@ -1374,6 +1380,11 @@ registerModal.dataset.nextStep = nextStep;
 attachRegisterFormListeners(registerModal, nextStep); // Re-attach to ensure correct nextStep is used
 }
 
+// Check for and display the referral banner if applicable
+if (window.displayReferralBanner) {
+  window.displayReferralBanner();
+}
+
 registerModal.style.display = 'flex';
 }
 window.showRegisterForm = showRegisterForm; // Ensure it's globally available
@@ -1400,6 +1411,11 @@ newForm.addEventListener('submit', async function(e) {
   const email = newForm.querySelector('#registerEmail').value;
   const password = newForm.querySelector('#registerPassword').value;
   const errorElement = modalElement.querySelector('#registerError');
+
+  // --- START: New Referral Logic ---
+  // Check localStorage for a referrer ID to send to the backend.
+  const referrerId = localStorage.getItem('medswipeReferrerId');
+  // --- END: New Referral Logic ---
   
   if (errorElement) errorElement.textContent = '';
   
@@ -1414,10 +1430,21 @@ newForm.addEventListener('submit', async function(e) {
     // Register the user
     let result;
     if (window.authState.user && window.authState.user.isAnonymous) {
-      result = await window.authFunctions.upgradeAnonymousUser(email, password, username);
+      // Pass referrerId to the upgrade function
+      result = await window.authFunctions.upgradeAnonymousUser(email, password, username, referrerId);
     } else {
-      result = await window.authFunctions.registerUser(email, password, username);
+      // Pass referrerId to the register function
+      result = await window.authFunctions.registerUser(email, password, username, referrerId);
     }
+    
+    // --- START: New Referral Logic ---
+    // If registration was successful, clear the referrer ID from localStorage
+    // so it's not accidentally used again for another account on the same browser.
+    if (referrerId) {
+        localStorage.removeItem('medswipeReferrerId');
+        console.log("Referral ID used and cleared from localStorage.");
+    }
+    // --- END: New Referral Logic ---
     
     // Check if promotion was applied
     if (result && result.data && result.data.promoApplied) {

@@ -354,7 +354,7 @@ function getCurrentUser() {
 }
 
 // In auth.js - NEW version of registerUser
-async function registerUser(email, password, username) {
+async function registerUser(email, password, username, referrerId = null) {
   if (!finalizeRegistrationFunction) {
     throw new Error('Registration service is not available. Please try again later.');
   }
@@ -376,7 +376,7 @@ async function registerUser(email, password, username) {
 
     // Step 4: Call the secure Cloud Function to finalize the registration fields.
     const marketingOptIn = document.getElementById('marketingOptIn')?.checked || false;
-    const result = await finalizeRegistrationFunction({ username, marketingOptIn });
+    const result = await finalizeRegistrationFunction({ username, marketingOptIn, referrerId });
 
     // The onAuthStateChanged listener will handle the rest, but we return the result.
     return result;
@@ -387,7 +387,7 @@ async function registerUser(email, password, username) {
 }
 
 // In auth.js - NEW version of upgradeAnonymousUser
-async function upgradeAnonymousUser(email, password, username) {
+async function upgradeAnonymousUser(email, password, username, referrerId = null) {
   const anonUser = auth.currentUser;
 
   if (!anonUser || !anonUser.isAnonymous) {
@@ -409,7 +409,7 @@ async function upgradeAnonymousUser(email, password, username) {
 
     // Step 3: Call the secure Cloud Function to update the Firestore document.
     const marketingOptIn = document.getElementById('marketingOptIn')?.checked || false;
-    const result = await finalizeRegistrationFunction({ username, marketingOptIn });
+    const result = await finalizeRegistrationFunction({ username, marketingOptIn, referrerId });
 
     // The onAuthStateChanged listener will automatically pick up the new state,
     // but we return the result from the function call.

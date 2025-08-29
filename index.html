@@ -574,7 +574,20 @@
     </div>
     <!-- END: New CME Tracker Card for Dashboard -->
 
-    <!-- REMOVED DUPLICATE: Leaderboard Preview Card -->
+    <!-- START: New Referral Card for Dashboard -->
+    <div class="dashboard-card referral-card" id="referralCard" style="width: 100%; margin-bottom: 20px; display: none;"> <!-- Start hidden -->
+      <div class="card-header">
+          <h3>Refer a Friend, Get a Free Month</h3>
+      </div>
+      <div class="card-content" style="text-align: center; padding: 15px;">
+          <p style="margin: 0; font-size: 0.9rem; color: #555;">Share MedSwipe with a colleague. When they start a trial, you get a month of premium access for free!</p>
+      </div>
+      <div class="card-footer">
+          <span>Get Your Referral Link</span>
+          <span class="arrow-icon">→</span>
+      </div>
+  </div>
+  <!-- END: New Referral Card for Dashboard -->
   
   <!-- Second Row: Leaderboard Preview Card (full width) -->
   <div class="dashboard-card leaderboard-card" id="leaderboardPreviewCard" style="width: 100%; margin-bottom: 20px;">
@@ -1042,6 +1055,7 @@
 <script type="module" src="stats.js"></script>
 <script type="module" src="ui.js"></script>
 <script type="module" src="app.js"></script>
+<script type="module" src="referral.js"></script>
 <script type="module" src="login-screen.js"></script>
 <script src="tos-privacy.js"></script>
   <script>
@@ -1204,6 +1218,26 @@
   </div>
 </div>
 <!-- *** END OF NEW MODAL STRUCTURE *** -->
+
+<!-- START: New Referral Modal -->
+<div id="referralModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Share Your Referral Link</h2>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <p>Share this link with your friends. When they sign up and start a trial, you'll get a free month added to your subscription!</p>
+      
+      <div class="referral-link-container">
+        <input type="text" id="referralLinkInput" readonly value="Generating your link...">
+        <button id="copyLinkBtn" class="auth-primary-btn">Copy</button>
+      </div>
+      <p id="copyConfirmation" style="color: #28a745; font-weight: 500; min-height: 20px; margin-top: 10px;"></p>
+    </div>
+  </div>
+</div>
+<!-- END: New Referral Modal -->
 
  <!-- Forgot Password Modal -->
 <div id="forgotPasswordModal" class="modal">
