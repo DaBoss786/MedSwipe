@@ -5833,15 +5833,6 @@ html, body {
 /* == Referral System Styles        == */
 /* =================================== */
 
-/* Style for the referral card on the dashboard */
-.referral-card {
-  background-color: #e6f7ff; /* A light, inviting blue */
-  border-left: 4px solid #0C72D3;
-}
-
-.referral-card:hover {
-  background-color: #d9f2ff;
-}
 
 /* Style for the referral modal link container */
 .referral-link-container {
