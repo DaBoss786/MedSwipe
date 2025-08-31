@@ -180,159 +180,208 @@ async function initializeLeaderboardView() {
 
 // --- Keep displayPerformance as it is, but make it globally available ---
 async function displayPerformance() {
-  // ... (The existing displayPerformance function code remains unchanged)
-  console.log("displayPerformance function called");
-  document.querySelector(".swiper").style.display = "none";
-  document.getElementById("bottomToolbar").style.display = "none";
-  document.getElementById("iconBar").style.display = "none";
-  document.getElementById("mainOptions").style.display = "none";
-  document.getElementById("leaderboardView").style.display = "none";
-  document.getElementById("aboutView").style.display = "none";
-  document.getElementById("faqView").style.display = "none";
-  document.getElementById("performanceView").style.display = "block";
-  
-  const uid = auth.currentUser.uid;
-  const userDocRef = doc(db, 'users', uid);
-  const userDocSnap = await getDoc(userDocRef);
-  console.log("User document exists:", userDocSnap.exists());
-  
-  if (!userDocSnap.exists()) {
-    document.getElementById("performanceView").innerHTML = `
-      <h2>Performance</h2>
-      <p>No performance data available yet.</p>
-      <button id='backToMain'>Back</button>
-    `;
-    document.getElementById("backToMain").addEventListener("click", () => {
-      document.getElementById("performanceView").style.display = "none";
-      document.getElementById("mainOptions").style.display = "flex";
-    });
-    return;
-  }
-  const data = userDocSnap.data();
-  const stats = data.stats || {};
-  const totalAnswered = stats.totalAnswered || 0;
-  const totalCorrect = stats.totalCorrect || 0;
-  const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-  const xp = stats.xp || 0;
-  const level = stats.level || 1;
-  const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
-  const currentLevelXp = levelThresholds[level - 1] || 0;
-  const nextLevelXp = level < levelThresholds.length ? levelThresholds[level] : null;
-  const xpInCurrentLevel = xp - currentLevelXp;
-  const xpRequiredForNextLevel = nextLevelXp ? nextLevelXp - currentLevelXp : 1000; 
-  const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
-
-  let questionBank = [];
-  try {
-    questionBank = await fetchQuestionBank();
-  } catch (error) {
-    console.error("Error fetching question bank:", error);
-  }
-  const totalInBank = questionBank.length;
-  let remaining = totalInBank - totalAnswered;
-  if (remaining < 0) { remaining = 0; }
-
-  const performanceView = document.getElementById("performanceView");
-  if (!performanceView) {
-      console.error("Performance view element not found!");
+    console.log("displayPerformance function called");
+    document.querySelector(".swiper").style.display = "none";
+    document.getElementById("bottomToolbar").style.display = "none";
+    document.getElementById("iconBar").style.display = "none";
+    document.getElementById("mainOptions").style.display = "none";
+    document.getElementById("leaderboardView").style.display = "none";
+    document.getElementById("aboutView").style.display = "none";
+    document.getElementById("faqView").style.display = "none";
+    document.getElementById("performanceView").style.display = "block";
+    
+    const uid = auth.currentUser.uid;
+    const userDocRef = doc(db, 'users', uid);
+    const userDocSnap = await getDoc(userDocRef);
+    console.log("User document exists:", userDocSnap.exists());
+    
+    if (!userDocSnap.exists()) {
+      document.getElementById("performanceView").innerHTML = `
+        <h2>Performance</h2>
+        <p>No performance data available yet.</p>
+        <button id='backToMain'>Back</button>
+      `;
+      document.getElementById("backToMain").addEventListener("click", () => {
+        document.getElementById("performanceView").style.display = "none";
+        document.getElementById("mainOptions").style.display = "flex";
+      });
       return;
-  }
+    }
+    const data = userDocSnap.data();
+    const userSpecialty = data.specialty; // Get the user's specialty
+    const allAnsweredQuestions = data.answeredQuestions || {}; // Get all answered questions from the user's doc
   
-  performanceView.innerHTML = `
-    <h2 style="text-align:center; color:#0056b3;">Performance</h2>
-    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-bottom:20px;">
-      <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
-        <canvas id="overallScoreChart" width="200" height="200"></canvas>
-        <p style="font-size:1.2rem; color:#333; margin-top:10px; text-align:center;">
-          Accuracy: ${overallPercent}%
-        </p>
-      </div>
-      <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
-        <div class="level-progress-circle" style="width:100px; height:100px; margin:20px auto;">
-          <div class="level-circle-background"></div>
-          <div class="level-circle-progress" id="performanceLevelProgress"></div>
-          <div class="level-number" style="font-size:2rem; transform:scale(0.85);">${level}</div>
+    // --- Fetch and Filter Question Bank by Specialty ---
+    let questionBank = [];
+    let specialtyQuestions = [];
+    try {
+      questionBank = await fetchQuestionBank();
+      if (userSpecialty) {
+        specialtyQuestions = questionBank.filter(q => q.Specialty && q.Specialty.trim().toLowerCase() === userSpecialty.trim().toLowerCase());
+        console.log(`Filtered question bank for specialty "${userSpecialty}". Found ${specialtyQuestions.length} questions.`);
+      } else {
+        // Fallback for users without a specialty (e.g., legacy users)
+        specialtyQuestions = questionBank;
+        console.log("User has no specialty set. Using the entire question bank for stats.");
+      }
+    } catch (error) {
+      console.error("Error fetching or filtering question bank:", error);
+      // Display an error and return if the question bank can't be loaded
+      document.getElementById("performanceView").innerHTML = `<p>Error loading question data. Please try again later.</p>`;
+      return;
+    }
+  
+    // --- Recalculate Stats Based ONLY on Specialty Questions ---
+    let totalAnswered = 0;
+    let totalCorrect = 0;
+    const specialtyCategoryStats = {};
+  
+    // Create a Set of specialty question IDs for efficient lookup
+    const specialtyQuestionIds = new Set(specialtyQuestions.map(q => q.Question.trim()));
+  
+    // Iterate through the user's answered questions
+    for (const questionId in allAnsweredQuestions) {
+      // Check if the answered question belongs to the user's specialty
+      if (specialtyQuestionIds.has(questionId.trim())) {
+        const answerData = allAnsweredQuestions[questionId];
+        totalAnswered++;
+        if (answerData.isCorrect) {
+          totalCorrect++;
+        }
+        
+        const category = answerData.category || "Uncategorized";
+        if (!specialtyCategoryStats[category]) {
+          specialtyCategoryStats[category] = { answered: 0, correct: 0 };
+        }
+        specialtyCategoryStats[category].answered++;
+        if (answerData.isCorrect) {
+          specialtyCategoryStats[category].correct++;
+        }
+      }
+    }
+  
+    const overallPercent = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+    
+    // --- XP and Level logic remains UNCHANGED, using the original stats object ---
+    const stats = data.stats || {};
+    const xp = stats.xp || 0;
+    const level = stats.level || 1;
+    const levelThresholds = [0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500];
+    const currentLevelXp = levelThresholds[level - 1] || 0;
+    const nextLevelXp = level < levelThresholds.length ? levelThresholds[level] : null;
+    const xpInCurrentLevel = xp - currentLevelXp;
+    const xpRequiredForNextLevel = nextLevelXp ? nextLevelXp - currentLevelXp : 1000; 
+    const levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
+  
+    // --- 'Remaining' calculation is now based on the specialty question bank ---
+    const totalInSpecialtyBank = specialtyQuestions.length;
+    let remaining = totalInSpecialtyBank - totalAnswered;
+    if (remaining < 0) { remaining = 0; }
+  
+    const performanceView = document.getElementById("performanceView");
+    if (!performanceView) {
+        console.error("Performance view element not found!");
+        return;
+    }
+    
+    performanceView.innerHTML = `
+      <h2 style="text-align:center; color:#0056b3;">Performance (Specialty: ${userSpecialty || 'Overall'})</h2>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-bottom:20px;">
+        <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
+          <canvas id="overallScoreChart" width="200" height="200"></canvas>
+          <p style="font-size:1.2rem; color:#333; margin-top:10px; text-align:center;">
+            Accuracy: ${overallPercent}%
+          </p>
         </div>
-        <p style="font-size:1.4rem; color:#0056b3; margin:10px 0 5px 0; text-align:center;">
-          ${xp} XP
-        </p>
-        <p style="font-size:0.9rem; color:#666; margin-top:0; text-align:center;">
-          ${nextLevelXp ? `${xpInCurrentLevel}/${xpRequiredForNextLevel} XP to Level ${level + 1}` : 'Max Level Reached!'}
-        </p>
+        <div style="flex:1; min-width:220px; max-width:300px; display:flex; flex-direction:column; align-items:center;">
+          <div class="level-progress-circle" style="width:100px; height:100px; margin:20px auto;">
+            <div class="level-circle-background"></div>
+            <div class="level-circle-progress" id="performanceLevelProgress"></div>
+            <div class="level-number" style="font-size:2rem; transform:scale(0.85);">${level}</div>
+          </div>
+          <p style="font-size:1.4rem; color:#0056b3; margin:10px 0 5px 0; text-align:center;">
+            ${xp} XP
+          </p>
+          <p style="font-size:0.9rem; color:#666; margin-top:0; text-align:center;">
+            ${nextLevelXp ? `${xpInCurrentLevel}/${xpRequiredForNextLevel} XP to Level ${level + 1}` : 'Max Level Reached!'}
+          </p>
+        </div>
       </div>
-    </div>
-    <div style="background:#f5f5f5; border-radius:8px; padding:15px; margin:20px 0;">
-      <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary</h3>
-      <p style="font-size:1rem; color:#333;">Total Questions Answered: <strong>${totalAnswered}</strong></p>
-      <p style="font-size:1rem; color:#333;">Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)</p>
-      <p style="font-size:1rem; color:#333;">Questions Remaining: <strong>${remaining}</strong></p>
-    </div>
-    <hr>
-    <h3 style="text-align:center; color:#0056b3;">By Category</h3>
-    <div id="categoryBreakdownInternal"></div>
-    <button id="backToMain" style="margin-top:20px; display:block; margin-left:auto; margin-right:auto;" class="start-quiz-btn">Back</button>
-  `;
-
-  const categoryBreakdownContainer = document.getElementById("categoryBreakdownInternal");
-  const accessTier = window.authState?.accessTier;
-  const isRegistered = window.authState?.isRegistered; 
-
-  if (categoryBreakdownContainer) {
-    if (accessTier === "free_guest") {
-        const message1 = "Detailed subject-specific analytics are a premium feature.";
-        const message2 = "Upgrade your account to track your performance across different subspecialties!";
-        const buttonText = "Upgrade to Access";
-        const buttonId = "upgradeForAnalyticsBtn_stats";
-        categoryBreakdownContainer.innerHTML = `<div class="guest-analytics-prompt" style="margin-top: 20px; padding: 15px; background: #f2f7ff; border-left: 4px solid #0C72D3; border-radius: 8px; text-align: center;"><p style="color: #0056b3; margin-bottom: 10px;">${message1}</p><p style="color: #0056b3; margin-bottom: 15px;">${message2}</p><button id="${buttonId}" class="start-quiz-btn" style="padding: 10px 20px; font-size: 1rem;">${buttonText}</button></div>`;
-        const upgradeButton = document.getElementById(buttonId);
-        if (upgradeButton) {
-            const newUpgradeButton = upgradeButton.cloneNode(true);
-            upgradeButton.parentNode.replaceChild(newUpgradeButton, upgradeButton);
-            newUpgradeButton.addEventListener('click', function() {
-                if (performanceView) performanceView.style.display = 'none'; 
-                const mainPaywallScreen = document.getElementById("newPaywallScreen");
-                if (mainPaywallScreen) { mainPaywallScreen.style.display = 'flex'; }
-            });
-        }
-    } else if (isRegistered && (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
-        let categoryBreakdownHtml = "";
-        if (stats.categories && Object.keys(stats.categories).length > 0) {
-            categoryBreakdownHtml = Object.keys(stats.categories).map(cat => {
-                const c = stats.categories[cat];
-                const catAnswered = c.answered || 0;
-                const catCorrect = c.correct || 0;
-                const percent = catAnswered > 0 ? Math.round((catCorrect / catAnswered) * 100) : 0;
-                return `<div class="category-item"><strong>${cat}</strong>: ${catCorrect}/${catAnswered} (${percent}%)<div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%"></div></div></div>`;
-            }).join("");
-        } else {
-            categoryBreakdownHtml = "<p>No category data available yet. Answer more questions to see your breakdown!</p>";
-        }
-        categoryBreakdownContainer.innerHTML = categoryBreakdownHtml;
+      <div style="background:#f5f5f5; border-radius:8px; padding:15px; margin:20px 0;">
+        <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary (Specialty)</h3>
+        <p style="font-size:1rem; color:#333;">Total Questions Answered: <strong>${totalAnswered}</strong></p>
+        <p style="font-size:1rem; color:#333;">Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)</p>
+        <p style="font-size:1rem; color:#333;">Questions Remaining: <strong>${remaining}</strong></p>
+      </div>
+      <hr>
+      <h3 style="text-align:center; color:#0056b3;">By Category (Specialty)</h3>
+      <div id="categoryBreakdownInternal"></div>
+      <button id="backToMain" style="margin-top:20px; display:block; margin-left:auto; margin-right:auto;" class="start-quiz-btn">Back</button>
+    `;
+  
+    const categoryBreakdownContainer = document.getElementById("categoryBreakdownInternal");
+    const accessTier = window.authState?.accessTier;
+    const isRegistered = window.authState?.isRegistered; 
+  
+    if (categoryBreakdownContainer) {
+      if (accessTier === "free_guest") {
+          const message1 = "Detailed subject-specific analytics are a premium feature.";
+          const message2 = "Upgrade your account to track your performance across different subspecialties!";
+          const buttonText = "Upgrade to Access";
+          const buttonId = "upgradeForAnalyticsBtn_stats";
+          categoryBreakdownContainer.innerHTML = `<div class="guest-analytics-prompt" style="margin-top: 20px; padding: 15px; background: #f2f7ff; border-left: 4px solid #0C72D3; border-radius: 8px; text-align: center;"><p style="color: #0056b3; margin-bottom: 10px;">${message1}</p><p style="color: #0056b3; margin-bottom: 15px;">${message2}</p><button id="${buttonId}" class="start-quiz-btn" style="padding: 10px 20px; font-size: 1rem;">${buttonText}</button></div>`;
+          const upgradeButton = document.getElementById(buttonId);
+          if (upgradeButton) {
+              const newUpgradeButton = upgradeButton.cloneNode(true);
+              upgradeButton.parentNode.replaceChild(newUpgradeButton, upgradeButton);
+              newUpgradeButton.addEventListener('click', function() {
+                  if (performanceView) performanceView.style.display = 'none'; 
+                  const mainPaywallScreen = document.getElementById("newPaywallScreen");
+                  if (mainPaywallScreen) { mainPaywallScreen.style.display = 'flex'; }
+              });
+          }
+      } else if (isRegistered && (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
+          let categoryBreakdownHtml = "";
+          // Use the newly calculated specialtyCategoryStats
+          if (specialtyCategoryStats && Object.keys(specialtyCategoryStats).length > 0) {
+              categoryBreakdownHtml = Object.keys(specialtyCategoryStats).map(cat => {
+                  const c = specialtyCategoryStats[cat];
+                  const catAnswered = c.answered || 0;
+                  const catCorrect = c.correct || 0;
+                  const percent = catAnswered > 0 ? Math.round((catCorrect / catAnswered) * 100) : 0;
+                  return `<div class="category-item"><strong>${cat}</strong>: ${catCorrect}/${catAnswered} (${percent}%)<div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%"></div></div></div>`;
+              }).join("");
+          } else {
+              categoryBreakdownHtml = "<p>No category data available yet for your specialty. Answer more questions to see your breakdown!</p>";
+          }
+          categoryBreakdownContainer.innerHTML = categoryBreakdownHtml;
+      }
+    }
+  
+    const canvasElement = document.getElementById("overallScoreChart");
+    if (canvasElement) {
+      const ctx = canvasElement.getContext("2d");
+      // Use the recalculated totalCorrect and totalAnswered for the chart
+      new Chart(ctx, { type: "doughnut", data: { labels: ["Correct", "Incorrect"], datasets: [{ data: [totalCorrect, totalAnswered - totalCorrect], backgroundColor: ["#28a745", "#dc3545"] }] }, options: { responsive: false, cutout: "60%", plugins: { legend: { display: true } } } });
+    }
+    
+    const performanceLevelProgress = document.getElementById("performanceLevelProgress");
+    if (performanceLevelProgress) {
+      // XP progress remains unchanged
+      performanceLevelProgress.style.setProperty('--progress', `${levelProgress}%`);
+    }
+    
+    const backButton = document.getElementById("backToMain");
+    if (backButton) {
+      const newBackButton = backButton.cloneNode(true);
+      backButton.parentNode.replaceChild(newBackButton, backButton);
+      newBackButton.addEventListener("click", function() {
+          if (performanceView) performanceView.style.display = "none";
+          const mainOptions = document.getElementById("mainOptions");
+          if (mainOptions) mainOptions.style.display = "flex";
+      });
     }
   }
-
-  const canvasElement = document.getElementById("overallScoreChart");
-  if (canvasElement) {
-    const ctx = canvasElement.getContext("2d");
-    new Chart(ctx, { type: "doughnut", data: { labels: ["Correct", "Incorrect"], datasets: [{ data: [totalCorrect, totalAnswered - totalCorrect], backgroundColor: ["#28a745", "#dc3545"] }] }, options: { responsive: false, cutout: "60%", plugins: { legend: { display: true } } } });
-  }
-  
-  const performanceLevelProgress = document.getElementById("performanceLevelProgress");
-  if (performanceLevelProgress) {
-    performanceLevelProgress.style.setProperty('--progress', `${levelProgress}%`);
-  }
-  
-  const backButton = document.getElementById("backToMain");
-  if (backButton) {
-    const newBackButton = backButton.cloneNode(true);
-    backButton.parentNode.replaceChild(newBackButton, backButton);
-    newBackButton.addEventListener("click", function() {
-        if (performanceView) performanceView.style.display = "none";
-        const mainOptions = document.getElementById("mainOptions");
-        if (mainOptions) mainOptions.style.display = "flex";
-    });
-  }
-}
 
 // Make functions globally available
 window.displayPerformance = displayPerformance;
