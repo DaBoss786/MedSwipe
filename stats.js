@@ -308,13 +308,13 @@ async function displayPerformance() {
         </div>
       </div>
       <div style="background:#f5f5f5; border-radius:8px; padding:15px; margin:20px 0;">
-        <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary (Specialty)</h3>
+        <h3 style="margin-top:0; color:#0056b3; text-align:center;">Stats Summary</h3>
         <p style="font-size:1rem; color:#333;">Total Questions Answered: <strong>${totalAnswered}</strong></p>
         <p style="font-size:1rem; color:#333;">Correct Answers: <strong>${totalCorrect}</strong> (${overallPercent}%)</p>
         <p style="font-size:1rem; color:#333;">Questions Remaining: <strong>${remaining}</strong></p>
       </div>
       <hr>
-      <h3 style="text-align:center; color:#0056b3;">By Category (Specialty)</h3>
+      <h3 style="text-align:center; color:#0056b3;">By Category</h3>
       <div id="categoryBreakdownInternal"></div>
       <button id="backToMain" style="margin-top:20px; display:block; margin-left:auto; margin-right:auto;" class="start-quiz-btn">Back</button>
     `;

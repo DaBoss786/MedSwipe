@@ -3538,9 +3538,45 @@ async function populateCategoryDropdownForMainQuiz() {
       const allQuestions = await fetchQuestionBank(); // Reuses existing function
       let relevantQuestions = allQuestions;
 
+      // --- START: NEW SPECIALTY FILTERING LOGIC ---
+      let userSpecialty = null;
+
+      // 1. Get specialty for a signed-in user from Firestore
+      if (auth.currentUser && !auth.currentUser.isAnonymous) {
+          try {
+              const userDocRef = doc(db, 'users', auth.currentUser.uid);
+              const userDocSnap = await getDoc(userDocRef);
+              if (userDocSnap.exists() && userDocSnap.data().specialty) {
+                  userSpecialty = userDocSnap.data().specialty;
+              }
+          } catch (error) {
+              console.error("Error fetching user specialty for category dropdown:", error);
+          }
+      }
+
+      // 2. Fallback to window.selectedSpecialty for anonymous/onboarding users
+      if (!userSpecialty && window.selectedSpecialty) {
+          userSpecialty = window.selectedSpecialty;
+      }
+
+      // 3. Filter questions by the determined specialty
+      if (userSpecialty) {
+          console.log(`Filtering categories for specialty: ${userSpecialty}`);
+          relevantQuestions = relevantQuestions.filter(q => {
+              const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
+              // A question without a specialty is available to everyone
+              if (!questionSpecialty) return true;
+              // Otherwise, it must match the user's specialty
+              return questionSpecialty.toLowerCase() === userSpecialty.toLowerCase();
+          });
+      } else {
+          console.log("No user specialty found; not filtering categories by specialty.");
+      }
+      // --- END: NEW SPECIALTY FILTERING LOGIC ---
+
       // If user is free_guest, only show categories that have at least one "Free: true" question
       if (window.authState && window.authState.accessTier === "free_guest") {
-          relevantQuestions = allQuestions.filter(q => q.Free === true);
+          relevantQuestions = relevantQuestions.filter(q => q.Free === true);
       }
       // For other tiers, all categories from all questions are potentially relevant
 
