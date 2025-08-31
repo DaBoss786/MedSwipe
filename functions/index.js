@@ -1538,7 +1538,7 @@ exports.updateUserProfile = onCall(
   }
 );
 
-// --- MODIFIED LEADERBOARD CLOUD FUNCTION ---
+// --- FULLY OPTIMIZED AND SECURE LEADERBOARD CLOUD FUNCTION ---
 exports.getLeaderboardData = onCall(
   {
     region: "us-central1",
@@ -1571,112 +1571,181 @@ exports.getLeaderboardData = onCall(
     }
     const currentAuthUid = request.auth.uid;
 
-    // --- NEW: Helper function to get the start of the current week (Monday) ---
+    // 2. Get the calling user's data and validate
+    const currentUserDocRef = currentDbInstance.collection("users").doc(currentAuthUid);
+    const currentUserDoc = await currentUserDocRef.get();
+
+    if (!currentUserDoc.exists) {
+      logger.warn(`User ${currentAuthUid} has no document. Returning empty leaderboards.`);
+      return {
+        xpLeaderboard: [],
+        weeklyXpLeaderboard: [],
+        streakLeaderboard: [],
+        answeredLeaderboard: [],
+        currentUserRanks: { xp: null, weeklyXp: null, streak: null, answered: null },
+      };
+    }
+
+    const currentUserData = currentUserDoc.data();
+    
+    // --- START: NEWLY ADDED SUBSCRIPTION CHECK ---
+    const allowedTiers = ['board_review', 'cme_annual', 'cme_credits_only'];
+    if (!allowedTiers.includes(currentUserData.accessTier)) {
+      logger.warn(`User ${currentAuthUid} with tier "${currentUserData.accessTier}" attempted to access a restricted feature.`);
+      // You can either return empty leaderboards or throw an error.
+      // Throwing an error is often better for security to make it clear access is denied.
+      throw new HttpsError(
+        "permission-denied",
+        "You do not have sufficient permissions to view the leaderboard."
+      );
+    }
+    // --- END: NEWLY ADDED SUBSCRIPTION CHECK ---
+    
+    // Check if current user has required fields for leaderboard logic
+    if (!currentUserData.specialty || !currentUserData.email || !currentUserData.isRegistered) {
+      logger.warn(`User ${currentAuthUid} is missing required fields (specialty/email/isRegistered). Returning empty leaderboards.`);
+      return {
+        xpLeaderboard: [],
+        weeklyXpLeaderboard: [],
+        streakLeaderboard: [],
+        answeredLeaderboard: [],
+        currentUserRanks: { xp: null, weeklyXp: null, streak: null, answered: null },
+      };
+    }
+
+    const currentUserSpecialty = currentUserData.specialty;
+    logger.info(`Filtering leaderboard for specialty: "${currentUserSpecialty}"`);
+
+    // 3. Helper functions
     function getStartOfWeekMilliseconds(date = new Date()) {
       const d = new Date(date);
-      // d.getDay() returns 0 for Sunday, 1 for Monday, etc.
-      // We want to find the most recent Monday.
       const day = d.getDay();
-      // If today is Sunday (0), we subtract 6 days. If Monday (1), subtract 0. If Tuesday (2), subtract 1.
       const diff = d.getDate() - day + (day === 0 ? -6 : 1); 
       const startOfWeekDate = new Date(d.setDate(diff));
-      startOfWeekDate.setHours(0, 0, 0, 0); // Set to midnight
+      startOfWeekDate.setHours(0, 0, 0, 0);
       return startOfWeekDate.getTime();
     }
 
-    const TOP_N_LEADERBOARD = 10;
+    // Helper function to calculate weekly stats for a user
+    function calculateWeeklyStats(userData, weekStartMillis) {
+      let weeklyAnsweredCount = 0;
+      let weeklyXp = 0;
 
-    try {
-      // Use currentDbInstance which is either the global 'db' or the locally re-initialized one
-      logger.info("Attempting to query users collection with currentDbInstance:", typeof currentDbInstance);
-      const usersSnapshot = await currentDbInstance.collection("users").get();
-      logger.info("Users collection query successful. Number of docs:", usersSnapshot.size);
-      
-      const allEligibleUsersData = [];
-      const weekStartMillis = getStartOfWeekMilliseconds();
-
-      usersSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        if (userData.isRegistered === true) {
-          let weeklyAnsweredCount = 0;
-          let weeklyXp = 0; // --- NEW: Initialize weekly XP counter ---
-
-          if (userData.answeredQuestions) {
-            for (const questionKey in userData.answeredQuestions) {
-              const answer = userData.answeredQuestions[questionKey];
-              // Check if the answer was within the current week
-              if (answer.timestamp && answer.timestamp >= weekStartMillis) {
-                weeklyAnsweredCount++;
-                // --- NEW: Calculate weekly XP based on answers ---
-                // 1 XP for answering, +2 additional for correct
-                weeklyXp += 1; 
-                if (answer.isCorrect === true) {
-                    weeklyXp += 2;
-                }
-                // --- END NEW ---
-              }
+      if (userData.answeredQuestions) {
+        for (const questionKey in userData.answeredQuestions) {
+          const answer = userData.answeredQuestions[questionKey];
+          if (answer.timestamp && answer.timestamp >= weekStartMillis) {
+            weeklyAnsweredCount++;
+            weeklyXp += 1; // 1 XP for answering
+            if (answer.isCorrect === true) {
+              weeklyXp += 2; // +2 additional for correct
             }
           }
+        }
+      }
+
+      return { weeklyAnsweredCount, weeklyXp };
+    }
+
+    const TOP_N_LEADERBOARD = 10;
+    const weekStartMillis = getStartOfWeekMilliseconds();
+
+    try {
+      // 4. OPTIMIZED QUERY: Use Firestore query to filter at database level
+      let usersSnapshot;
+      
+      try {
+        // Attempt optimized query (requires composite index)
+        usersSnapshot = await currentDbInstance.collection("users")
+          .where("isRegistered", "==", true)
+          .where("specialty", "==", currentUserSpecialty)
+          .get();
+        logger.info(`Optimized query successful. Found ${usersSnapshot.size} eligible users.`);
+      } catch (indexError) {
+        // Fallback to less optimized query if composite index doesn't exist
+        logger.warn("Composite index not available, falling back to single-field query:", indexError.message);
+        usersSnapshot = await currentDbInstance.collection("users")
+          .where("isRegistered", "==", true)
+          .get();
+        logger.info(`Fallback query returned ${usersSnapshot.size} registered users.`);
+      }
+
+      // 5. Process eligible users
+      const allEligibleUsersData = [];
+      
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        
+        // Apply ALL filtering criteria
+        if (
+          userData.isRegistered === true &&
+          userData.email && // Must have email
+          userData.specialty === currentUserSpecialty // Must match specialty
+        ) {
+          const weeklyStats = calculateWeeklyStats(userData, weekStartMillis);
+          
           allEligibleUsersData.push({
             uid: doc.id,
             username: userData.username || "Anonymous",
             xp: userData.stats?.xp || 0,
-            weeklyXp: weeklyXp, // --- NEW: Add weeklyXp to the user's data ---
+            weeklyXp: weeklyStats.weeklyXp,
             level: userData.stats?.level || 1,
             currentStreak: userData.streaks?.currentStreak || 0,
-            weeklyAnsweredCount: weeklyAnsweredCount,
+            weeklyAnsweredCount: weeklyStats.weeklyAnsweredCount,
           });
         }
       });
 
       logger.info(`Processed ${allEligibleUsersData.length} eligible users for leaderboards.`);
-      let currentUserRanks = { xp: null, weeklyXp: null, streak: null, answered: null }; // --- NEW: Added weeklyXp rank ---
 
-      // --- All-Time XP Leaderboard (No changes here) ---
-      const sortedByXp = [...allEligibleUsersData].sort((a, b) => b.xp - a.xp);
-      const xpLeaderboard = sortedByXp
-        .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({ ...user, rank: index + 1 }));
-      const currentUserXpIndex = sortedByXp.findIndex(u => u.uid === currentAuthUid);
-      if (currentUserXpIndex !== -1) {
-        currentUserRanks.xp = { ...sortedByXp[currentUserXpIndex], rank: currentUserXpIndex + 1 };
+      // 6. Create sorted leaderboards with proper ranking
+      let currentUserRanks = { xp: null, weeklyXp: null, streak: null, answered: null };
+
+      // Helper function to create leaderboard and find user rank
+      function createLeaderboardWithRanking(data, sortKey) {
+        const sorted = [...data].sort((a, b) => b[sortKey] - a[sortKey]);
+        const leaderboard = sorted.slice(0, TOP_N_LEADERBOARD).map((user, index) => ({
+          ...user,
+          rank: index + 1
+        }));
+        
+        const currentUserIndex = sorted.findIndex(u => u.uid === currentAuthUid);
+        let currentUserRank = null;
+        if (currentUserIndex !== -1) {
+          currentUserRank = {
+            ...sorted[currentUserIndex],
+            rank: currentUserIndex + 1
+          };
+        }
+        
+        return { leaderboard, currentUserRank };
       }
 
-      // --- NEW: Weekly XP Leaderboard ---
-      const sortedByWeeklyXp = [...allEligibleUsersData].sort((a, b) => b.weeklyXp - a.weeklyXp);
-      const weeklyXpLeaderboard = sortedByWeeklyXp
-        .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({ ...user, rank: index + 1 }));
-      const currentUserWeeklyXpIndex = sortedByWeeklyXp.findIndex(u => u.uid === currentAuthUid);
-      if (currentUserWeeklyXpIndex !== -1) {
-        currentUserRanks.weeklyXp = { ...sortedByWeeklyXp[currentUserWeeklyXpIndex], rank: currentUserWeeklyXpIndex + 1 };
-      }
-      // --- END NEW ---
+      // All-Time XP Leaderboard
+      const xpResults = createLeaderboardWithRanking(allEligibleUsersData, 'xp');
+      const xpLeaderboard = xpResults.leaderboard;
+      currentUserRanks.xp = xpResults.currentUserRank;
 
-      // --- Streak Leaderboard (No changes here) ---
-      const sortedByStreak = [...allEligibleUsersData].sort((a, b) => b.currentStreak - a.currentStreak);
-      const streakLeaderboard = sortedByStreak
-        .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({ ...user, rank: index + 1 }));
-      const currentUserStreakIndex = sortedByStreak.findIndex(u => u.uid === currentAuthUid);
-      if (currentUserStreakIndex !== -1) {
-        currentUserRanks.streak = { ...sortedByStreak[currentUserStreakIndex], rank: currentUserStreakIndex + 1 };
-      }
+      // Weekly XP Leaderboard
+      const weeklyXpResults = createLeaderboardWithRanking(allEligibleUsersData, 'weeklyXp');
+      const weeklyXpLeaderboard = weeklyXpResults.leaderboard;
+      currentUserRanks.weeklyXp = weeklyXpResults.currentUserRank;
 
-      // --- Weekly Answered Leaderboard (No changes here) ---
-      const sortedByAnswered = [...allEligibleUsersData].sort((a, b) => b.weeklyAnsweredCount - a.weeklyAnsweredCount);
-      const answeredLeaderboard = sortedByAnswered
-        .slice(0, TOP_N_LEADERBOARD)
-        .map((user, index) => ({ ...user, rank: index + 1 }));
-      const currentUserAnsweredIndex = sortedByAnswered.findIndex(u => u.uid === currentAuthUid);
-      if (currentUserAnsweredIndex !== -1) {
-        currentUserRanks.answered = { ...sortedByAnswered[currentUserAnsweredIndex], rank: currentUserAnsweredIndex + 1 };
-      }
+      // Streak Leaderboard
+      const streakResults = createLeaderboardWithRanking(allEligibleUsersData, 'currentStreak');
+      const streakLeaderboard = streakResults.leaderboard;
+      currentUserRanks.streak = streakResults.currentUserRank;
+
+      // Weekly Answered Leaderboard
+      const answeredResults = createLeaderboardWithRanking(allEligibleUsersData, 'weeklyAnsweredCount');
+      const answeredLeaderboard = answeredResults.leaderboard;
+      currentUserRanks.answered = answeredResults.currentUserRank;
 
       logger.info("Leaderboard data prepared successfully.");
+      
       return {
         xpLeaderboard,
-        weeklyXpLeaderboard, // --- NEW: Return the weekly leaderboard data ---
+        weeklyXpLeaderboard,
         streakLeaderboard,
         answeredLeaderboard,
         currentUserRanks,
