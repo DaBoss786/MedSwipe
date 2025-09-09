@@ -2077,3 +2077,244 @@ exports.syncActivityToMailerLite = onSchedule(
     logger.info(`MailerLite sync completed. Processed: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}, Retries: ${retryCount}`);
   }
 );
+
+// --- Configuration for Weekly Digest ---
+const MAILERLITE_WEEKLY_DIGEST_GROUP_ID = "164298506172892979"; // <<< REPLACE THIS with your actual "Weekly Digest" Group ID from MailerLite
+const MIN_QUESTIONS_FOR_CATEGORY = 3; // The minimum questions a user must answer in a category for it to be considered for strongest/weakest
+
+/**
+ * =================================================================================
+ *  Function A: Weekly Logger
+ *  Scheduled to run late every Saturday night.
+ *  Creates a snapshot of each user's cumulative stats for accurate weekly calculations.
+ * =================================================================================
+ */
+exports.logWeeklyUserStats = onSchedule(
+  {
+    schedule: "every saturday 23:50", // Runs at 11:50 PM every Saturday
+    timeZone: "America/Los_Angeles", // Pacific Time Zone
+    secrets: [], // No secrets needed for this function
+    memory: "512MiB",
+    timeoutSeconds: 540, // 9 minutes, allows for processing many users
+  },
+  async (event) => {
+    logger.info("Starting scheduled job: logWeeklyUserStats.");
+
+    const usersRef = db.collection("users");
+    const today = new Date();
+    const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    let processedCount = 0;
+
+    try {
+      // Query for all users who are registered and have an email.
+      const snapshot = await usersRef
+        .where("isRegistered", "==", true)
+        .where("email", "!=", null)
+        .get();
+
+      if (snapshot.empty) {
+        logger.info("No registered users found to log stats for. Job finished.");
+        return;
+      }
+
+      logger.info(`Found ${snapshot.docs.length} users to process for weekly stat logging.`);
+
+      // Process users in parallel for efficiency
+      const promises = snapshot.docs.map(async (userDoc) => {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+        const userStats = userData.stats || {};
+
+        const snapshotData = {
+          timestamp: admin.firestore.Timestamp.now(),
+          totalAnswered: userStats.totalAnswered || 0,
+          totalCorrect: userStats.totalCorrect || 0,
+          xp: userStats.xp || 0,
+        };
+
+        // The path is /weeklySnapshots/{userId}/snapshots/{YYYY-MM-DD}
+        const snapshotRef = db.collection("weeklySnapshots").doc(userId)
+                              .collection("snapshots").doc(dateString);
+
+        await snapshotRef.set(snapshotData);
+        processedCount++;
+      });
+
+      await Promise.all(promises);
+
+      logger.info(`Successfully logged weekly stats for ${processedCount} users. Job finished.`);
+
+    } catch (error) {
+      logger.error("Error during logWeeklyUserStats execution:", error);
+    }
+  }
+);
+
+
+/**
+ * =================================================================================
+ *  Function B: Digest Calculator & MailerLite Pusher
+ *  Scheduled to run every Sunday morning.
+ *  Calculates weekly stats from snapshots and syncs them to MailerLite.
+ * =================================================================================
+ */
+exports.calculateAndSyncWeeklyDigest = onSchedule(
+  {
+    schedule: "every sunday 08:00", // Runs at 8:00 AM every Sunday
+    timeZone: "America/Los_Angeles", // Pacific Time Zone
+    secrets: ["MAILERLITE_API_KEY"], // Needs the API key we configured
+    memory: "1GiB", // More memory for potentially heavy calculations
+    timeoutSeconds: 540, // 9 minutes
+  },
+  async (event) => {
+    logger.info("Starting scheduled job: calculateAndSyncWeeklyDigest.");
+    const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
+
+    if (!mailerLiteApiKey) {
+      logger.error("MAILERLITE_API_KEY is not available. Aborting job.");
+      return;
+    }
+
+    const usersRef = db.collection("users");
+    let successCount = 0;
+    let skippedCount = 0;
+
+    try {
+      // 1. Get all eligible users: registered, have an email, and opted-in.
+      const usersSnapshot = await usersRef
+        .where("isRegistered", "==", true)
+        .where("email", "!=", null)
+        .where("marketingOptIn", "==", true)
+        .get();
+
+      if (usersSnapshot.empty) {
+        logger.info("No eligible users found for weekly digest. Job finished.");
+        return;
+      }
+
+      logger.info(`Found ${usersSnapshot.docs.length} eligible users to process for the weekly digest.`);
+
+      // Process each user
+      for (const userDoc of usersSnapshot.docs) {
+        const userId = userDoc.id;
+        const userData = userDoc.data();
+        const userEmail = userData.email;
+
+        // 2. Get the last two snapshots for the user
+        const snapshotsRef = db.collection("weeklySnapshots").doc(userId).collection("snapshots");
+        const snapshotQuery = await snapshotsRef.orderBy("timestamp", "desc").limit(2).get();
+
+        if (snapshotQuery.docs.length === 0) {
+          skippedCount++;
+          continue; // No snapshots for this user, skip them.
+        }
+
+        // 3. Calculate weekly stats using the snapshot "logbook" method
+        const latestSnapshot = snapshotQuery.docs[0].data();
+        const previousSnapshot = snapshotQuery.docs[1] ? snapshotQuery.docs[1].data() : { totalAnswered: 0, totalCorrect: 0, xp: 0 };
+
+        const weeklyAnswered = latestSnapshot.totalAnswered - previousSnapshot.totalAnswered;
+        const weeklyCorrect = latestSnapshot.totalCorrect - previousSnapshot.totalCorrect;
+        const weeklyXp = latestSnapshot.xp - previousSnapshot.xp;
+
+        // Requirement: Only send to users who answered at least one question this week.
+        if (weeklyAnswered <= 0) {
+          skippedCount++;
+          continue;
+        }
+
+        const weeklyAccuracy = weeklyAnswered > 0 ? Math.round((weeklyCorrect / weeklyAnswered) * 100) : 0;
+
+        // 4. Calculate Strongest/Weakest Category (this requires a scan of recent answers)
+        let strongestCategory = "N/A";
+        let weakestCategory = "N/A";
+        const answeredQuestions = userData.answeredQuestions || {};
+        const categoryStats = {};
+
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        const oneWeekAgoMillis = oneWeekAgo.getTime();
+
+        for (const qId in answeredQuestions) {
+          const answer = answeredQuestions[qId];
+          if (answer.timestamp && answer.timestamp >= oneWeekAgoMillis) {
+            const category = answer.category || "Uncategorized";
+            if (!categoryStats[category]) {
+              categoryStats[category] = { answered: 0, correct: 0 };
+            }
+            categoryStats[category].answered++;
+            if (answer.isCorrect) {
+              categoryStats[category].correct++;
+            }
+          }
+        }
+
+        const eligibleCategories = Object.entries(categoryStats)
+          .filter(([cat, stats]) => stats.answered >= MIN_QUESTIONS_FOR_CATEGORY)
+          .map(([cat, stats]) => ({
+            name: cat,
+            accuracy: (stats.correct / stats.answered) * 100,
+          }));
+
+                // --- START: FINAL Logic for Strongest/Weakest Category (with Accuracy %) ---
+                if (eligibleCategories.length > 1) {
+                  // If there are 2 or more eligible categories, find the best and worst.
+                  eligibleCategories.sort((a, b) => b.accuracy - a.accuracy); // Sort descending
+        
+                  const strongest = eligibleCategories[0];
+                  const weakest = eligibleCategories[eligibleCategories.length - 1];
+        
+                  // Format the string to include the name and the rounded accuracy percentage
+                  strongestCategory = `${strongest.name} (${Math.round(strongest.accuracy)}% Accuracy)`;
+                  weakestCategory = `${weakest.name} (${Math.round(weakest.accuracy)}% Accuracy)`;
+        
+                } else if (eligibleCategories.length === 1) {
+                  // If there is only 1 eligible category, format it as the strongest.
+                  const strongest = eligibleCategories[0];
+                  strongestCategory = `${strongest.name} (${Math.round(strongest.accuracy)}% Accuracy)`;
+                  weakestCategory = "Focus on other topics!"; // The helpful message remains
+                }
+                // If eligibleCategories.length is 0, both will remain "N/A" by default.
+                // --- END: FINAL Logic ---
+
+        // 5. Prepare and sync the data to MailerLite
+        const mailerLitePayload = {
+          email: userEmail,
+          fields: {
+            weekly_answered: weeklyAnswered,
+            weekly_xp: weeklyXp,
+            weekly_accuracy: weeklyAccuracy,
+            strongest_category: strongestCategory,
+            weakest_category: weakestCategory,
+          },
+          groups: [MAILERLITE_WEEKLY_DIGEST_GROUP_ID],
+          resubscribe: true, // Re-add them if they were removed by a previous automation
+        };
+
+        try {
+          await axios.post(
+            "https://connect.mailerlite.com/api/subscribers",
+            mailerLitePayload,
+            {
+              headers: {
+                "Authorization": `Bearer ${mailerLiteApiKey}`,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+              },
+            }
+          );
+          successCount++;
+          logger.info(`Successfully synced weekly digest data for user ${userId} (${userEmail}).`);
+        } catch (apiError) {
+          logger.error(`Failed to sync MailerLite data for user ${userId}.`, apiError.response?.data || apiError.message);
+        }
+      }
+
+      logger.info(`Weekly digest job finished. Successfully synced: ${successCount}, Skipped (no activity/data): ${skippedCount}.`);
+
+    } catch (error) {
+      logger.error("Error during calculateAndSyncWeeklyDigest execution:", error);
+    }
+  }
+);
