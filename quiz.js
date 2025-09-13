@@ -561,6 +561,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
     questionSlide.dataset.bookmarked = bookmarks.includes(qId) ? "true" : "false";
+    questionSlide.dataset.imageUrl = question["Image URL"] || "";
     const cmeEligibleValue = question["CME Eligible"];
   const isCME = typeof cmeEligibleValue === 'boolean' ? cmeEligibleValue : (cmeEligibleValue && String(cmeEligibleValue).trim().toLowerCase() === 'yes');
   
@@ -570,9 +571,9 @@ async function initializeQuiz(questions, quizType = 'regular') {
       <div class="card">
         ${isCME ? '<div class="cme-tag">CME Eligible</div>' : ''}
         <div class="question">${question["Question"]}</div>
-        ${question["Image URL"] && question["Image URL"].trim() !== ""
-          ? `<img src="${question["Image URL"].trim()}" class="question-image">`
-          : "" }
+            ${question["Image URL"] && question["Image URL"].trim() !== ""
+      ? `<button class="view-image-btn">View Image</button>`
+      : "" }
         <div class="options">
   ${question["Option A"] && question["Option A"].trim() !== ""
     ? `<button class="option-btn" data-option="A"><span class="option-text">A. ${question["Option A"]}</span></button>`
@@ -643,6 +644,7 @@ async function initializeQuiz(questions, quizType = 'regular') {
   });
 
   addOptionListeners();
+  setupImageModalListeners();
 
   // Set initial permissions after a small delay to ensure Swiper is fully initialized
   setTimeout(() => {
@@ -695,6 +697,48 @@ function updateSwipePermissions() {
       window.mySwiper.allowSlideNext = true;
       console.log("Unlocked swiping - on answer slide");
     }
+}
+
+// --- NEW FUNCTION TO HANDLE IMAGE MODAL ---
+function setupImageModalListeners() {
+  const imageModal = document.getElementById('questionImageModal');
+  const modalImage = document.getElementById('modalImage');
+  const closeButton = document.getElementById('closeImageModal');
+
+  if (!imageModal || !modalImage || !closeButton) {
+    console.error("Image modal elements not found!");
+    return;
+  }
+
+  // Function to close the modal
+  const closeModal = () => {
+    imageModal.style.display = 'none';
+    modalImage.src = ""; // Clear the image source
+  };
+
+  // Add listeners to close the modal
+  closeButton.addEventListener('click', closeModal);
+  imageModal.addEventListener('click', (event) => {
+    // Close only if the user clicks on the dark background, not the image itself
+    if (event.target === imageModal) {
+      closeModal();
+    }
+  });
+
+  // Add listeners to all "View Image" buttons
+  document.querySelectorAll('.view-image-btn').forEach(button => {
+    button.addEventListener('click', function() {
+      const questionSlide = this.closest('.swiper-slide');
+      const imageUrl = questionSlide.dataset.imageUrl;
+
+      if (imageUrl) {
+        modalImage.src = imageUrl;
+        imageModal.style.display = 'flex';
+      } else {
+        alert("Image not found for this question.");
+      }
+    });
+  });
 }
 
 // Update the bookmark icon based on the current question's bookmark status

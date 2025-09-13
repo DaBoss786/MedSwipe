@@ -5877,3 +5877,35 @@ html, body {
   font-weight: 500;
   line-height: 1.4;
 }
+
+/* =================================== */
+/* == Question Image Modal Styles   == */
+/* =================================== */
+
+/* This ensures the modal is centered and ready */
+#questionImageModal {
+  display: none; /* Hidden by default */
+  justify-content: center;
+  align-items: center;
+}
+
+/* Style for the image button that will appear on the question card */
+.view-image-btn {
+  display: block;
+  margin: 15px auto 10px auto; /* Spacing above and below */
+  padding: 8px 18px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #0C72D3;
+  background-color: #f0f7ff; /* Light blue background */
+  border: 1px solid #0C72D3;
+  border-radius: 20px; /* Pill shape */
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-image-btn:hover {
+  background-color: #0C72D3;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(12, 114, 211, 0.3);
+}
