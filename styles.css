@@ -5889,6 +5889,30 @@ html, body {
   align-items: center;
 }
 
+/* This is the key fix: It creates a positioning boundary for the 'X' button */
+#questionImageModal .modal-content {
+  position: relative;
+}
+
+/* New, improved styling for the 'X' button */
+#questionImageModal .close-modal {
+  position: absolute;
+  top: 0px;
+  right: 5px;
+  font-size: 2.5rem; /* Larger for better visibility */
+  font-weight: bold;
+  color: #000;
+  cursor: pointer;
+  padding: 5px 10px;
+  line-height: 1;
+  z-index: 10; /* Ensures it's on top of the image */
+  text-shadow: 0 1px 0 #fff; /* Makes it pop a bit */
+}
+
+#questionImageModal .close-modal:hover {
+  color: #dc3545; /* Red on hover */
+}
+
 /* Style for the image button that will appear on the question card */
 .view-image-btn {
   display: block;
