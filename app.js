@@ -3535,13 +3535,47 @@ async function populateCategoryDropdownForMainQuiz() {
   }
 
   try {
-      const allQuestions = await fetchQuestionBank(); // Reuses existing function
+      // --- NEW: Get the user's answered questions first ---
+      let answeredQuestions = {};
+      if (auth.currentUser && !auth.currentUser.isAnonymous) {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              answeredQuestions = userDocSnap.data().answeredQuestions || {};
+          }
+      }
+      const answeredQuestionIds = Object.keys(answeredQuestions);
+
+      // --- Fetch all questions and process them ---
+      const allQuestions = await fetchQuestionBank();
       let relevantQuestions = allQuestions;
 
-      // --- START: NEW SPECIALTY FILTERING LOGIC ---
-      let userSpecialty = null;
+      // --- NEW: Create maps to hold our counts ---
+      const categoryTotals = {};
+      const categoryAnswered = {};
+      // Create a quick lookup map for question data by its text
+      const questionBankMap = new Map(allQuestions.map(q => [q.Question.trim(), q]));
 
-      // 1. Get specialty for a signed-in user from Firestore
+      // --- NEW: Calculate total questions per category ---
+      allQuestions.forEach(q => {
+          const category = q.Category ? q.Category.trim() : null;
+          if (category) {
+              categoryTotals[category] = (categoryTotals[category] || 0) + 1;
+          }
+      });
+
+      // --- NEW: Calculate answered questions per category ---
+      answeredQuestionIds.forEach(answeredId => {
+          const questionData = questionBankMap.get(answeredId.trim());
+          if (questionData && questionData.Category) {
+              const category = questionData.Category.trim();
+              categoryAnswered[category] = (categoryAnswered[category] || 0) + 1;
+          }
+      });
+
+
+      // --- START: EXISTING SPECIALTY FILTERING LOGIC (No changes here) ---
+      let userSpecialty = null;
       if (auth.currentUser && !auth.currentUser.isAnonymous) {
           try {
               const userDocRef = doc(db, 'users', auth.currentUser.uid);
@@ -3553,45 +3587,44 @@ async function populateCategoryDropdownForMainQuiz() {
               console.error("Error fetching user specialty for category dropdown:", error);
           }
       }
-
-      // 2. Fallback to window.selectedSpecialty for anonymous/onboarding users
       if (!userSpecialty && window.selectedSpecialty) {
           userSpecialty = window.selectedSpecialty;
       }
-
-      // 3. Filter questions by the determined specialty
       if (userSpecialty) {
           console.log(`Filtering categories for specialty: ${userSpecialty}`);
           relevantQuestions = relevantQuestions.filter(q => {
               const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
-              // A question without a specialty is available to everyone
               if (!questionSpecialty) return true;
-              // Otherwise, it must match the user's specialty
               return questionSpecialty.toLowerCase() === userSpecialty.toLowerCase();
           });
       } else {
           console.log("No user specialty found; not filtering categories by specialty.");
       }
-      // --- END: NEW SPECIALTY FILTERING LOGIC ---
+      // --- END: EXISTING SPECIALTY FILTERING LOGIC ---
 
-      // If user is free_guest, only show categories that have at least one "Free: true" question
       if (window.authState && window.authState.accessTier === "free_guest") {
           relevantQuestions = relevantQuestions.filter(q => q.Free === true);
       }
-      // For other tiers, all categories from all questions are potentially relevant
 
       const categories = [...new Set(relevantQuestions
           .map(q => q.Category ? q.Category.trim() : null)
           .filter(cat => cat && cat !== "")
       )].sort();
 
+      // --- MODIFIED: Build the dropdown options with the new text format ---
       categories.forEach(category => {
+          const total = categoryTotals[category] || 0;
+          const answered = categoryAnswered[category] || 0;
+          
+          // This is the new text format we decided on!
+          const optionText = `${category} (${answered}/${total})`;
+
           const option = document.createElement("option");
           option.value = category;
-          option.textContent = category;
+          option.textContent = optionText; // Use our newly created text
           categorySelect.appendChild(option);
       });
-      console.log("Main quiz category dropdown populated with:", categories);
+      console.log("Main quiz category dropdown populated with progress counts.");
 
   } catch (error) {
       console.error("Error populating main quiz category dropdown:", error);
