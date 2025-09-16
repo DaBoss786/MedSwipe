@@ -1,7 +1,7 @@
 // app.js - Top of file
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged } from './firebase-config.js'; // Adjust path if needed
 // Import needed functions from user.js
-import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections } from './user.v2.js';
+import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections, fetchPersistentAnsweredIds } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
@@ -3517,21 +3517,33 @@ if (cmeModuleBtn) {
     const newModalStartQuiz = modalStartQuiz.cloneNode(true);
     modalStartQuiz.parentNode.replaceChild(newModalStartQuiz, modalStartQuiz);
 
-    newModalStartQuiz.addEventListener("click", function() {
-      // We no longer need to read every filter here, just the ones that affect quiz loading
+    newModalStartQuiz.addEventListener("click", async function() { // <-- Made this async
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
       const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
       
       document.getElementById("quizSetupModal").style.display = "none";
+
+      // --- START: This is the new, crucial fix ---
+      let finalFilteredQuestions = modalFilteredQuestions; // Start with the list from the search/category filters
+
+      if (!includeAnswered) {
+        console.log("'Include Answered' is OFF. Filtering out answered questions now.");
+        const answeredIds = await fetchPersistentAnsweredIds();
+        if (answeredIds.length > 0) {
+          finalFilteredQuestions = modalFilteredQuestions.filter(q => 
+            !answeredIds.includes(q["Question"]?.trim())
+          );
+        }
+      }
+      // --- END: The new fix ---
       
-      // This is the key change: we pass our pre-filtered list of questions directly
       loadQuestions({
         num: numQuestions,
         includeAnswered: includeAnswered,
         spacedRepetition: useSpacedRepetition,
-        // This new option will tell loadQuestions to use our list and skip its own filtering
-        prefilteredQuestions: modalFilteredQuestions 
+        // Pass the FINAL, correctly filtered list to the quiz builder
+        prefilteredQuestions: finalFilteredQuestions 
       });
     });
   }
