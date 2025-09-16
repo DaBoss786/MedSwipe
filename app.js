@@ -3419,7 +3419,20 @@ if (cmeModuleBtn) {
       startQuizBtn.parentNode.replaceChild(newStartQuizBtn, startQuizBtn);
   
       newStartQuizBtn.addEventListener("click", async function() { // <-- Made this async
-        // --- START: New logic to fetch questions and set up filters ---
+        // --- START: New logic to show/hide search based on tier ---
+        const accessTier = window.authState?.accessTier || 'free_guest';
+        const searchGroup = document.getElementById('searchFormGroup'); // The container for the search bar
+
+        if (searchGroup) {
+            if (accessTier === 'free_guest') {
+                searchGroup.style.display = 'none'; // Hide for free users
+            } else {
+                searchGroup.style.display = 'block'; // Show for premium users
+            }
+        }
+        // --- END: New logic to show/hide search ---
+
+        // --- START: Existing logic to fetch questions and set up filters ---
         if (fullQuestionBank.length === 0) {
             try {
                 fullQuestionBank = await fetchQuestionBank();
@@ -3445,26 +3458,23 @@ if (cmeModuleBtn) {
         // Reset search field and helper text each time modal is opened
         searchInput.value = '';
         document.getElementById('modalSearchHelper').innerHTML = '&nbsp;';
-        // --- END: New logic ---
+        // --- END: Existing logic ---
 
-        const accessTier = window.authState?.accessTier;
         const isAnonymousUser = auth.currentUser && auth.currentUser.isAnonymous;
 
-        // const spacedRepCheckbox = document.getElementById('modalSpacedRepetition'); // This line is now redundant
         const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.formGroup') : null;
         
         // --- START: Board Review Checkbox Visibility ---
-        // const boardReviewCheckbox = document.getElementById('modalBoardReviewOnly'); // This line is now redundant
         const boardReviewContainer = document.getElementById('boardReviewOnlyContainer');
 
         if (boardReviewContainer) {
             if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
-                boardReviewContainer.style.display = 'block'; // Or 'flex' if your .formGroup uses flex
+                boardReviewContainer.style.display = 'block';
                 console.log("Board Review Only option shown for tiered user.");
             } else {
                 boardReviewContainer.style.display = 'none';
                 if (boardReviewCheckbox) {
-                    boardReviewCheckbox.checked = false; // Ensure it's unchecked if hidden
+                    boardReviewCheckbox.checked = false;
                 }
                 console.log("Board Review Only option hidden for free_guest/anonymous user.");
             }
@@ -3493,7 +3503,6 @@ if (cmeModuleBtn) {
         const quizSetupModal = document.getElementById("quizSetupModal");
         if (quizSetupModal) {
             quizSetupModal.style.display = "block";
-            // Manually trigger a filter update when the modal opens
             updateQuizFiltersAndCount();
         } else {
             console.error("Quiz Setup Modal (#quizSetupModal) not found.");
