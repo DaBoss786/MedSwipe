@@ -130,15 +130,27 @@ async function loadQuestions(options = {}) {
       user_tier: accessTier,
       is_guest: isGuest,
       board_review_only: options.boardReviewOnly || false,
-      spaced_repetition: options.spacedRepetition || false
+      spaced_repetition: options.spacedRepetition || false,
+      // Add a flag to see if search was used
+      search_used: !!options.prefilteredQuestions 
     });
   }
 
   try {
-    const allQuestionsData = await fetchQuestionBank();
-    console.log("Total questions fetched from bank:", allQuestionsData.length);
-
     let filteredQuestions = []; // Initialize as empty
+
+    // --- START: New logic to handle pre-filtered questions ---
+    if (options.prefilteredQuestions) {
+      console.log("Using pre-filtered questions from modal search.");
+      filteredQuestions = options.prefilteredQuestions;
+    } else {
+      // This is the original logic block that runs if no search was performed
+      const allQuestionsData = await fetchQuestionBank();
+      console.log("Total questions fetched from bank:", allQuestionsData.length);
+    // --- END: New logic ---
+
+    
+
     const accessTier = window.authState?.accessTier || 'free_guest';
 
     // ==================================================
@@ -315,6 +327,7 @@ async function loadQuestions(options = {}) {
       // ==================================================
       // == END: EXISTING QUIZ LOGIC
       // ==================================================
+    }
     }
 
     // --- Common logic for ALL quiz types ---

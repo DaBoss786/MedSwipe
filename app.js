@@ -112,6 +112,8 @@ try {
 
 let selectedSpecialty = null;
 let selectedExperienceLevel = null;
+let fullQuestionBank = []; // To hold all questions for searching
+let modalFilteredQuestions = []; // To hold the results of the modal's filters
 
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
@@ -3278,6 +3280,82 @@ async function updateReviewQueue() {
   }
 }
 
+// --- START: New Search/Filter Logic ---
+
+// Debounce function to prevent the search from running on every single keystroke
+function debounce(func, delay) {
+  let timeout;
+  return function(...args) {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
+// This is the core function that filters questions and updates the UI
+async function updateQuizFiltersAndCount() {
+  const searchInput = document.getElementById('modalSearchInput');
+  const categorySelect = document.getElementById('modalCategorySelect');
+  const boardReviewCheckbox = document.getElementById('modalBoardReviewOnly');
+  const helperText = document.getElementById('modalSearchHelper');
+  const numQuestionsInput = document.getElementById('modalNumQuestions');
+  const startQuizBtn = document.getElementById('modalStartQuiz');
+
+  if (!searchInput || !helperText || !numQuestionsInput || !startQuizBtn) return;
+
+  const searchTerm = searchInput.value.toLowerCase().trim();
+  const selectedCategory = categorySelect.value;
+  const boardReviewOnly = boardReviewCheckbox.checked;
+
+  // Filter the full question bank based on all active filters
+  modalFilteredQuestions = fullQuestionBank.filter(q => {
+    // 1. Category Filter
+    if (selectedCategory && q.Category !== selectedCategory) {
+      return false;
+    }
+    // 2. Board Review Filter
+    if (boardReviewOnly && q['Board Review'] !== true) {
+      return false;
+    }
+    // 3. Search Term Filter
+    if (searchTerm) {
+      const questionText = q.Question?.toLowerCase() || '';
+      const explanationText = q.Explanation?.toLowerCase() || '';
+      if (!questionText.includes(searchTerm) && !explanationText.includes(searchTerm)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const matchCount = modalFilteredQuestions.length;
+
+  // Update the helper text
+  if (searchTerm) {
+    helperText.textContent = `${matchCount} question${matchCount !== 1 ? 's' : ''} match your search.`;
+  } else {
+    helperText.innerHTML = '&nbsp;'; // Reset if search is empty
+  }
+
+  // Update the number of questions input
+  numQuestionsInput.value = matchCount;
+  numQuestionsInput.max = matchCount > 0 ? matchCount : 1; // Set the max value
+
+  // Enable or disable the start button
+  if (matchCount === 0) {
+    startQuizBtn.disabled = true;
+    if (searchTerm) { // Only show this specific message if they were searching
+        helperText.textContent = "No questions match your search and filters.";
+    }
+  } else {
+    startQuizBtn.disabled = false;
+  }
+}
+
+const debouncedFilterUpdate = debounce(updateQuizFiltersAndCount, 300); // 300ms delay
+
+// --- END: New Search/Filter Logic ---
+
 // Set up event listeners for dashboard
 function setupDashboardEvents() {
 
@@ -3338,57 +3416,87 @@ if (cmeModuleBtn) {
       const newStartQuizBtn = startQuizBtn.cloneNode(true);
       startQuizBtn.parentNode.replaceChild(newStartQuizBtn, startQuizBtn);
   
-      newStartQuizBtn.addEventListener("click", function() {
-          const accessTier = window.authState?.accessTier;
-          const isAnonymousUser = auth.currentUser && auth.currentUser.isAnonymous;
-  
-          const spacedRepCheckbox = document.getElementById('modalSpacedRepetition');
-          const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.formGroup') : null;
-          
-          // --- START: Board Review Checkbox Visibility ---
-          const boardReviewCheckbox = document.getElementById('modalBoardReviewOnly');
-          const boardReviewContainer = document.getElementById('boardReviewOnlyContainer');
+      newStartQuizBtn.addEventListener("click", async function() { // <-- Made this async
+        // --- START: New logic to fetch questions and set up filters ---
+        if (fullQuestionBank.length === 0) {
+            try {
+                fullQuestionBank = await fetchQuestionBank();
+                console.log("Full question bank loaded for search modal.");
+            } catch (error) {
+                console.error("Could not load question bank for search:", error);
+                alert("Error preparing quiz options. Please try again.");
+                return;
+            }
+        }
 
-          if (boardReviewContainer) {
-              if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
-                  boardReviewContainer.style.display = 'block'; // Or 'flex' if your .formGroup uses flex
-                  console.log("Board Review Only option shown for tiered user.");
-              } else {
-                  boardReviewContainer.style.display = 'none';
-                  if (boardReviewCheckbox) {
-                      boardReviewCheckbox.checked = false; // Ensure it's unchecked if hidden
-                  }
-                  console.log("Board Review Only option hidden for free_guest/anonymous user.");
-              }
-          } else {
-              console.warn("Board Review Only container not found in quiz setup modal.");
-          }
-          // --- END: Board Review Checkbox Visibility ---
+        // Get references to all filter inputs inside the modal
+        const searchInput = document.getElementById('modalSearchInput');
+        const categorySelect = document.getElementById('modalCategorySelect');
+        const boardReviewCheckbox = document.getElementById('modalBoardReviewOnly');
+        const spacedRepCheckbox = document.getElementById('modalSpacedRepetition'); // Keep existing logic
 
-          if (spacedRepContainer) {
-              if (isAnonymousUser || accessTier === "free_guest") {
-                  spacedRepContainer.style.display = 'none';
-                  if (spacedRepCheckbox) spacedRepCheckbox.checked = false;
-                  console.log("Spaced repetition option hidden for guest/free_guest user.");
-              } else {
-                  spacedRepContainer.style.display = 'block';
-                  console.log("Spaced repetition option shown for tiered user.");
-              }
-          } else {
-              console.warn("Spaced repetition container or checkbox not found in quiz setup modal.");
-          }
-          
-          if (typeof populateCategoryDropdownForMainQuiz === 'function') {
-              populateCategoryDropdownForMainQuiz();
-          }
-  
-          const quizSetupModal = document.getElementById("quizSetupModal");
-          if (quizSetupModal) {
-              quizSetupModal.style.display = "block";
-          } else {
-              console.error("Quiz Setup Modal (#quizSetupModal) not found.");
-          }
-      });
+        // Attach listeners to all filters that trigger the debounced update
+        searchInput.addEventListener('input', debouncedFilterUpdate);
+        categorySelect.addEventListener('change', updateQuizFiltersAndCount); // No debounce needed for change events
+        boardReviewCheckbox.addEventListener('change', updateQuizFiltersAndCount);
+
+        // Reset search field and helper text each time modal is opened
+        searchInput.value = '';
+        document.getElementById('modalSearchHelper').innerHTML = '&nbsp;';
+        // --- END: New logic ---
+
+        const accessTier = window.authState?.accessTier;
+        const isAnonymousUser = auth.currentUser && auth.currentUser.isAnonymous;
+
+        // const spacedRepCheckbox = document.getElementById('modalSpacedRepetition'); // This line is now redundant
+        const spacedRepContainer = spacedRepCheckbox ? spacedRepCheckbox.closest('.formGroup') : null;
+        
+        // --- START: Board Review Checkbox Visibility ---
+        // const boardReviewCheckbox = document.getElementById('modalBoardReviewOnly'); // This line is now redundant
+        const boardReviewContainer = document.getElementById('boardReviewOnlyContainer');
+
+        if (boardReviewContainer) {
+            if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+                boardReviewContainer.style.display = 'block'; // Or 'flex' if your .formGroup uses flex
+                console.log("Board Review Only option shown for tiered user.");
+            } else {
+                boardReviewContainer.style.display = 'none';
+                if (boardReviewCheckbox) {
+                    boardReviewCheckbox.checked = false; // Ensure it's unchecked if hidden
+                }
+                console.log("Board Review Only option hidden for free_guest/anonymous user.");
+            }
+        } else {
+            console.warn("Board Review Only container not found in quiz setup modal.");
+        }
+        // --- END: Board Review Checkbox Visibility ---
+
+        if (spacedRepContainer) {
+            if (isAnonymousUser || accessTier === "free_guest") {
+                spacedRepContainer.style.display = 'none';
+                if (spacedRepCheckbox) spacedRepCheckbox.checked = false;
+                console.log("Spaced repetition option hidden for guest/free_guest user.");
+            } else {
+                spacedRepContainer.style.display = 'block';
+                console.log("Spaced repetition option shown for tiered user.");
+            }
+        } else {
+            console.warn("Spaced repetition container or checkbox not found in quiz setup modal.");
+        }
+        
+        if (typeof populateCategoryDropdownForMainQuiz === 'function') {
+            populateCategoryDropdownForMainQuiz();
+        }
+
+        const quizSetupModal = document.getElementById("quizSetupModal");
+        if (quizSetupModal) {
+            quizSetupModal.style.display = "block";
+            // Manually trigger a filter update when the modal opens
+            updateQuizFiltersAndCount();
+        } else {
+            console.error("Quiz Setup Modal (#quizSetupModal) not found.");
+        }
+    });
   }
   
   // Modal Start Quiz button
@@ -3399,32 +3507,20 @@ if (cmeModuleBtn) {
     modalStartQuiz.parentNode.replaceChild(newModalStartQuiz, modalStartQuiz);
 
     newModalStartQuiz.addEventListener("click", function() {
-      const category = document.getElementById("modalCategorySelect").value;
+      // We no longer need to read every filter here, just the ones that affect quiz loading
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
       const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
       
-      // --- START: Read Board Review Checkbox State ---
-      const boardReviewOnlyCheckbox = document.getElementById("modalBoardReviewOnly");
-      const boardReviewOnlyContainer = document.getElementById("boardReviewOnlyContainer");
-      let boardReviewOnly = false; // Default to false
-
-      // Only consider the checkbox if its container is visible (i.e., user has access)
-      if (boardReviewOnlyContainer && boardReviewOnlyContainer.style.display !== 'none' && boardReviewOnlyCheckbox) {
-          boardReviewOnly = boardReviewOnlyCheckbox.checked;
-      }
-      console.log("Board Review Only selected:", boardReviewOnly);
-      // --- END: Read Board Review Checkbox State ---
-      
       document.getElementById("quizSetupModal").style.display = "none";
       
+      // This is the key change: we pass our pre-filtered list of questions directly
       loadQuestions({
-        type: category ? 'custom' : 'random',
-        category: category,
         num: numQuestions,
         includeAnswered: includeAnswered,
         spacedRepetition: useSpacedRepetition,
-        boardReviewOnly: boardReviewOnly // <<< Pass the new option
+        // This new option will tell loadQuestions to use our list and skip its own filtering
+        prefilteredQuestions: modalFilteredQuestions 
       });
     });
   }
