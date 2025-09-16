@@ -3330,19 +3330,21 @@ async function updateQuizFiltersAndCount() {
 
   const matchCount = modalFilteredQuestions.length;
 
-  // Update the helper text
-  if (searchTerm) {
-    helperText.textContent = `${matchCount} question${matchCount !== 1 ? 's' : ''} match your search.`;
-  } else {
-    helperText.innerHTML = '&nbsp;'; // Reset if search is empty
-  }
-
-  // Update the number of questions input
-  numQuestionsInput.value = matchCount;
-  numQuestionsInput.max = matchCount > 0 ? matchCount : 1; // Set the max value
-
-  // Enable or disable the start button
-  if (matchCount === 0) {
+    // Update the helper text
+    if (searchTerm) {
+      helperText.textContent = `${matchCount} question${matchCount !== 1 ? 's' : ''} match your search.`;
+    } else {
+      helperText.innerHTML = '&nbsp;'; // Reset if search is empty
+    }
+  
+    // Update the number of questions input ONLY if a search is active
+    if (searchTerm) {
+      numQuestionsInput.value = matchCount;
+    }
+    numQuestionsInput.max = matchCount > 0 ? matchCount : 1; // ALWAYS set the max value
+  
+    // Enable or disable the start button
+    if (matchCount === 0) {
     startQuizBtn.disabled = true;
     if (searchTerm) { // Only show this specific message if they were searching
         helperText.textContent = "No questions match your search and filters.";
