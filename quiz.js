@@ -277,9 +277,7 @@ async function loadQuestions(options = {}) {
           relevantAnsweredIdsForCurrentYear = await fetchPersistentAnsweredIds();
         }
 
-        if (accessTier === "free_guest") {
-          filteredQuestions = filteredQuestions.filter(q => q.Free === true);
-        }
+        
 
         const currentSpecialtyForFilter = options.isOnboarding ? window.selectedSpecialty : userSpecialty;
         if (currentSpecialtyForFilter) {
@@ -328,6 +326,10 @@ async function loadQuestions(options = {}) {
       // == END: EXISTING QUIZ LOGIC
       // ==================================================
     }
+    }
+
+    if (accessTier === "free_guest") {
+      filteredQuestions = filteredQuestions.filter(q => q.Free === true);
     }
 
     // --- Common logic for ALL quiz types ---
