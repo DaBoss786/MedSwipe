@@ -84,6 +84,7 @@ async function handleDeepLink() {
     // It removes the `#/question/...` part from the URL in the browser's address bar without reloading.
     history.pushState("", document.title, window.location.pathname + window.location.search);
 
+    initializeCasePrepButton(); // FIX: Ensure Case Prep button works after deep link
     return true; // Let the app know that the deep link was successfully handled.
 
   } catch (error) {
@@ -95,6 +96,7 @@ async function handleDeepLink() {
     const mainOptions = document.getElementById("mainOptions");
     if (mainOptions) mainOptions.style.display = "flex";
 
+    initializeCasePrepButton(); // FIX: Ensure Case Prep button works after deep link error
     return true; // We still "handled" the link, even though it was an error.
   }
 }
@@ -942,216 +944,220 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
         });
     }
 
-        // ==================================================
-    // == START: Case Prep Feature Logic
     // ==================================================
+    // == START: Case Prep Feature Initialization Function
+    // ==================================================
+    function initializeCasePrepButton() {
+      console.log("Attaching Case Prep button event listeners...");
+      // --- Get references to all new Case Prep elements ---
+      const casePrepBtn = document.getElementById("casePrepBtn");
+      const casePrepIntroModal = document.getElementById("casePrepIntroModal");
+      const closeCasePrepIntroBtn = document.getElementById("closeCasePrepIntroBtn");
+      const continueCasePrepBtn = document.getElementById("continueCasePrepBtn");
+      const casePrepSetupModal = document.getElementById("casePrepSetupModal");
+      const startCasePrepBtn = document.getElementById("startCasePrepBtn");
+      const cancelCasePrepBtn = document.getElementById("cancelCasePrepBtn");
+      const procedureSelect = document.getElementById("casePrepProcedureSelect");
 
-    // --- Get references to all new Case Prep elements ---
-    const casePrepBtn = document.getElementById("casePrepBtn");
-    const casePrepIntroModal = document.getElementById("casePrepIntroModal");
-    const closeCasePrepIntroBtn = document.getElementById("closeCasePrepIntroBtn");
-    const continueCasePrepBtn = document.getElementById("continueCasePrepBtn");
-    const casePrepSetupModal = document.getElementById("casePrepSetupModal");
-    const startCasePrepBtn = document.getElementById("startCasePrepBtn");
-    const cancelCasePrepBtn = document.getElementById("cancelCasePrepBtn");
-    const procedureSelect = document.getElementById("casePrepProcedureSelect");
+         /**
+       * Populates the procedure dropdown based on the user's access tier AND specialty.
+       */
+         async function populateProcedureDropdown() { // <-- Made async
+          if (!procedureSelect) return;
+    
+          // Clear existing options
+          procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
+    
+                // --- START: Get User's Specialty (Handles both Registered and Anonymous) ---
+        let userSpecialty = null;
 
-       /**
-     * Populates the procedure dropdown based on the user's access tier AND specialty.
-     */
-       async function populateProcedureDropdown() { // <-- Made async
-        if (!procedureSelect) return;
-  
-        // Clear existing options
-        procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
-  
-              // --- START: Get User's Specialty (Handles both Registered and Anonymous) ---
-      let userSpecialty = null;
-
-      // 1. Prioritize Firestore for registered users
-      if (auth.currentUser && !auth.currentUser.isAnonymous) {
-        try {
-          const userDocRef = doc(db, 'users', auth.currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists() && userDocSnap.data().specialty) {
-            userSpecialty = userDocSnap.data().specialty;
-            console.log(`Registered user specialty found in Firestore: ${userSpecialty}`);
-          }
-        } catch (error) {
-          console.error("Error fetching user specialty for dropdown:", error);
-        }
-      }
-
-      // 2. Fallback to the window variable for anonymous users or if Firestore fails/is empty
-      if (!userSpecialty && window.selectedSpecialty) {
-        userSpecialty = window.selectedSpecialty;
-        console.log(`Using specialty from window (for anonymous/onboarding user): ${userSpecialty}`);
-      }
-
-      if (!userSpecialty) {
-          console.log("Could not determine user specialty from Firestore or window variable.");
-      }
-      // --- END: Get User's Specialty ---
-  
-        const accessTier = window.authState?.accessTier || 'free_guest';
-        const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
-  
-        const procedures = [
-          { name: "Thyroidectomy", premium: false, specialty: "ENT" },
-          { name: "Parotidectomy", premium: false, specialty: "ENT" },
-          { name: "Neck Dissection", premium: true, specialty: "ENT" },
-          { name: "Endoscopic Sinus Surgery", premium: true, specialty: "ENT" },
-          { name: "Septoplasty", premium: true, specialty: "ENT" },
-          { name: "Rhinoplasty", premium: true, specialty: "ENT" },
-          { name: "Tonsillectomy", premium: true, specialty: "ENT" },
-          { name: "Congenital Neck Masses", premium: true, specialty: "ENT" },
-          { name: "Mastoidectomy", premium: true, specialty: "ENT" },
-          { name: "Stapedectomy", premium: true, specialty: "ENT" },
-          { name: "Submandibular Gland Excision", premium: true, specialty: "ENT" },
-          { name: "Tracheostomy", premium: true, specialty: "ENT" },
-          { name: "Free Flaps", premium: true, specialty: "ENT" },
-          { name: "Mandible Fracture", premium: true, specialty: "ENT" },
-          { name: "Midface Trauma", premium: true, specialty: "ENT" },
-          { name: "Microlaryngoscopy", premium: true, specialty: "ENT" },
-        ];
-  
-        // --- START: Filter Procedures by Specialty ---
-        // If a specialty is found, filter the list. Otherwise, show nothing.
-        const specialtyProcedures = userSpecialty
-          ? procedures.filter(proc => proc.specialty === userSpecialty)
-          : []; // Default to an empty array if no specialty is set
-        // --- END: Filter Procedures by Specialty ---
-  
-        // Use the filtered list to populate the dropdown
-        specialtyProcedures.forEach(proc => { // <-- Changed to specialtyProcedures
-          const option = document.createElement('option');
-          option.value = proc.name;
-          option.textContent = proc.name;
-  
-          if (proc.premium && !hasPremiumAccess) {
-            option.disabled = true;
-            option.textContent += " (Subscription Required)";
-          }
-          
-          procedureSelect.appendChild(option);
-        });
-      }
-
-    /**
-     * Sets a flag in Firestore indicating the user has seen the Case Prep intro.
-     */
-    async function setCasePrepIntroSeen() {
-      if (!auth.currentUser || auth.currentUser.isAnonymous) return;
-      try {
-        const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userDocRef, {
-          casePrepIntroSeen: true
-        });
-        console.log("Firestore updated: casePrepIntroSeen set to true.");
-      } catch (error) {
-        console.error("Error setting casePrepIntroSeen flag:", error);
-      }
-    }
-
-    // --- Event Listener for the main "Case Prep" button on the dashboard ---
-    if (casePrepBtn) {
-      casePrepBtn.addEventListener("click", async () => {
-        console.log("Case Prep button clicked.");
-
-        // This check is important to make sure Firebase is ready.
-        if (!auth.currentUser) {
-          console.warn("Auth is not ready yet, please wait a moment.");
-          return;
-        }
-
-        // NEW LOGIC: Handle anonymous and registered users differently.
-        if (auth.currentUser.isAnonymous) {
-          // --- ANONYMOUS USER FLOW ---
-          // They can't have a saved flag, so always show the intro.
-          console.log("Anonymous user detected. Showing intro modal directly.");
-          if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
-        } else {
-          // --- REGISTERED USER FLOW (Original Logic) ---
-          // Check Firestore to see if they've seen the intro before.
-          console.log("Registered user detected. Checking Firestore for intro flag.");
+        // 1. Prioritize Firestore for registered users
+        if (auth.currentUser && !auth.currentUser.isAnonymous) {
           try {
             const userDocRef = doc(db, 'users', auth.currentUser.uid);
             const userDocSnap = await getDoc(userDocRef);
-
-            if (userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen) {
-              // User has seen the intro, show the setup modal directly.
-              console.log("User has seen intro. Showing setup modal.");
-              populateProcedureDropdown();
-              if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
-            } else {
-              // First-time registered user, show the intro modal.
-              console.log("First-time registered user. Showing intro modal.");
-              if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+            if (userDocSnap.exists() && userDocSnap.data().specialty) {
+              userSpecialty = userDocSnap.data().specialty;
+              console.log(`Registered user specialty found in Firestore: ${userSpecialty}`);
             }
           } catch (error) {
-            console.error("Error checking for case prep intro flag:", error);
-            // Fallback to showing the intro modal on any error.
-            if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+            console.error("Error fetching user specialty for dropdown:", error);
           }
         }
-      });
-    }
 
-    // --- Event Listeners for the Intro Modal ---
-    if (continueCasePrepBtn) {
-      continueCasePrepBtn.addEventListener("click", () => {
-        if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
-        populateProcedureDropdown();
-        if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
-        setCasePrepIntroSeen(); // Mark as seen in Firestore
-      });
-    }
-    if (closeCasePrepIntroBtn) {
-      closeCasePrepIntroBtn.addEventListener("click", () => {
-        if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
-      });
-    }
-
-    // --- Event Listeners for the Setup Modal ---
-    if (startCasePrepBtn) {
-      startCasePrepBtn.addEventListener("click", () => {
-        const selectedProcedure = procedureSelect.value;
-        const numQuestions = parseInt(document.getElementById("casePrepNumQuestions").value) || 10;
-        const includeAnswered = document.getElementById("casePrepIncludeAnswered").checked;
-
-        if (!selectedProcedure) {
-          alert("Please select a procedure to begin.");
-          return;
+        // 2. Fallback to the window variable for anonymous users or if Firestore fails/is empty
+        if (!userSpecialty && window.selectedSpecialty) {
+          userSpecialty = window.selectedSpecialty;
+          console.log(`Using specialty from window (for anonymous/onboarding user): ${userSpecialty}`);
         }
 
-        if (casePrepSetupModal) casePrepSetupModal.style.display = "none";
-        
-        // We will add the logic for this in the next step (quiz.js)
-        console.log(`Starting Case Prep with options:`, {
-            quizType: 'case_prep',
-            procedure: selectedProcedure,
-            num: numQuestions,
-            includeAnswered: includeAnswered
-        });
+        if (!userSpecialty) {
+            console.log("Could not determine user specialty from Firestore or window variable.");
+        }
+        // --- END: Get User's Specialty ---
+    
+          const accessTier = window.authState?.accessTier || 'free_guest';
+          const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
+    
+          const procedures = [
+            { name: "Thyroidectomy", premium: false, specialty: "ENT" },
+            { name: "Parotidectomy", premium: false, specialty: "ENT" },
+            { name: "Neck Dissection", premium: true, specialty: "ENT" },
+            { name: "Endoscopic Sinus Surgery", premium: true, specialty: "ENT" },
+            { name: "Septoplasty", premium: true, specialty: "ENT" },
+            { name: "Rhinoplasty", premium: true, specialty: "ENT" },
+            { name: "Tonsillectomy", premium: true, specialty: "ENT" },
+            { name: "Congenital Neck Masses", premium: true, specialty: "ENT" },
+            { name: "Mastoidectomy", premium: true, specialty: "ENT" },
+            { name: "Stapedectomy", premium: true, specialty: "ENT" },
+            { name: "Submandibular Gland Excision", premium: true, specialty: "ENT" },
+            { name: "Tracheostomy", premium: true, specialty: "ENT" },
+            { name: "Free Flaps", premium: true, specialty: "ENT" },
+            { name: "Mandible Fracture", premium: true, specialty: "ENT" },
+            { name: "Midface Trauma", premium: true, specialty: "ENT" },
+            { name: "Microlaryngoscopy", premium: true, specialty: "ENT" },
+          ];
+    
+          // --- START: Filter Procedures by Specialty ---
+          // If a specialty is found, filter the list. Otherwise, show nothing.
+          const specialtyProcedures = userSpecialty
+            ? procedures.filter(proc => proc.specialty === userSpecialty)
+            : []; // Default to an empty array if no specialty is set
+          // --- END: Filter Procedures by Specialty ---
+    
+          // Use the filtered list to populate the dropdown
+          specialtyProcedures.forEach(proc => { // <-- Changed to specialtyProcedures
+            const option = document.createElement('option');
+            option.value = proc.name;
+            option.textContent = proc.name;
+    
+            if (proc.premium && !hasPremiumAccess) {
+              option.disabled = true;
+              option.textContent += " (Subscription Required)";
+            }
+            
+            procedureSelect.appendChild(option);
+          });
+        }
 
-        loadQuestions({
-            quizType: 'case_prep',
-            procedure: selectedProcedure,
-            num: numQuestions,
-            includeAnswered: includeAnswered
+      /**
+       * Sets a flag in Firestore indicating the user has seen the Case Prep intro.
+       */
+      async function setCasePrepIntroSeen() {
+        if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+        try {
+          const userDocRef = doc(db, 'users', auth.currentUser.uid);
+          await updateDoc(userDocRef, {
+            casePrepIntroSeen: true
+          });
+          console.log("Firestore updated: casePrepIntroSeen set to true.");
+        } catch (error) {
+          console.error("Error setting casePrepIntroSeen flag:", error);
+        }
+      }
+
+      // --- Event Listener for the main "Case Prep" button on the dashboard ---
+      if (casePrepBtn) {
+        casePrepBtn.addEventListener("click", async () => {
+          console.log("Case Prep button clicked.");
+
+          // This check is important to make sure Firebase is ready.
+          if (!auth.currentUser) {
+            console.warn("Auth is not ready yet, please wait a moment.");
+            return;
+          }
+
+          // NEW LOGIC: Handle anonymous and registered users differently.
+          if (auth.currentUser.isAnonymous) {
+            // --- ANONYMOUS USER FLOW ---
+            // They can't have a saved flag, so always show the intro.
+            console.log("Anonymous user detected. Showing intro modal directly.");
+            if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+          } else {
+            // --- REGISTERED USER FLOW (Original Logic) ---
+            // Check Firestore to see if they've seen the intro before.
+            console.log("Registered user detected. Checking Firestore for intro flag.");
+            try {
+              const userDocRef = doc(db, 'users', auth.currentUser.uid);
+              const userDocSnap = await getDoc(userDocRef);
+
+              if (userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen) {
+                // User has seen the intro, show the setup modal directly.
+                console.log("User has seen intro. Showing setup modal.");
+                populateProcedureDropdown();
+                if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
+              } else {
+                // First-time registered user, show the intro modal.
+                console.log("First-time registered user. Showing intro modal.");
+                if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+              }
+            } catch (error) {
+              console.error("Error checking for case prep intro flag:", error);
+              // Fallback to showing the intro modal on any error.
+              if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
+            }
+          }
         });
-      });
-    }
-    if (cancelCasePrepBtn) {
-      cancelCasePrepBtn.addEventListener("click", () => {
-        if (casePrepSetupModal) casePrepSetupModal.style.display = "none";
-      });
+      }
+
+      // --- Event Listeners for the Intro Modal ---
+      if (continueCasePrepBtn) {
+        continueCasePrepBtn.addEventListener("click", () => {
+          if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
+          populateProcedureDropdown();
+          if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
+          setCasePrepIntroSeen(); // Mark as seen in Firestore
+        });
+      }
+      if (closeCasePrepIntroBtn) {
+        closeCasePrepIntroBtn.addEventListener("click", () => {
+          if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
+        });
+      }
+
+      // --- Event Listeners for the Setup Modal ---
+      if (startCasePrepBtn) {
+        startCasePrepBtn.addEventListener("click", () => {
+          const selectedProcedure = procedureSelect.value;
+          const numQuestions = parseInt(document.getElementById("casePrepNumQuestions").value) || 10;
+          const includeAnswered = document.getElementById("casePrepIncludeAnswered").checked;
+
+          if (!selectedProcedure) {
+            alert("Please select a procedure to begin.");
+            return;
+          }
+
+          if (casePrepSetupModal) casePrepSetupModal.style.display = "none";
+          
+          // We will add the logic for this in the next step (quiz.js)
+          console.log(`Starting Case Prep with options:`, {
+              quizType: 'case_prep',
+              procedure: selectedProcedure,
+              num: numQuestions,
+              includeAnswered: includeAnswered
+          });
+
+          loadQuestions({
+              quizType: 'case_prep',
+              procedure: selectedProcedure,
+              num: numQuestions,
+              includeAnswered: includeAnswered
+          });
+        });
+      }
+      if (cancelCasePrepBtn) {
+        cancelCasePrepBtn.addEventListener("click", () => {
+          if (casePrepSetupModal) casePrepSetupModal.style.display = "none";
+        });
+      }
     }
     // ==================================================
-    // == END: Case Prep Feature Logic
+    // == END: Case Prep Feature Initialization Function
     // ==================================================
+    initializeCasePrepButton(); // Initialize the Case Prep button logic
     showMainToolbarInfo();
 });
+
 
 // Function to show the login form modal
 function showLoginForm(fromWelcomeScreen = false) {
