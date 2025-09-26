@@ -1941,7 +1941,7 @@ userData.trialType === "board_review" ? "board_review_trial" :
   }
 );
 
-// --- FINAL CORRECTED (v10): Daily Scheduled Function to Sync User Activity Status to MailerLite ---
+// --- Daily Scheduled Function to Sync User Activity Status to MailerLite ---
 exports.syncActivityToMailerLite = onSchedule(
   {
     schedule: "every day 22:00",
@@ -1976,6 +1976,7 @@ exports.syncActivityToMailerLite = onSchedule(
     let successCount = 0;
     let errorCount = 0;
     let skippedCount = 0;
+    let unsubscribedCount = 0;
     let retryCount = 0;
 
     // Process each user individually
@@ -2023,7 +2024,7 @@ exports.syncActivityToMailerLite = onSchedule(
               fields: {
                 inactivity_status: newStatus,
               },
-              resubscribe: true,
+              // Removed resubscribe: true to respect unsubscribes
             },
             {
               headers: {
@@ -2038,8 +2039,29 @@ exports.syncActivityToMailerLite = onSchedule(
 
         } catch (apiError) {
           const statusCode = apiError.response?.status;
+          const errorMessage = apiError.response?.data?.message || '';
+          const errorDetail = apiError.response?.data?.errors?.email?.[0] || '';
           
-          if (statusCode === 429) {
+          // Check if the error is because user is unsubscribed or doesn't exist
+          if (statusCode === 400 || statusCode === 422) {
+            // Check for unsubscribed status in various error message formats
+            if (errorMessage.toLowerCase().includes('unsubscribed') || 
+                errorDetail.toLowerCase().includes('unsubscribed') ||
+                errorMessage.toLowerCase().includes('subscriber not found') ||
+                errorDetail.toLowerCase().includes('does not exist')) {
+              unsubscribedCount++;
+              logger.info(`User ${userData.email} is unsubscribed or not in MailerLite. Skipping.`);
+              break; // Exit retry loop, don't retry for unsubscribed users
+            } else {
+              // Other 400/422 error - log and don't retry
+              errorCount++;
+              logger.error(
+                `Validation error for ${userData.email}. Status: ${statusCode}. Error:`,
+                apiError.response?.data || apiError.message
+              );
+              break;
+            }
+          } else if (statusCode === 429) {
             // Rate limit hit - wait and retry
             attempts++;
             if (attempts < 3) {
@@ -2074,7 +2096,7 @@ exports.syncActivityToMailerLite = onSchedule(
       }
     }
 
-    logger.info(`MailerLite sync completed. Processed: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}, Retries: ${retryCount}`);
+    logger.info(`MailerLite sync completed. Processed: ${successCount}, Errors: ${errorCount}, Skipped: ${skippedCount}, Unsubscribed/Not Found: ${unsubscribedCount}, Retries: ${retryCount}`);
   }
 );
 
