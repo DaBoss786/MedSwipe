@@ -327,6 +327,7 @@ let selectedSpecialty = null;
 let selectedExperienceLevel = null;
 let fullQuestionBank = []; // To hold all questions for searching
 let modalFilteredQuestions = []; // To hold the results of the modal's filters
+let selectedUsername = null;
 
 // --- Get reference to Firebase Callable Function ---
 let createCheckoutSessionFunction;
@@ -445,6 +446,13 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   const experienceContinueBtn = document.getElementById('experienceContinueBtn'); // <<<--- ADD
   const experienceOptionButtons = document.querySelectorAll('#experiencePickScreen .onboarding-option-button'); // <<<--- ADD
   // --- END NEW element references ---
+
+    // --- NEW element references for Username Screen ---
+    const usernamePickScreen = document.getElementById('usernamePickScreen');
+    const usernameContinueBtn = document.getElementById('usernameContinueBtn');
+    const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
+    const onboardingUsernameError = document.getElementById('onboardingUsernameError');
+    // --- END NEW element references ---
 
   // Initialize window properties if they don't exist, to be safe
   if (typeof window.selectedSpecialty === 'undefined') {
@@ -598,9 +606,9 @@ if (experienceOptionButtons.length > 0 && experienceContinueBtn) {
   experienceContinueBtn.disabled = !window.selectedExperienceLevel;
 }
 
-if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
-  experienceContinueBtn.addEventListener('click', async function() {
-    console.log("Experience Continue Btn Clicked. Current window.selectedExperienceLevel:", window.selectedExperienceLevel, "Current window.selectedSpecialty:", window.selectedSpecialty);
+if (experienceContinueBtn && experiencePickScreen && usernamePickScreen) {
+  experienceContinueBtn.addEventListener('click', function() {
+    console.log("Experience Continue Btn Clicked. Proceeding to username screen.");
 
     if (!window.selectedExperienceLevel) {
       alert("Please select your experience level.");
@@ -608,24 +616,55 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
     }
     if (!window.selectedSpecialty) {
       alert("Specialty not selected. Please go back and select a specialty.");
-      // Code to go back to specialty screen
-      experiencePickScreen.style.opacity = '0';
-      setTimeout(() => {
-          experiencePickScreen.style.display = 'none';
-          if (specialtyPickScreen) {
-              specialtyPickScreen.style.display = 'flex';
-              specialtyPickScreen.style.opacity = '1';
-          }
-      }, 500);
       return;
     }
     
+    experiencePickScreen.style.opacity = '0';
+    setTimeout(function() {
+      experiencePickScreen.style.display = 'none';
+      usernamePickScreen.style.display = 'flex';
+      usernamePickScreen.style.opacity = '1';
+      if(onboardingUsernameInput) onboardingUsernameInput.focus(); // Auto-focus the input field
+    }, 500);
+  });
+}
+
+// --- Username Screen Logic ---
+if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
+  // Enable/disable continue button based on input
+  onboardingUsernameInput.addEventListener('input', function() {
+    const username = this.value.trim();
+    if (username.length >= 3) {
+      usernameContinueBtn.disabled = false;
+      onboardingUsernameError.textContent = '';
+    } else {
+      usernameContinueBtn.disabled = true;
+      if (username.length > 0) {
+        onboardingUsernameError.textContent = 'Username must be at least 3 characters.';
+      } else {
+        onboardingUsernameError.textContent = '';
+      }
+    }
+  });
+
+  usernameContinueBtn.addEventListener('click', async function() {
+    const username = onboardingUsernameInput.value.trim();
+    if (username.length < 3) {
+      onboardingUsernameError.textContent = 'Username must be at least 3 characters long.';
+      return;
+    }
+    
+    // Store the username globally
+    window.selectedUsername = username;
+    console.log("Username selected and set on window:", window.selectedUsername);
+
     this.disabled = true;
     this.textContent = "Saving...";
 
     try {
-      await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel);
-      console.log("Successfully saved onboarding selections to Firestore.");
+      // Now we save all three selections
+      await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel, window.selectedUsername);
+      console.log("Successfully saved onboarding selections (including username) to Firestore.");
 
       if (analytics && window.selectedSpecialty) {
         setUserProperties(analytics, {
@@ -634,9 +673,9 @@ if (experienceContinueBtn && experiencePickScreen && onboardingLoadingScreen) {
         console.log(`GA User Property 'user_specialty' set to: ${window.selectedSpecialty}`);
       }
 
-      experiencePickScreen.style.opacity = '0';
+      usernamePickScreen.style.opacity = '0';
       setTimeout(function() {
-        experiencePickScreen.style.display = 'none';
+        usernamePickScreen.style.display = 'none';
         onboardingLoadingScreen.style.display = 'flex';
         setTimeout(function() {
           onboardingLoadingScreen.style.display = 'none';
@@ -1325,12 +1364,7 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     </div>
     
 
-    <form id="registerForm">
-      <div class="form-group">
-        <label for="registerUsername">Username (for Leaderboards)</label>
-        <input type="text" id="registerUsername" required>
-      </div>
-      
+    <form id="registerForm">      
       <div class="form-group">
         <label for="registerEmail">Email</label>
         <input type="email" id="registerEmail" required>
@@ -1416,7 +1450,7 @@ form.parentNode.replaceChild(newForm, form);
 newForm.addEventListener('submit', async function(e) {
   e.preventDefault();
   
-  const username = newForm.querySelector('#registerUsername').value;
+  const username = window.selectedUsername || generateGuestUsername(); // Use selected username or a fallback
   const email = newForm.querySelector('#registerEmail').value;
   const password = newForm.querySelector('#registerPassword').value;
   const errorElement = modalElement.querySelector('#registerError');

@@ -1164,7 +1164,7 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
    
 
 // NEW FUNCTION to save onboarding selections
-async function saveOnboardingSelections(specialty, experienceLevel) {
+async function saveOnboardingSelections(specialty, experienceLevel, username) {
   if (!auth || !auth.currentUser) {
     console.error("User not authenticated. Cannot save onboarding selections.");
     // Potentially throw an error or handle this case, though in onboarding,
@@ -1176,6 +1176,7 @@ async function saveOnboardingSelections(specialty, experienceLevel) {
   const userDocRef = doc(db, 'users', uid);
 
   const dataToSave = {
+    username: username,
     specialty: specialty,
     experienceLevel: experienceLevel,
     onboardingCompletedAt: serverTimestamp(), // Mark when these were saved
@@ -1192,19 +1193,17 @@ async function saveOnboardingSelections(specialty, experienceLevel) {
       // Document doesn't exist, so we're creating it with these onboarding details
       // and some essential defaults. auth.js will later merge/update if needed.
       console.log(`User doc for ${uid} (anonymous) not found during onboarding save. Creating with onboarding data.`);
-      const defaultGuestUsername = `Guest${Math.floor(Math.random() * 9000) + 1000}`; // Simple guest name
       // SLIM WRITE: Only write non-sensitive fields. The backend will add defaults.
-await setDoc(userDocRef, {
-  ...dataToSave,
-  username: defaultGuestUsername,
-  email: null,
-  createdAt: serverTimestamp(),
-  // --- SENSITIVE FIELDS REMOVED ---
-  // isRegistered, accessTier, etc., will be set by a Cloud Function.
-  stats: { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0 },
-  bookmarks: [],
-  cmeStats: { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0 },
-});
+      await setDoc(userDocRef, {
+        ...dataToSave,
+        email: null,
+        createdAt: serverTimestamp(),
+        // --- SENSITIVE FIELDS REMOVED ---
+        // isRegistered, accessTier, etc., will be set by a Cloud Function.
+        stats: { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0 },
+        bookmarks: [],
+        cmeStats: { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0 },
+      });
       console.log("New user document created with onboarding selections for UID:", uid);
     } else {
       // Document exists, merge the new data
@@ -1214,7 +1213,7 @@ await setDoc(userDocRef, {
   } catch (error) {
     console.error("Error saving onboarding selections to Firestore:", error);
     // Optionally, re-throw the error to be handled by the caller in app.js
-    throw error; 
+    throw error;
   }
 }
 

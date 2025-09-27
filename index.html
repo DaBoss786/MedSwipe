@@ -126,6 +126,27 @@
 <!-- == END Experience Level Pick Screen == -->
 <!-- ===================================== -->
 
+<!-- ===================================== -->
+<!-- == NEW Username Pick Screen        == -->
+<!-- ===================================== -->
+<div id="usernamePickScreen" class="onboarding-screen" style="display: none;">
+  <div class="onboarding-content">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
+    <h1 class="onboarding-title">Create Your Username</h1>
+    <p class="onboarding-subtitle">This will be displayed on leaderboards. You can change it anytime later.</p>
+    
+    <div class="form-group" style="width: 100%; max-width: 320px; margin-bottom: 30px;">
+      <input type="text" id="onboardingUsernameInput" placeholder="Enter your username" required minlength="3" style="text-align: center; font-size: 1.1rem; padding: 12px;">
+      <div class="form-error" id="onboardingUsernameError" style="min-height: 20px; margin-top: 8px;"></div>
+    </div>
+    
+    <button id="usernameContinueBtn" class="onboarding-primary-btn" disabled>Continue</button>
+  </div>
+</div>
+<!-- ===================================== -->
+<!-- == END Username Pick Screen        == -->
+<!-- ===================================== -->
+
   <!-- Onboarding Loading Screen -->
 <div id="onboardingLoadingScreen" class="loading-screen">
   <div class="loading-content">
