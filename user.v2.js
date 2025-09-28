@@ -1,5 +1,5 @@
 // user.js - TOP OF FILE
-import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc, updateProfile } from './firebase-config.js'; // Adjust path if needed
 
 // user.js - After imports
 
@@ -1209,6 +1209,32 @@ async function saveOnboardingSelections(specialty, experienceLevel, username) {
       // Document exists, merge the new data
       await setDoc(userDocRef, dataToSave, { merge: true });
       console.log("Onboarding selections saved for existing UID:", uid, dataToSave);
+    }
+
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      try {
+        const needsUpdate = currentUser.displayName !== username;
+        if (needsUpdate) {
+          await updateProfile(currentUser, { displayName: username });
+          console.log("Firebase Auth displayName updated to onboarding username for UID:", uid);
+        }
+      } catch (profileErr) {
+        console.warn("Unable to update Firebase Auth displayName during onboarding save:", profileErr);
+      }
+
+      if (updateUserProfileFunction && !currentUser.isAnonymous) {
+        try {
+          await updateUserProfileFunction({
+            username,
+            specialty,
+            experienceLevel
+          });
+          console.log("Server-side profile synced with onboarding selections for UID:", uid);
+        } catch (callableErr) {
+          console.warn("updateUserProfileFunction failed during onboarding save:", callableErr);
+        }
+      }
     }
 
     if (window.authState) {

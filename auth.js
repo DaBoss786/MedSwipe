@@ -137,16 +137,75 @@ async function handleOAuthResult(result, { providerKey, flow = 'login', marketin
   let finalizeResult = null;
   let referralCleared = false;
 
+  const resolveOnboardingUsername = () => {
+    try {
+      const maybeFromWindow = typeof window !== 'undefined' ? window.selectedUsername : null;
+      if (typeof maybeFromWindow === 'string' && maybeFromWindow.trim().length >= 3) {
+        return maybeFromWindow.trim();
+      }
+      const maybeFromAuthState = typeof window !== 'undefined' && window.authState && typeof window.authState.username === 'string'
+        ? window.authState.username
+        : null;
+      if (maybeFromAuthState && maybeFromAuthState.trim().length >= 3) {
+        return maybeFromAuthState.trim();
+      }
+    } catch (err) {
+      console.warn('Unable to resolve onboarding username from window context:', err);
+    }
+    return null;
+  };
+
+  const sanitizeProviderUsername = (candidate) => {
+    if (typeof candidate !== 'string') {
+      return null;
+    }
+    const trimmed = candidate.trim();
+    if (trimmed.length < 3) {
+      return null;
+    }
+    // Treat names with spaces as potential real names; prefer to generate a guest name instead.
+    if (/\s/.test(trimmed)) {
+      return null;
+    }
+    return trimmed;
+  };
+
+  const onboardingUsername = resolveOnboardingUsername();
+  let usernameForFinalize = onboardingUsername;
+  if (!usernameForFinalize) {
+    const displayNameCandidate = sanitizeProviderUsername(user?.displayName);
+    if (displayNameCandidate) {
+      usernameForFinalize = displayNameCandidate;
+    }
+  }
+  if (!usernameForFinalize) {
+    const derivedCandidate = sanitizeProviderUsername(
+      deriveDisplayName(user, additionalUserInfo?.profile)
+    );
+    if (derivedCandidate) {
+      usernameForFinalize = derivedCandidate;
+    }
+  }
+  if (!usernameForFinalize) {
+    usernameForFinalize = generateGuestUsername();
+  }
+
   if (isNewUser) {
     if (!finalizeRegistrationFunction) {
       throw new Error('Registration service is not available. Please try again later.');
     }
-    const username = deriveDisplayName(user, additionalUserInfo?.profile);
     finalizeResult = await finalizeRegistrationFunction({
-      username,
+      username: usernameForFinalize,
       marketingOptIn: Boolean(marketingOptIn),
       referrerId
     });
+    if (user?.displayName !== usernameForFinalize) {
+      try {
+        await updateProfile(user, { displayName: usernameForFinalize });
+      } catch (profileErr) {
+        console.warn('Failed to align Firebase Auth displayName after OAuth finalize:', profileErr);
+      }
+    }
     if (referrerId) {
       try {
         localStorage.removeItem(OAUTH_REFERRAL_STORAGE_KEY);
