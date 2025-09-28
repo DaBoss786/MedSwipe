@@ -15,36 +15,62 @@ async function updateUserMenuInfo(authState) {
       return;
   }
 
-  if (authState.user) { // Check if there's a Firebase user object
-      let displayName = 'User'; // Default
-      if (authState.user.isAnonymous) {
-          // For anonymous users, try to get username from Firestore if it was set
-          try {
-              const userDocRef = doc(db, 'users', authState.user.uid);
-              const userDocSnap = await getDoc(userDocRef);
-              if (userDocSnap.exists() && userDocSnap.data().username) {
-                  displayName = userDocSnap.data().username;
-              } else {
-                  displayName = 'Guest User'; // Fallback if no username in Firestore
-              }
-          } catch (error) {
-              console.error("Error fetching username for anonymous user:", error);
-              displayName = 'Guest User';
-          }
-      } else { // Registered user
-          displayName = authState.user.displayName || authState.user.email || 'Registered User';
-      }
-      usernameDisplay.textContent = displayName;
-      console.log(`User menu username updated by user-profile.js to: ${displayName}`);
-  } else {
-      // Should ideally not happen if auth.js always ensures an anonymous user
+  if (!authState || !authState.user) {
       usernameDisplay.textContent = 'Guest';
       console.log("User menu username set to 'Guest' by user-profile.js (no authState.user).");
+      if (window.authState) {
+          window.authState.username = null;
+          if (window.authState.user) {
+              window.authState.user.displayName = null;
+          }
+      }
+      return;
   }
 
-  // NOTE: All logic for adding/removing <li> items (Logout, Register, Login, Subscribe, Manage Sub)
-  // has been REMOVED from here. This will now be handled by updateUserMenu() in user.js.
-  // The visibility of manageSubscriptionBtn will also be handled there.
+  const { user } = authState;
+  let displayName = null;
+
+  if (typeof authState.username === 'string' && authState.username.trim()) {
+      displayName = authState.username.trim();
+  }
+
+  if (!displayName) {
+      try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+              const firestoreUsername = userDocSnap.data().username;
+              if (typeof firestoreUsername === 'string' && firestoreUsername.trim()) {
+                  displayName = firestoreUsername.trim();
+              }
+          }
+      } catch (error) {
+          console.error('Error fetching username for user menu:', error);
+      }
+  }
+
+  if (!displayName) {
+      if (user.isAnonymous) {
+          displayName = 'Guest User';
+      } else if (typeof user.displayName === 'string' && user.displayName.trim()) {
+          displayName = user.displayName.trim();
+      } else if (typeof user.email === 'string' && user.email.includes('@')) {
+          displayName = user.email.split('@')[0];
+      } else {
+          displayName = 'Registered User';
+      }
+  }
+
+  usernameDisplay.textContent = displayName;
+
+  if (window.authState) {
+      window.authState.username = displayName;
+      if (window.authState.user) {
+          window.authState.user.displayName = displayName;
+      }
+  }
+
+  console.log(`User menu username updated by user-profile.js to: ${displayName}`);
 }
 window.updateUserMenuInfo = updateUserMenuInfo;
 

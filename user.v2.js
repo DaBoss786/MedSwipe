@@ -1210,6 +1210,20 @@ async function saveOnboardingSelections(specialty, experienceLevel, username) {
       await setDoc(userDocRef, dataToSave, { merge: true });
       console.log("Onboarding selections saved for existing UID:", uid, dataToSave);
     }
+
+    if (window.authState) {
+      window.authState.username = username;
+      if (window.authState.user) {
+        window.authState.user.displayName = username;
+      }
+    }
+    if (typeof window.updateUserMenuInfo === "function") {
+      try {
+        await window.updateUserMenuInfo(window.authState);
+      } catch (updateErr) {
+        console.warn("updateUserMenuInfo failed after onboarding save:", updateErr);
+      }
+    }
   } catch (error) {
     console.error("Error saving onboarding selections to Firestore:", error);
     // Optionally, re-throw the error to be handled by the caller in app.js
