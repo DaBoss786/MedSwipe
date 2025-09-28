@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const forgotPasswordLink = document.getElementById('forgotPasswordLink');
   const createAccountBtn = document.getElementById('createAccountBtn');
   const continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
+  const oauthButtons = Array.from(document.querySelectorAll('[data-oauth-context="login-screen"]'));
+
+  if (window.__medswipeOAuthRedirectOutcome && window.__medswipeOAuthRedirectOutcome.status === 'error' && (!window.__medswipeOAuthRedirectOutcome.flow || window.__medswipeOAuthRedirectOutcome.flow === 'login')) {
+    if (loginError) {
+      loginError.textContent = getAuthErrorMessage(window.__medswipeOAuthRedirectOutcome.error || { message: 'Authentication did not complete. Please try again.' });
+    }
+    window.__medswipeOAuthRedirectOutcome = null;
+  }
   
   // Form validation flags
   let isEmailValid = false;
@@ -71,6 +79,18 @@ document.addEventListener('DOMContentLoaded', function() {
   // Update submit button state based on validation
   function updateSubmitButtonState() {
     submitButton.disabled = !(isEmailValid && isPasswordValid);
+  }
+
+  function toggleOauthButtonState(buttons, isLoading) {
+    buttons.forEach((btn) => {
+      btn.disabled = isLoading;
+      btn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+      if (isLoading) {
+        btn.classList.add('oauth-button--loading');
+      } else {
+        btn.classList.remove('oauth-button--loading');
+      }
+    });
   }
   
   // Toggle password visibility
@@ -151,7 +171,97 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 500);
     }
   }
-  
+
+  // Handle OAuth login
+  async function handleOAuthLogin(providerKey) {
+    if (!window.authFunctions?.oauthSignIn) {
+      console.error('OAuth sign-in function unavailable.');
+      if (loginError) {
+        loginError.textContent = 'Single sign-on is temporarily unavailable. Please use email and password.';
+      }
+      return;
+    }
+
+    if (loginError) {
+      loginError.textContent = '';
+    }
+
+    toggleOauthButtonState(oauthButtons, true);
+    loginLoader.classList.add('show');
+    const method = providerKey === 'google' ? 'google_oauth' : 'apple_oauth';
+    let keepLoaderVisible = false;
+
+    try {
+      const result = await window.authFunctions.oauthSignIn(providerKey, { flow: 'login' });
+      if (!result) {
+        throw new Error('OAuth sign-in did not return a result.');
+      }
+
+      if (result.status === 'redirect') {
+        keepLoaderVisible = true;
+        return;
+      }
+
+      if (result.status !== 'success') {
+        throw new Error('OAuth sign-in failed.');
+      }
+
+      if (result.isNewUser && result.flow === 'register') {
+        loginLoader.classList.remove('show');
+        if (typeof window.handleRegistrationSuccessFlow === 'function') {
+          hideLoginScreen();
+          try {
+            await window.handleRegistrationSuccessFlow({ finalizeResult: result.finalizeResult, method });
+          } catch (registrationError) {
+            console.error('OAuth registration completion error:', registrationError);
+            if (loginError) {
+              loginError.textContent = getAuthErrorMessage(registrationError);
+            }
+            if (typeof window.showLoginScreen === 'function') {
+              window.showLoginScreen();
+            }
+          }
+        } else {
+          hideLoginScreen();
+          const mainOptionsFallback = document.getElementById('mainOptions');
+          if (mainOptionsFallback) {
+            mainOptionsFallback.style.display = 'flex';
+          }
+        }
+        return;
+      }
+
+      hideLoginScreen();
+      sessionStorage.removeItem('pendingRedirectAfterRegistration');
+      const mainOptions = document.getElementById('mainOptions');
+      if (mainOptions) {
+        mainOptions.style.display = 'flex';
+      }
+      if (typeof ensureEventListenersAttached === 'function') {
+        ensureEventListenersAttached();
+      }
+      if (window.analytics && window.logEvent) {
+        window.logEvent(window.analytics, 'login', { method });
+      }
+    } catch (oauthError) {
+      console.error(providerKey + ' OAuth login error:', oauthError);
+      if (loginError) {
+        loginError.textContent = getAuthErrorMessage(oauthError);
+      }
+    } finally {
+      if (!keepLoaderVisible) {
+        loginLoader.classList.remove('show');
+      }
+      toggleOauthButtonState(oauthButtons, false);
+    }
+  }
+
+  if (oauthButtons.length) {
+    oauthButtons.forEach((btn) => {
+      btn.addEventListener('click', () => handleOAuthLogin(btn.getAttribute('data-oauth-provider')));
+    });
+  }
+
   // Get user-friendly error message
   function getAuthErrorMessage(error) {
     const errorCode = error.code;
@@ -167,6 +277,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'Incorrect password';
       case 'auth/too-many-requests':
         return 'Too many login attempts. Please try again later.';
+      case 'auth/popup-closed-by-user':
+        return 'The sign-in window was closed before completion.';
+      case 'auth/cancelled-popup-request':
+        return 'Another sign-in attempt is already in progress. Please wait and try again.';
+      case 'auth/popup-blocked':
+        return 'Your browser blocked the sign-in popup. Please enable pop-ups or try again.';
+      case 'auth/operation-not-supported-in-this-environment':
+        return 'This sign-in method is not supported in your current browser. Please try a different browser.';
+      case 'auth/account-exists-with-different-credential':
+        return 'An account already exists with the same email but a different sign-in method. Try signing in using your original method.';
+      case 'auth/credential-already-in-use':
+        return 'This sign-in credential is already in use. Try logging in instead.';
+      case 'auth/unauthorized-domain':
+        return 'This domain is not authorized for sign-in. Please contact support.';
       case 'auth/network-request-failed':
         return 'Network error. Please check your connection.';
       default:

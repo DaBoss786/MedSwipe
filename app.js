@@ -1199,6 +1199,88 @@ const viewAccreditationBtn = document.getElementById("viewCmeAccreditationBtn");
 });
 
 
+function toggleOAuthButtons(buttons, isLoading) {
+  buttons.forEach((btn) => {
+    btn.disabled = isLoading;
+    btn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    if (isLoading) {
+      btn.classList.add('oauth-button--loading');
+    } else {
+      btn.classList.remove('oauth-button--loading');
+    }
+  });
+}
+
+function consumeOAuthRedirectError(targetElement, expectedFlow) {
+  const outcome = window.__medswipeOAuthRedirectOutcome;
+  if (!outcome || outcome.status !== 'error') {
+    return;
+  }
+
+  if (expectedFlow && outcome.flow && outcome.flow !== expectedFlow) {
+    return;
+  }
+
+  if (targetElement) {
+    targetElement.textContent = getAuthErrorMessage(outcome.error || { message: 'Authentication did not complete. Please try again.' });
+  }
+
+  window.__medswipeOAuthRedirectOutcome = null;
+}
+
+async function handleRegistrationSuccessFlow({ finalizeResult, method }) {
+  const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+  if (postRegLoadingScreen) {
+    postRegLoadingScreen.style.display = 'flex';
+  }
+
+  try {
+    if (finalizeResult?.data?.promoApplied) {
+      sessionStorage.setItem('promoApplied', 'true');
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('No current user after registration.');
+    }
+
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      throw new Error('User document not found after registration.');
+    }
+
+    const freshUserData = userDocSnap.data();
+
+    const freshAuthState = {
+      user: currentUser,
+      isRegistered: true,
+      isLoading: false,
+      accessTier: freshUserData.accessTier || 'free_guest',
+      boardReviewActive: freshUserData.boardReviewActive || false,
+      boardReviewSubscriptionEndDate: freshUserData.boardReviewSubscriptionEndDate || null,
+      cmeSubscriptionActive: freshUserData.cmeSubscriptionActive || false,
+      cmeSubscriptionEndDate: freshUserData.cmeSubscriptionEndDate || null,
+      cmeCreditsAvailable: freshUserData.cmeCreditsAvailable || 0
+    };
+
+    window.authState = freshAuthState;
+    handleUserRouting(freshAuthState);
+
+    if (analytics) {
+      logEvent(analytics, 'sign_up', { method });
+    }
+  } finally {
+    if (postRegLoadingScreen) {
+      postRegLoadingScreen.style.display = 'none';
+    }
+  }
+}
+window.handleRegistrationSuccessFlow = handleRegistrationSuccessFlow;
+
 // Function to show the login form modal
 function showLoginForm(fromWelcomeScreen = false) {
   // Create login modal if it doesn't exist
@@ -1215,6 +1297,19 @@ function showLoginForm(fromWelcomeScreen = false) {
         <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
         <h2>Log In to MedSwipe</h2>
         <div id="loginError" class="auth-error"></div>
+        <div class="oauth-button-group">
+          <button type="button" class="oauth-button oauth-button--google" data-oauth-provider="google" data-oauth-context="login">
+            <img src="google-icon.svg" alt="" class="oauth-button__icon" aria-hidden="true">
+            <span class="oauth-button__label">Continue with Google</span>
+          </button>
+          <button type="button" class="oauth-button oauth-button--apple" data-oauth-provider="apple" data-oauth-context="login">
+            <svg class="oauth-button__icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+              <path fill="currentColor" d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z" />
+            </svg>
+            <span class="oauth-button__label">Continue with Apple</span>
+          </button>
+        </div>
+        <div class="oauth-divider"><span>or</span></div>
         <form id="loginForm">
           <div class="form-group">
             <label for="loginEmail">Email</label>
@@ -1241,16 +1336,18 @@ function showLoginForm(fromWelcomeScreen = false) {
     
     document.body.appendChild(loginModal);
     
+    const loginErrorEl = loginModal.querySelector('#loginError');
+
     // Add event listeners
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
-      const errorElement = document.getElementById('loginError');
-      
       try {
-        errorElement.textContent = '';
+        if (loginErrorEl) {
+          loginErrorEl.textContent = '';
+        }
         await window.authFunctions.loginUser(email, password);
 
         if (analytics) {
@@ -1266,10 +1363,84 @@ function showLoginForm(fromWelcomeScreen = false) {
         ensureEventListenersAttached(); // Make sure event listeners are attached
       } catch (error) {
         // Show error message
-        errorElement.textContent = getAuthErrorMessage(error);
+        if (loginErrorEl) {
+          loginErrorEl.textContent = getAuthErrorMessage(error);
+        }
       }
     });
     
+    const loginOauthButtons = Array.from(loginModal.querySelectorAll('[data-oauth-context="login"]'));
+    if (loginOauthButtons.length) {
+      const handleLoginOAuth = async (providerKey) => {
+        if (!window.authFunctions?.oauthSignIn) {
+          console.error('OAuth sign-in function unavailable.');
+          if (loginErrorEl) {
+            loginErrorEl.textContent = 'Single sign-on is temporarily unavailable. Please use email and password.';
+          }
+          return;
+        }
+
+        if (loginErrorEl) {
+          loginErrorEl.textContent = '';
+        }
+
+        toggleOAuthButtons(loginOauthButtons, true);
+        const method = providerKey === 'google' ? 'google_oauth' : 'apple_oauth';
+
+        try {
+          const result = await window.authFunctions.oauthSignIn(providerKey, { flow: 'login' });
+          if (!result) {
+            throw new Error('OAuth sign-in did not return a result.');
+          }
+
+          if (result.status === 'redirect') {
+            loginModal.style.display = 'none';
+            loginModal.setAttribute('data-oauth-redirect', 'true');
+            return;
+          }
+
+          if (result.status !== 'success') {
+            throw new Error('OAuth sign-in failed.');
+          }
+
+          if (result.isNewUser && result.flow === 'register') {
+            loginModal.style.display = 'none';
+            try {
+              await handleRegistrationSuccessFlow({ finalizeResult: result.finalizeResult, method });
+            } catch (registrationError) {
+              console.error('OAuth registration completion error:', registrationError);
+              if (loginErrorEl) {
+                loginErrorEl.textContent = getAuthErrorMessage(registrationError);
+              }
+              loginModal.style.display = 'flex';
+            }
+            return;
+          }
+
+          loginModal.style.display = 'none';
+          const mainOptions = document.getElementById('mainOptions');
+          if (mainOptions) {
+            mainOptions.style.display = 'flex';
+          }
+          ensureEventListenersAttached();
+          if (analytics) {
+            logEvent(analytics, 'login', { method });
+          }
+        } catch (oauthError) {
+          console.error(providerKey + ' OAuth login error:', oauthError);
+          if (loginErrorEl) {
+            loginErrorEl.textContent = getAuthErrorMessage(oauthError);
+          }
+        } finally {
+          toggleOAuthButtons(loginOauthButtons, false);
+        }
+      };
+
+      loginOauthButtons.forEach((btn) => {
+        btn.addEventListener('click', () => handleLoginOAuth(btn.getAttribute('data-oauth-provider')));
+      });
+    }
+
     document.getElementById('createAccountBtn').addEventListener('click', function() {
   loginModal.style.display = 'none';
   
@@ -1302,6 +1473,7 @@ function showLoginForm(fromWelcomeScreen = false) {
     }
   } else {
     // If modal already exists but we need to add/remove back button
+    loginModal.removeAttribute('data-oauth-redirect');
     const existingBackBtn = loginModal.querySelector('#backToWelcomeBtn');
     const modalContent = loginModal.querySelector('.auth-modal-content');
     
@@ -1327,6 +1499,9 @@ function showLoginForm(fromWelcomeScreen = false) {
     }
   }
   
+  const loginErrorForDisplay = loginModal.querySelector('#loginError');
+  consumeOAuthRedirectError(loginErrorForDisplay, 'login');
+
   // Show the modal
   loginModal.style.display = 'flex';
 }
@@ -1362,7 +1537,20 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
     <div id="referralOfferBanner" class="referral-offer-banner">
       <p>🎁 A friend referred you! Sign up and start a trial to get an extra week for free.</p>
     </div>
-    
+
+    <div class="oauth-button-group">
+      <button type="button" class="oauth-button oauth-button--google" data-oauth-provider="google" data-oauth-context="register">
+        <img src="google-icon.svg" alt="" class="oauth-button__icon" aria-hidden="true">
+        <span class="oauth-button__label">Sign up with Google</span>
+      </button>
+      <button type="button" class="oauth-button oauth-button--apple" data-oauth-provider="apple" data-oauth-context="register">
+        <svg class="oauth-button__icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+          <path fill="currentColor" d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z" />
+        </svg>
+        <span class="oauth-button__label">Sign up with Apple</span>
+      </button>
+    </div>
+    <div class="oauth-divider"><span>or</span></div>
 
     <form id="registerForm">      
       <div class="form-group">
@@ -1428,6 +1616,9 @@ if (window.displayReferralBanner) {
   window.displayReferralBanner();
 }
 
+const registerErrorEl = registerModal.querySelector('#registerError');
+consumeOAuthRedirectError(registerErrorEl, 'register');
+
 registerModal.style.display = 'flex';
 }
 window.showRegisterForm = showRegisterForm; // Ensure it's globally available
@@ -1469,7 +1660,7 @@ newForm.addEventListener('submit', async function(e) {
     if (postRegLoadingScreen) {
       postRegLoadingScreen.style.display = 'flex';
     }
-    
+
     // Register the user
     let result;
     if (window.authState.user && window.authState.user.isAnonymous) {
@@ -1479,76 +1670,16 @@ newForm.addEventListener('submit', async function(e) {
       // Pass referrerId to the register function
       result = await window.authFunctions.registerUser(email, password, username, referrerId);
     }
-    
+
     // --- START: New Referral Logic ---
-    // If registration was successful, clear the referrer ID from localStorage
-    // so it's not accidentally used again for another account on the same browser.
     if (referrerId) {
         localStorage.removeItem('medswipeReferrerId');
         console.log("Referral ID used and cleared from localStorage.");
     }
     // --- END: New Referral Logic ---
-    
-    // Check if promotion was applied
-    if (result && result.data && result.data.promoApplied) {
-      console.log("Promotion was successfully applied! Setting flag for welcome message.");
-      sessionStorage.setItem('promoApplied', 'true');
-    }
-    
-    // Log analytics
-    if (analytics) {
-      logEvent(analytics, 'sign_up', { method: 'email_password' });
-    }
-    
-    // CRITICAL: Wait a moment for Firestore to be fully updated
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Now manually fetch the fresh user data
-    console.log("Fetching fresh user data after registration...");
-    const currentUser = auth.currentUser;
-    
-    if (currentUser) {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-      
-      if (userDocSnap.exists()) {
-        const freshUserData = userDocSnap.data();
-        
-        // Build a complete authState object with fresh data
-        const freshAuthState = {
-          user: currentUser,
-          isRegistered: true,
-          isLoading: false,
-          accessTier: freshUserData.accessTier || 'free_guest',
-          boardReviewActive: freshUserData.boardReviewActive || false,
-          boardReviewSubscriptionEndDate: freshUserData.boardReviewSubscriptionEndDate || null,
-          cmeSubscriptionActive: freshUserData.cmeSubscriptionActive || false,
-          cmeSubscriptionEndDate: freshUserData.cmeSubscriptionEndDate || null,
-          cmeCreditsAvailable: freshUserData.cmeCreditsAvailable || 0
-        };
-        
-        // Hide loading screen
-        if (postRegLoadingScreen) {
-          postRegLoadingScreen.style.display = 'none';
-        }
-        
-        // Use our new, centralized routing function with the fresh data
-        handleUserRouting(freshAuthState);
-        
-        // Also update the global authState for consistency
-        window.authState = freshAuthState;
-        
-      } else {
-        console.error("User document not found after registration!");
-        if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
-        modalElement.style.display = 'flex';
-      }
-    } else {
-      console.error("No current user after registration!");
-      if (postRegLoadingScreen) postRegLoadingScreen.style.display = 'none';
-      modalElement.style.display = 'flex';
-    }
-    
+
+    await handleRegistrationSuccessFlow({ finalizeResult: result, method: 'email_password' });
+
   } catch (error) {
     console.error("Full registration error object:", error);
     if (errorElement) errorElement.textContent = getAuthErrorMessage(error);
@@ -1560,6 +1691,84 @@ newForm.addEventListener('submit', async function(e) {
     modalElement.style.display = 'flex';
   }
 });
+}
+
+const registerOauthButtons = Array.from(modalElement.querySelectorAll('[data-oauth-context="register"]'));
+if (registerOauthButtons.length) {
+  const handleRegisterOAuth = async (providerKey) => {
+    if (!window.authFunctions?.oauthSignIn) {
+      console.error('OAuth sign-up function unavailable.');
+      if (errorElement) {
+        errorElement.textContent = 'Single sign-on is temporarily unavailable. Please try again later.';
+      }
+      return;
+    }
+
+    if (errorElement) {
+      errorElement.textContent = '';
+    }
+
+    toggleOAuthButtons(registerOauthButtons, true);
+    const marketingOptInField = modalElement.querySelector('#marketingOptIn');
+    const marketingOptIn = marketingOptInField ? !!marketingOptInField.checked : false;
+    const method = providerKey === 'google' ? 'google_oauth' : 'apple_oauth';
+
+    try {
+      const result = await window.authFunctions.oauthSignIn(providerKey, { flow: 'register', marketingOptIn });
+      if (!result) {
+        throw new Error('OAuth sign-in did not return a result.');
+      }
+
+      if (result.status === 'redirect') {
+        modalElement.style.display = 'none';
+        const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+        if (postRegLoadingScreen) {
+          postRegLoadingScreen.style.display = 'flex';
+        }
+        return;
+      }
+
+      if (result.status !== 'success') {
+        throw new Error('OAuth sign-in failed.');
+      }
+
+      if (result.isNewUser && result.flow === 'register') {
+        modalElement.style.display = 'none';
+        await handleRegistrationSuccessFlow({ finalizeResult: result.finalizeResult, method });
+        return;
+      }
+
+      // Existing user fallback: treat as login
+      modalElement.style.display = 'none';
+      const mainOptions = document.getElementById('mainOptions');
+      if (mainOptions) {
+        mainOptions.style.display = 'flex';
+      }
+      ensureEventListenersAttached();
+      sessionStorage.removeItem('pendingRedirectAfterRegistration');
+      if (analytics) {
+        logEvent(analytics, 'login', { method });
+      }
+    } catch (oauthError) {
+      console.error(providerKey + ' OAuth registration error:', oauthError);
+      if (errorElement) {
+        errorElement.textContent = getAuthErrorMessage(oauthError);
+      }
+      const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
+      if (postRegLoadingScreen) {
+        postRegLoadingScreen.style.display = 'none';
+      }
+      if (modalElement.style.display === 'none') {
+        modalElement.style.display = 'flex';
+      }
+    } finally {
+      toggleOAuthButtons(registerOauthButtons, false);
+    }
+  };
+
+  registerOauthButtons.forEach((btn) => {
+    btn.addEventListener('click', () => handleRegisterOAuth(btn.getAttribute('data-oauth-provider')));
+  });
 }
 
 if (goToLoginBtn) {
@@ -1638,6 +1847,20 @@ function getAuthErrorMessage(error) {
       return 'An account with this email already exists';
     case 'auth/weak-password':
       return 'Password is too weak';
+    case 'auth/popup-closed-by-user':
+      return 'The sign-in window was closed before completion.';
+    case 'auth/cancelled-popup-request':
+      return 'Another sign-in attempt is already in progress. Please wait and try again.';
+    case 'auth/popup-blocked':
+      return 'Your browser blocked the sign-in popup. Please enable pop-ups or try again.';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'This sign-in method is not supported in your current browser. Please try a different browser.';
+    case 'auth/account-exists-with-different-credential':
+      return 'An account already exists with the same email but a different sign-in method. Try signing in using your original method.';
+    case 'auth/credential-already-in-use':
+      return 'This sign-in credential is already in use. Try logging in instead.';
+    case 'auth/unauthorized-domain':
+      return 'This domain is not authorized for sign-in. Please contact support.';
     case 'auth/network-request-failed':
       return 'Network error - please check your connection';
     default:
@@ -1647,6 +1870,27 @@ function getAuthErrorMessage(error) {
 
 // Main app initialization
 window.addEventListener('load', function() {
+  if (window.authFunctions?.oauthRedirectPromise) {
+    window.authFunctions.oauthRedirectPromise
+      .then((outcome) => {
+        if (!outcome || outcome.status !== 'success') {
+          return;
+        }
+
+        if (outcome.finalizeResult?.data?.promoApplied) {
+          sessionStorage.setItem('promoApplied', 'true');
+        }
+
+        if (outcome.flow === 'register' && outcome.isNewUser && window.analytics && window.logEvent) {
+          const method = outcome.provider ? `${outcome.provider}_oauth` : 'oauth';
+          window.logEvent(window.analytics, 'sign_up', { method });
+        }
+      })
+      .catch((err) => {
+        console.error('OAuth redirect processing error:', err);
+      });
+  }
+
   // Ensure functions are globally available
   window.updateUserXP = updateUserXP || function() {
     console.log("updateUserXP not loaded yet");

@@ -1,0 +1,21 @@
+You are an expert front-end engineer working on a Firebase-backed web app called MedSwipe. The backend already has Google and Apple authentication providers fully configured. Your task is to implement OAuth sign-in options in both the registration and login modals of the web experience.
+
+Project context:
+- The app is a modern board review multiple choice quiz app. The existing codebase uses vanilla HTML, CSS (see styles.css), and modular JavaScript (e.g., app.js, auth.js, user.js) without a framework.
+- Firebase client initialization lives in firebase-config.js, and auth-related helpers are in auth.js.
+- The onboarding flow lets users choose a pricing tier prior to authentication; after successful sign-up (including Google/Apple OAuth) users must be routed to the pricing screen they selected.
+
+Implementation requirements:
+1. Add visually prominent Google and Apple single-sign-on buttons to both the registration modal and login modal. Ensure the UI feels clean, modern, and consistent with the existing brand styling (rounded corners, soft shadows, subtle gradients, appropriate spacing, responsive behavior). Leverage existing CSS tokens or add scoped styles if needed.
+2. Hook each button into Firebase Authentication using the already-configured GoogleAuthProvider and OAuthProvider('apple.com'). Support both sign-in and sign-up flows:
+   - Registration modal: After a successful OAuth flow, create/load the Firebase user, ensure any required Firestore profile creation logic runs, and then programmatically navigate the user to the pricing screen corresponding to the plan they just selected in the onboarding flow. Preserve existing analytics or referral tracking behavior.
+   - Login modal: After a successful OAuth flow, simply authenticate the user and close the modal, then continue the standard post-login handling (dashboard load, state updates, etc.).
+3. Handle error states gracefully with user-friendly messaging and logging. Display inline alerts within the modal if OAuth fails or is cancelled.
+4. Refactor duplicated modal logic if necessary so that button markup and handlers are shared cleanly between registration and login components without breaking current email/password flows.
+5. Update any related utility modules or routing logic to support redirecting to the correct pricing page after OAuth sign-up. Make sure deep links (e.g., if the user selected a plan before opening the modal) continue to function.
+6. Test across desktop and mobile breakpoints to ensure the buttons render correctly and the modals remain accessible (keyboard focus, ARIA labels, contrast).
+
+Deliverables:
+- Updated HTML/CSS/JS implementing the new OAuth buttons and flows.
+- Any new helper functions or refactors documented with clear comments.
+- Confirmation of successful testing of both OAuth providers in registration and login scenarios, including redirect to the chosen pricing screen after sign-up.

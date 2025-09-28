@@ -7,7 +7,7 @@ import {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
 import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, EmailAuthProvider, linkWithCredential } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, EmailAuthProvider, linkWithCredential, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, getAdditionalUserInfo } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js"; // Added Functions import
 
 // Firebase configuration
@@ -61,34 +61,41 @@ console.log("Checking for ReCAPTCHA:", window.grecaptcha ? "Found" : "Not found"
 console.log("Firebase App Check available:", typeof initializeAppCheck !== 'undefined' ? "Yes" : "No");
 
 // Export initialized services for other modules to import
-export { 
-  app, 
-  analytics, 
-  db, 
-  auth, 
-  functionsInstance as functions, // Export as "functions" to match expected naming
+export {
+ app,
+  analytics,
+  db,
+  auth,
+  functionsInstance as functions,
+  // Export as "functions" to match expected naming
   logEvent,
-  setUserProperties, 
-  doc, 
-  runTransaction, 
-  getDoc, 
-  addDoc, 
-  collection, 
-  serverTimestamp, 
-  getDocs, 
-  setDoc, 
+  setUserProperties,
+  doc,
+  runTransaction,
+  getDoc,
+  addDoc,
+  collection,
+  serverTimestamp,
+  getDocs,
+  setDoc,
   updateDoc,
-  onAuthStateChanged, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signInAnonymously, 
-  signOut, 
-  updateProfile, 
-  sendPasswordResetEmail, 
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInAnonymously,
+  signOut,
+  updateProfile,
+  sendPasswordResetEmail,
   getIdToken,
   httpsCallable,
   EmailAuthProvider,
   linkWithCredential,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  getAdditionalUserInfo,
   query,
   where
 };

@@ -270,6 +270,19 @@
       <h1 class="login-title">Welcome Back</h1>
     </div>
 
+        <div class="oauth-button-group">
+      <button type="button" class="oauth-button oauth-button--google" data-oauth-provider="google" data-oauth-context="login-screen">
+        <img src="google-icon.svg" alt="" class="oauth-button__icon" aria-hidden="true">
+        <span class="oauth-button__label">Continue with Google</span>
+      </button>
+      <button type="button" class="oauth-button oauth-button--apple" data-oauth-provider="apple" data-oauth-context="login-screen">
+        <svg class="oauth-button__icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+          <path fill="currentColor" d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z" />
+        </svg>
+        <span class="oauth-button__label">Continue with Apple</span>
+      </button>
+    </div>
+    <div class="oauth-divider"><span>or</span></div>
     <form id="loginScreenForm" class="login-form">
       <div class="form-group">
         <label for="loginScreenEmail">Email</label>

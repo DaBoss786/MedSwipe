@@ -19,7 +19,13 @@ import {
   updateProfile,
   // --- Added for linkWithCredential ---
   EmailAuthProvider,
-  linkWithCredential
+  linkWithCredential,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  getAdditionalUserInfo
   // --- End added ---
 } from './firebase-config.js';
 
@@ -58,6 +64,236 @@ function generateGuestUsername() {
   const num  = Math.floor(Math.random() * 9000) + 1000;
   return `${adj}${noun}${num}`;
 }
+
+// ----------------------------------------------------
+// OAuth provider helpers
+const OAUTH_CONTEXT_STORAGE_KEY = 'medswipeOAuthContext';
+const OAUTH_REFERRAL_STORAGE_KEY = 'medswipeReferrerId';
+
+function createOAuthProvider(providerKey) {
+  switch (providerKey) {
+    case 'google': {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      provider.addScope('email');
+      provider.addScope('profile');
+      return provider;
+    }
+    case 'apple': {
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
+      try {
+        const locale = (navigator?.language || 'en-US').replace('-', '_');
+        provider.setCustomParameters({ locale });
+      } catch (err) {
+        console.warn('Unable to set Apple provider locale:', err);
+      }
+      return provider;
+    }
+    default:
+      throw new Error('Unsupported OAuth provider: ' + providerKey);
+  }
+}
+
+function deriveDisplayName(user, profile) {
+  if (user?.displayName) {
+    return user.displayName;
+  }
+  const profileName = profile && (profile.name || profile.fullName || profile.displayName);
+  if (typeof profileName === 'string' && profileName.trim()) {
+    return profileName.trim();
+  }
+  if (profileName && typeof profileName === 'object') {
+    const firstName = profileName.firstName || profileName.givenName || profileName.nameFirst || '';
+    const lastName = profileName.lastName || profileName.familyName || profileName.nameLast || '';
+    const combined = `${firstName} ${lastName}`.trim();
+    if (combined) {
+      return combined;
+    }
+  }
+  if (user?.email) {
+    return user.email.split('@')[0];
+  }
+  return generateGuestUsername();
+}
+
+function shouldFallbackToRedirect(error) {
+  const code = error?.code;
+  return code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment';
+}
+
+function isUserCancelledError(error) {
+  const code = error?.code;
+  return code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
+}
+
+async function handleOAuthResult(result, { providerKey, flow = 'login', marketingOptIn = false, referrerId = null }) {
+  const additionalUserInfo = getAdditionalUserInfo(result);
+  const isNewUser = !!additionalUserInfo?.isNewUser;
+  const effectiveFlow = isNewUser ? 'register' : flow;
+  const user = result.user;
+
+  let finalizeResult = null;
+  let referralCleared = false;
+
+  if (isNewUser) {
+    if (!finalizeRegistrationFunction) {
+      throw new Error('Registration service is not available. Please try again later.');
+    }
+    const username = deriveDisplayName(user, additionalUserInfo?.profile);
+    finalizeResult = await finalizeRegistrationFunction({
+      username,
+      marketingOptIn: Boolean(marketingOptIn),
+      referrerId
+    });
+    if (referrerId) {
+      try {
+        localStorage.removeItem(OAUTH_REFERRAL_STORAGE_KEY);
+        referralCleared = true;
+      } catch (storageErr) {
+        console.warn('Failed to clear referral storage:', storageErr);
+      }
+    }
+  }
+
+  return {
+    status: 'success',
+    provider: providerKey,
+    flow: effectiveFlow,
+    user,
+    isNewUser,
+    finalizeResult,
+    referralCleared
+  };
+}
+
+async function processOAuthRedirectResult() {
+  let context = null;
+  try {
+    const stored = sessionStorage.getItem(OAUTH_CONTEXT_STORAGE_KEY);
+    if (stored) {
+      context = JSON.parse(stored);
+    }
+  } catch (err) {
+    console.warn('Invalid stored OAuth context payload:', err);
+  }
+
+  try {
+    const redirectResult = await getRedirectResult(auth);
+    if (!redirectResult) {
+      if (context) {
+        try {
+          sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
+        } catch (err) {
+          console.warn('Unable to clear OAuth context storage:', err);
+        }
+      }
+      return null;
+    }
+
+    const inferredProvider = redirectResult?.providerId === 'apple.com' ? 'apple' : 'google';
+    const providerKey = context?.providerKey || inferredProvider;
+    let referrerId = context?.referrerId;
+    if (typeof referrerId === 'undefined') {
+      try {
+        referrerId = localStorage.getItem(OAUTH_REFERRAL_STORAGE_KEY);
+      } catch (storageErr) {
+        console.warn('Unable to read referral storage after redirect:', storageErr);
+        referrerId = null;
+      }
+    }
+
+    const outcome = await handleOAuthResult(redirectResult, {
+      providerKey,
+      flow: context?.flow || 'login',
+      marketingOptIn: context?.marketingOptIn ?? false,
+      referrerId
+    });
+
+    try {
+      sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
+    } catch (err) {
+      console.warn('Unable to clear OAuth context storage:', err);
+    }
+    window.__medswipeOAuthRedirectOutcome = outcome;
+    window.dispatchEvent(new CustomEvent('oauthRedirectResult', { detail: outcome }));
+    return outcome;
+  } catch (error) {
+    try {
+      sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
+    } catch (err) {
+      console.warn('Unable to clear OAuth context storage:', err);
+    }
+    const detail = { status: 'error', error, flow: context?.flow || null, provider: context?.providerKey || null };
+    window.__medswipeOAuthRedirectOutcome = detail;
+    window.dispatchEvent(new CustomEvent('oauthRedirectResult', { detail }));
+    console.error('OAuth redirect error:', error);
+    return null;
+  }
+}
+
+async function oauthSignIn(providerKey, options = {}) {
+  const provider = createOAuthProvider(providerKey);
+  const flow = options.flow || 'login';
+  const marketingOptIn = Boolean(options.marketingOptIn);
+  let referrerId = options.referrerId;
+
+  if (typeof referrerId === 'undefined') {
+    try {
+      referrerId = localStorage.getItem(OAUTH_REFERRAL_STORAGE_KEY);
+    } catch (storageErr) {
+      console.warn('Unable to read referral storage for OAuth sign-in:', storageErr);
+      referrerId = null;
+    }
+  }
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return await handleOAuthResult(result, {
+      providerKey,
+      flow,
+      marketingOptIn,
+      referrerId
+    });
+  } catch (error) {
+    if (shouldFallbackToRedirect(error)) {
+      try {
+        sessionStorage.setItem(
+          OAUTH_CONTEXT_STORAGE_KEY,
+          JSON.stringify({
+            providerKey,
+            flow,
+            marketingOptIn,
+            referrerId
+          })
+        );
+      } catch (storageErr) {
+        console.warn('Unable to persist OAuth redirect context:', storageErr);
+      }
+
+      try {
+        await signInWithRedirect(auth, provider);
+        return { status: 'redirect', provider: providerKey, flow };
+      } catch (redirectError) {
+        try {
+          sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
+        } catch (err) {
+          console.warn('Unable to clear OAuth context storage:', err);
+        }
+        throw redirectError;
+      }
+    }
+
+    if (isUserCancelledError(error)) {
+      throw error;
+    }
+
+    throw error;
+  }
+}
+
+const oauthRedirectPromise = processOAuthRedirectResult();
 
 // ----------------------------------------------------
 // Initialize authentication system and set up listeners
@@ -453,7 +689,9 @@ window.authFunctions = {
   registerUser,
   loginUser,
   logoutUser,
-  upgradeAnonymousUser
+  upgradeAnonymousUser,
+  oauthSignIn,
+  oauthRedirectPromise
 };
 
 // Kick things off
