@@ -4789,6 +4789,11 @@ function setupEditProfileModalListeners() {
     switchToEditMode();
   });
 
+  document.getElementById('changeIntervalsLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    switchToEditMode();
+  });
+
   document.getElementById('cancelProfileChangesBtn').addEventListener('click', () => {
     // Before switching, reset edit fields to their original values from the view fields
     document.getElementById('editUsername').value = document.getElementById('viewUsername').textContent;
