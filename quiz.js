@@ -1377,35 +1377,31 @@ async function addDifficultyListeners(answerSlide, questionId, isCorrect) {
 
             const difficulty = this.getAttribute('data-difficulty');
 
-            // Calculate next review interval based on difficulty and correctness
-            let nextReviewInterval = 1; // Default 1 day
-            if (isCorrect) {
-                if (difficulty === 'easy') nextReviewInterval = 7;
-                else if (difficulty === 'medium') nextReviewInterval = 3;
-                else if (difficulty === 'hard') nextReviewInterval = 1;
-            } else {
-                nextReviewInterval = 1; // Always review incorrect soon
-            }
+// Call the updated function and wait for it to return the correct interval
+let finalInterval = 1; // Default to 1 in case of an error
+if (typeof updateSpacedRepetitionData === 'function') {
+    try {
+        // The function now returns the correct interval (custom or default)
+        finalInterval = await updateSpacedRepetitionData(questionId, isCorrect, difficulty);
+    } catch (e) {
+        console.error("Error calling updateSpacedRepetitionData:", e);
+    }
+} else {
+    console.error("updateSpacedRepetitionData function not found");
+}
 
-            // Store the spaced repetition data (ensure function exists)
-            if (typeof updateSpacedRepetitionData === 'function') {
-                 try {
-                     await updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval);
-                 } catch (e) { console.error("Error calling updateSpacedRepetitionData:", e); }
-            } else { console.error("updateSpacedRepetitionData function not found"); }
+// Show feedback to the user using the CORRECT interval
+const difficultyButtonsDiv = this.closest('.difficulty-buttons');
+if (difficultyButtonsDiv) {
+    const existingFeedback = difficultyButtonsDiv.querySelector('.review-scheduled');
+    if (existingFeedback) existingFeedback.remove();
 
-
-            // Show feedback to the user
-            const difficultyButtonsDiv = this.closest('.difficulty-buttons'); // Find the parent div
-            if (difficultyButtonsDiv) {
-                const existingFeedback = difficultyButtonsDiv.querySelector('.review-scheduled');
-                if(existingFeedback) existingFeedback.remove(); // Remove old feedback
-
-                const feedbackEl = document.createElement('p');
-                feedbackEl.className = 'review-scheduled';
-                feedbackEl.textContent = `Review scheduled in ${nextReviewInterval} ${nextReviewInterval === 1 ? 'day' : 'days'}`;
-                difficultyButtonsDiv.appendChild(feedbackEl); // Append feedback within the correct div
-            }
+    const feedbackEl = document.createElement('p');
+    feedbackEl.className = 'review-scheduled';
+    // Use the 'finalInterval' variable that was returned from our updated function
+    feedbackEl.textContent = `Review scheduled in ${finalInterval} ${finalInterval === 1 ? 'day' : 'days'}`;
+    difficultyButtonsDiv.appendChild(feedbackEl);
+}
 
             // Disable all buttons after selection
             currentButtons.forEach(b => b.disabled = true);

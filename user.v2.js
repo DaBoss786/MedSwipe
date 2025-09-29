@@ -957,7 +957,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Function to update spaced repetition data for a question
-async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nextReviewInterval) {
+async function updateSpacedRepetitionData(questionId, isCorrect, difficulty) {
   if (!auth || !auth.currentUser) {
     console.log("User not authenticated, can't update spaced repetition data");
     return;
@@ -1015,7 +1015,7 @@ transaction.update(userDocRef, {
   spacedRepetition: data.spacedRepetition
 });
     });
-    
+    return finalInterval;
     console.log(`Spaced repetition data updated for question ${questionId}`);
   } catch (error) {
     console.error("Error updating spaced repetition data:", error);

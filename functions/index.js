@@ -1495,6 +1495,7 @@ exports.updateUserProfile = onCall(
       'streaks',
       'specialty',
       'experienceLevel',
+      'spacedRepetitionSettings'
     ];
     
     // 3. Validate input data
