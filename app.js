@@ -1,5 +1,6 @@
 // app.js - Top of file
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged } from './firebase-config.js'; // Adjust path if needed
+import { generateGuestUsername } from './auth.js';
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections, fetchPersistentAnsweredIds } from './user.v2.js';
 import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
@@ -1641,7 +1642,8 @@ form.parentNode.replaceChild(newForm, form);
 newForm.addEventListener('submit', async function(e) {
   e.preventDefault();
   
-  const username = window.selectedUsername || generateGuestUsername(); // Use selected username or a fallback
+  const selectedUsername = typeof window.selectedUsername === 'string' ? window.selectedUsername.trim() : '';
+  const username = selectedUsername ? selectedUsername : generateGuestUsername(); // Use selected username or generate one
   const email = newForm.querySelector('#registerEmail').value;
   const password = newForm.querySelector('#registerPassword').value;
   const errorElement = modalElement.querySelector('#registerError');
@@ -6690,3 +6692,4 @@ if (viewAccreditationInfoBtn) {
 } else {
     console.error("View Accreditation button on Info Screen (#viewAccreditationInfoBtn) not found.");
 }
+

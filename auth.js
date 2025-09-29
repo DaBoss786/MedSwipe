@@ -56,7 +56,7 @@ window.authState = {
 
 // ----------------------------------------------------
 // Helper: generate a guest-style username
-function generateGuestUsername() {
+export function generateGuestUsername() {
   const adjectives = ['Curious', 'Medical', 'Swift', 'Learning', 'Aspiring'];
   const nouns      = ['Learner', 'Student', 'User', 'Doctor', 'Practitioner'];
   const adj  = adjectives[Math.floor(Math.random() * adjectives.length)];
@@ -742,6 +742,9 @@ async function logoutUser() {
 
 // ----------------------------------------------------
 // Expose functions globally if needed by UI scripts
+// Provide guest username helper globally for modules that rely on dynamic import
+window.generateGuestUsername = generateGuestUsername;
+
 window.authFunctions = {
   isUserRegistered,
   getCurrentUser,
@@ -755,3 +758,4 @@ window.authFunctions = {
 
 // Kick things off
 initAuth();
+
