@@ -967,6 +967,8 @@ async function updateSpacedRepetitionData(questionId, isCorrect, difficulty) {
   const userDocRef = doc(db, 'users', uid);
   
   try {
+    let finalInterval; // <<< FIX: Declare the variable OUTSIDE the transaction
+
     await runTransaction(db, async (transaction) => {
       const userDoc = await transaction.get(userDocRef);
       let data = userDoc.exists() ? userDoc.data() : {};
@@ -976,28 +978,28 @@ async function updateSpacedRepetitionData(questionId, isCorrect, difficulty) {
         data.spacedRepetition = {};
       }
       
-// Define default intervals
-let intervals = { hard: 1, medium: 3, easy: 7 };
+      // Define default intervals
+      let intervals = { hard: 1, medium: 3, easy: 7 };
 
-// Check for and use user's custom settings if they exist
-if (data.spacedRepetitionSettings) {
-    intervals.hard = data.spacedRepetitionSettings.hardInterval || 1;
-    intervals.medium = data.spacedRepetitionSettings.mediumInterval || 3;
-    intervals.easy = data.spacedRepetitionSettings.easyInterval || 7;
-}
+      // Check for and use user's custom settings if they exist
+      if (data.spacedRepetitionSettings) {
+          intervals.hard = data.spacedRepetitionSettings.hardInterval || 1;
+          intervals.medium = data.spacedRepetitionSettings.mediumInterval || 3;
+          intervals.easy = data.spacedRepetitionSettings.easyInterval || 7;
+      }
 
-// Calculate next review interval based on difficulty and correctness
-let finalInterval = intervals.hard; // Default for incorrect answers
-if (isCorrect) {
-    if (difficulty === 'easy') finalInterval = intervals.easy;
-    else if (difficulty === 'medium') finalInterval = intervals.medium;
-    else if (difficulty === 'hard') finalInterval = intervals.hard;
-}
+      // Calculate next review interval based on difficulty and correctness
+      finalInterval = intervals.hard; // <<< FIX: ASSIGN value, don't re-declare with 'let'
+      if (isCorrect) {
+          if (difficulty === 'easy') finalInterval = intervals.easy;
+          else if (difficulty === 'medium') finalInterval = intervals.medium;
+          else if (difficulty === 'hard') finalInterval = intervals.hard;
+      }
 
-// Calculate the next review date
-const now = new Date();
-const nextReviewDate = new Date();
-nextReviewDate.setDate(now.getDate() + finalInterval);
+      // Calculate the next review date
+      const now = new Date();
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(now.getDate() + finalInterval);
       
       // Update or create the question's spaced repetition data
       data.spacedRepetition[questionId] = {
@@ -1010,15 +1012,17 @@ nextReviewDate.setDate(now.getDate() + finalInterval);
       };
       
       // Update the user document
-      // Inside the runTransaction block...
-transaction.update(userDocRef, {
-  spacedRepetition: data.spacedRepetition
-});
+      transaction.update(userDocRef, {
+        spacedRepetition: data.spacedRepetition
+      });
     });
-    return finalInterval;
+
     console.log(`Spaced repetition data updated for question ${questionId}`);
+    return finalInterval; // <<< FIX: This will now work correctly
+    
   } catch (error) {
     console.error("Error updating spaced repetition data:", error);
+    return 1; // Return a default value in case of an error
   }
 }
 
