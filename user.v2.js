@@ -976,16 +976,34 @@ async function updateSpacedRepetitionData(questionId, isCorrect, difficulty, nex
         data.spacedRepetition = {};
       }
       
-      // Calculate the next review date
-      const now = new Date();
-      const nextReviewDate = new Date();
-      nextReviewDate.setDate(now.getDate() + nextReviewInterval);
+// Define default intervals
+let intervals = { hard: 1, medium: 3, easy: 7 };
+
+// Check for and use user's custom settings if they exist
+if (data.spacedRepetitionSettings) {
+    intervals.hard = data.spacedRepetitionSettings.hardInterval || 1;
+    intervals.medium = data.spacedRepetitionSettings.mediumInterval || 3;
+    intervals.easy = data.spacedRepetitionSettings.easyInterval || 7;
+}
+
+// Calculate next review interval based on difficulty and correctness
+let finalInterval = intervals.hard; // Default for incorrect answers
+if (isCorrect) {
+    if (difficulty === 'easy') finalInterval = intervals.easy;
+    else if (difficulty === 'medium') finalInterval = intervals.medium;
+    else if (difficulty === 'hard') finalInterval = intervals.hard;
+}
+
+// Calculate the next review date
+const now = new Date();
+const nextReviewDate = new Date();
+nextReviewDate.setDate(now.getDate() + finalInterval);
       
       // Update or create the question's spaced repetition data
       data.spacedRepetition[questionId] = {
         lastReviewedAt: now.toISOString(),
         nextReviewDate: nextReviewDate.toISOString(),
-        reviewInterval: nextReviewInterval,
+        reviewInterval: finalInterval,
         difficulty: difficulty,
         lastResult: isCorrect ? 'correct' : 'incorrect',
         reviewCount: (data.spacedRepetition[questionId]?.reviewCount || 0) + 1
@@ -1303,6 +1321,11 @@ async function saveProfileChanges() {
   const newUsername = usernameInput.value.trim();
   const newExperienceLevel = experienceSelect.value;
 
+  // Get and parse interval values
+const hardInterval = parseInt(document.getElementById('editHardInterval').value, 10);
+const mediumInterval = parseInt(document.getElementById('editMediumInterval').value, 10);
+const easyInterval = parseInt(document.getElementById('editEasyInterval').value, 10);
+
   // --- 1. Client-Side Validation ---
   if (newUsername.length < 3) {
     messageEl.textContent = 'Username must be at least 3 characters long.';
@@ -1312,6 +1335,16 @@ async function saveProfileChanges() {
     messageEl.textContent = 'Please select your experience level.';
     return;
   }
+
+  // Validate intervals
+if (isNaN(hardInterval) || isNaN(mediumInterval) || isNaN(easyInterval) || hardInterval < 1 || mediumInterval < 1 || easyInterval < 1) {
+  messageEl.textContent = 'Intervals must be a number greater than 0.';
+  return;
+}
+if (!(hardInterval < mediumInterval && mediumInterval < easyInterval)) {
+  messageEl.textContent = 'Intervals must be in increasing order (Hard < Medium < Easy).';
+  return;
+}
 
   // --- 2. Set UI to Loading State ---
   saveButton.disabled = true;
@@ -1327,13 +1360,22 @@ async function saveProfileChanges() {
     
     await updateUserProfileFunction({
       username: newUsername,
-      experienceLevel: newExperienceLevel
+      experienceLevel: newExperienceLevel,
+      spacedRepetitionSettings: {
+        hardInterval: hardInterval,
+        mediumInterval: mediumInterval,
+        easyInterval: easyInterval
+      }
     });
 
     // --- 4. Handle Success ---
     // Update the "View Mode" fields with the new data
     document.getElementById('viewUsername').textContent = newUsername;
     document.getElementById('viewExperienceLevel').textContent = newExperienceLevel;
+    // Update the interval displays in View Mode
+document.getElementById('viewHardInterval').textContent = hardInterval;
+document.getElementById('viewMediumInterval').textContent = mediumInterval;
+document.getElementById('viewEasyInterval').textContent = easyInterval;
 
     // Manually trigger the username update in the user menu.
     // We need to get the latest auth state to pass to the function.

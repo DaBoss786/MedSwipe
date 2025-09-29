@@ -974,6 +974,14 @@
           <span id="viewExperienceLevel"></span>
           <a href="#" id="changeExperienceLink" class="change-link">Change</a>
         </div>
+        <div class="form-group">
+          <label>Spaced Repetition Intervals (Days)</label>
+          <div class="profile-view-field">
+            <span>Hard: <b id="viewHardInterval">1</b></span>
+            <span>Medium: <b id="viewMediumInterval">3</b></span>
+            <span>Easy: <b id="viewEasyInterval">7</b></span>
+          </div>
+        </div>
       </div>
       <div class="auth-buttons" style="margin-top: 30px;">
          <button type="button" id="editProfileDoneBtn" class="auth-primary-btn">Done</button>
@@ -1001,6 +1009,24 @@
             <option value="Fellow">Fellow</option>
             <option value="Attending">Attending</option>
           </select>
+        </div>
+        <div class="form-group">
+          <h4>Spaced Repetition Intervals</h4>
+          <div class="interval-settings-container">
+            <div class="interval-setting">
+              <label for="editHardInterval">Hard (days)</label>
+              <input type="number" id="editHardInterval" min="1" required>
+            </div>
+            <div class="interval-setting">
+              <label for="editMediumInterval">Medium (days)</label>
+              <input type="number" id="editMediumInterval" min="1" required>
+            </div>
+            <div class="interval-setting">
+              <label for="editEasyInterval">Easy (days)</label>
+              <input type="number" id="editEasyInterval" min="1" required>
+            </div>
+          </div>
+          <small>Set the number of days until you review a question again.</small>
         </div>
         <div class="auth-buttons">
           <button type="submit" id="saveProfileChangesBtn" class="auth-primary-btn">Save Changes</button>

@@ -4723,6 +4723,22 @@ async function showEditProfileModal() {
       document.getElementById('editUsername').value = currentUsername;
       document.getElementById('editExperienceLevel').value = currentExperience;
 
+        // Get custom intervals or use defaults
+  const settings = userData.spacedRepetitionSettings || {};
+  const hardInterval = settings.hardInterval || 1;
+  const mediumInterval = settings.mediumInterval || 3;
+  const easyInterval = settings.easyInterval || 7;
+
+  // Populate View Mode
+  document.getElementById('viewHardInterval').textContent = hardInterval;
+  document.getElementById('viewMediumInterval').textContent = mediumInterval;
+  document.getElementById('viewEasyInterval').textContent = easyInterval;
+
+  // Populate Edit Mode
+  document.getElementById('editHardInterval').value = hardInterval;
+  document.getElementById('editMediumInterval').value = mediumInterval;
+  document.getElementById('editEasyInterval').value = easyInterval;
+
       // 5. SHOW THE MODAL
       modal.style.display = 'flex';
 
@@ -4778,6 +4794,9 @@ function setupEditProfileModalListeners() {
     document.getElementById('editUsername').value = document.getElementById('viewUsername').textContent;
     document.getElementById('editExperienceLevel').value = document.getElementById('viewExperienceLevel').textContent;
     switchToViewMode();
+    document.getElementById('editHardInterval').value = document.getElementById('viewHardInterval').textContent;
+document.getElementById('editMediumInterval').value = document.getElementById('viewMediumInterval').textContent;
+document.getElementById('editEasyInterval').value = document.getElementById('viewEasyInterval').textContent;
   });
 
   document.getElementById('closeEditProfileModal').addEventListener('click', () => {
