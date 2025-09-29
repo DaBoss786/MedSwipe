@@ -1,4 +1,4 @@
-﻿// app.js - Top of file
+// app.js - Top of file
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged } from './firebase-config.js'; // Adjust path if needed
 import { generateGuestUsername } from './auth.js';
 // Import needed functions from user.js
@@ -1543,20 +1543,6 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
       <p>🎁 A friend referred you! Sign up and start a trial to get an extra week for free.</p>
     </div>
 
-    <div class="oauth-button-group">
-      <button type="button" class="oauth-button oauth-button--google" data-oauth-provider="google" data-oauth-context="register">
-        <img src="google-icon.svg" alt="" class="oauth-button__icon" aria-hidden="true">
-        <span class="oauth-button__label">Sign up with Google</span>
-      </button>
-      <button type="button" class="oauth-button oauth-button--apple" data-oauth-provider="apple" data-oauth-context="register">
-        <svg class="oauth-button__icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
-          <path fill="currentColor" d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z" />
-        </svg>
-        <span class="oauth-button__label">Sign up with Apple</span>
-      </button>
-    </div>
-    <div class="oauth-divider"><span>or</span></div>
-
     <form id="registerForm">      
       <div class="form-group">
         <label for="registerEmail">Email</label>
@@ -1567,24 +1553,37 @@ function showRegisterForm(nextStep = 'dashboard') { // Added nextStep parameter,
         <input type="password" id="registerPassword" required minlength="6">
         <small>Password must be at least 6 characters</small>
       </div>
+      <div class="oauth-divider"><span>or</span></div>
+      <div class="oauth-button-group">
+        <button type="button" class="oauth-button oauth-button--google" data-oauth-provider="google" data-oauth-context="register">
+          <img src="google-icon.svg" alt="" class="oauth-button__icon" aria-hidden="true">
+          <span class="oauth-button__label">Sign up with Google</span>
+        </button>
+        <button type="button" class="oauth-button oauth-button--apple" data-oauth-provider="apple" data-oauth-context="register">
+          <svg class="oauth-button__icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
+            <path fill="currentColor" d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z" />
+          </svg>
+          <span class="oauth-button__label">Sign up with Apple</span>
+        </button>
+      </div>
       <div class="form-group terms-container">
-  <div class="terms-checkbox">
-    <input type="checkbox" id="agreeTerms" required>
-    <label for="agreeTerms">
-      I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and
-      <a href="#" id="registerViewPrivacy">Privacy Policy</a>
-    </label>
-  </div>
-  <div class="form-error" id="termsError"></div>
-  
-  <!-- New Marketing Email Opt-in Checkbox -->
-  <div class="terms-checkbox" style="margin-top: 10px;">
-    <input type="checkbox" id="marketingOptIn" checked>
-    <label for="marketingOptIn">
-      Send me occasional notifications and updates to keep me motivated. Unsubscribe anytime.
-    </label>
-  </div>
-</div>
+        <div class="terms-checkbox">
+          <input type="checkbox" id="agreeTerms" required>
+          <label for="agreeTerms">
+            I agree to the <a href="#" id="registerViewTOS">Terms of Service</a> and
+            <a href="#" id="registerViewPrivacy">Privacy Policy</a>
+          </label>
+        </div>
+        <div class="form-error" id="termsError"></div>
+        
+        <!-- New Marketing Email Opt-in Checkbox -->
+        <div class="terms-checkbox" style="margin-top: 10px;">
+          <input type="checkbox" id="marketingOptIn" checked>
+          <label for="marketingOptIn">
+            Send me occasional notifications and updates to keep me motivated. Unsubscribe anytime.
+          </label>
+        </div>
+      </div>
       <div class="auth-buttons">
         <button type="submit" class="auth-primary-btn">Create Account</button>
         <button type="button" id="goToLoginBtn" class="auth-secondary-btn">I Already Have an Account</button>
@@ -1634,20 +1633,23 @@ function attachRegisterFormListeners(modalElement, initialNextStep) {
 const form = modalElement.querySelector('#registerForm');
 const goToLoginBtn = modalElement.querySelector('#goToLoginBtn');
 const closeRegisterBtn = modalElement.querySelector('#closeRegisterBtn');
+let termsErrorElement = modalElement.querySelector('#termsError');
+let agreeTermsCheckbox = modalElement.querySelector('#agreeTerms');
 const errorElement = modalElement.querySelector('#registerError');
 
 if (form) {
 // Clone and replace form to remove old submit listeners
 const newForm = form.cloneNode(true);
 form.parentNode.replaceChild(newForm, form);
+termsErrorElement = modalElement.querySelector('#termsError');
+agreeTermsCheckbox = newForm.querySelector('#agreeTerms');
 
 // In app.js, inside attachRegisterFormListeners - This is the final version
-
 newForm.addEventListener('submit', async function(e) {
   e.preventDefault();
-  
   const selectedUsername = typeof window.selectedUsername === 'string' ? window.selectedUsername.trim() : '';
   const username = selectedUsername ? selectedUsername : generateGuestUsername(); // Use selected username or generate one
+
   const email = newForm.querySelector('#registerEmail').value;
   const password = newForm.querySelector('#registerPassword').value;
   const errorElement = modalElement.querySelector('#registerError');
@@ -1697,6 +1699,13 @@ newForm.addEventListener('submit', async function(e) {
     modalElement.style.display = 'flex';
   }
 });
+  if (agreeTermsCheckbox) {
+    agreeTermsCheckbox.addEventListener('change', function() {
+      if (termsErrorElement) {
+        termsErrorElement.textContent = '';
+      }
+    });
+  }
 }
 
 const registerOauthButtons = Array.from(modalElement.querySelectorAll('[data-oauth-context="register"]'));
@@ -1712,6 +1721,22 @@ if (registerOauthButtons.length) {
 
     if (errorElement) {
       errorElement.textContent = '';
+    }
+
+    const termsErrorElement = modalElement.querySelector('#termsError');
+    if (termsErrorElement) {
+      termsErrorElement.textContent = '';
+    }
+
+    const agreeTermsCheckbox = modalElement.querySelector('#agreeTerms');
+    if (agreeTermsCheckbox && !agreeTermsCheckbox.checked) {
+      if (termsErrorElement) {
+        termsErrorElement.textContent = 'You must agree to the Terms of Service and Privacy Policy';
+      }
+      if (typeof agreeTermsCheckbox.focus === 'function') {
+        agreeTermsCheckbox.focus();
+      }
+      return;
     }
 
     toggleOAuthButtons(registerOauthButtons, true);
@@ -1795,11 +1820,13 @@ if (goToLoginBtn) {
           if (regModal) regModal.style.display = 'none';
       }
 
-      // Show the login form
-      if (typeof showLoginForm === 'function') {
+      // Show the login screen
+      if (typeof window.showLoginScreen === 'function') {
+          window.showLoginScreen();
+      } else if (typeof showLoginForm === 'function') {
           showLoginForm();
       } else {
-          console.error("showLoginForm function is not available to be called.");
+          console.error("No login screen handler is available to be called.");
           alert("Error opening login form. Please close this and try again.");
       }
   });
