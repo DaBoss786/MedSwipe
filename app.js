@@ -1,4 +1,4 @@
-// app.js - Top of file
+﻿// app.js - Top of file
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged } from './firebase-config.js'; // Adjust path if needed
 import { generateGuestUsername } from './auth.js';
 // Import needed functions from user.js
@@ -791,6 +791,10 @@ window.startOnboardingCarousel = function() {
 
 // This function handles the final transition from the carousel to the paywall
 function finishOnboarding() {
+  if (typeof window.unlockBodyScroll === 'function') {
+    window.unlockBodyScroll();
+  }
+
   const carouselContainer = document.getElementById("onboardingCarousel");
   const paywallScreen = document.getElementById("newPaywallScreen");
 
@@ -6692,4 +6696,5 @@ if (viewAccreditationInfoBtn) {
 } else {
     console.error("View Accreditation button on Info Screen (#viewAccreditationInfoBtn) not found.");
 }
+
 
