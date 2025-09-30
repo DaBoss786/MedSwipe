@@ -2793,9 +2793,12 @@ html, body {
 .auth-modal h2 {
   color: #0C72D3;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 12px; /* Reduced space below title */
   text-align: center;
+  font-size: 1.3rem; /* Made title font smaller */
+  line-height: 1.3; /* Improved line spacing for long titles */
 }
+
 
 .auth-error {
   color: #dc3545;
@@ -3285,7 +3288,7 @@ html, body {
   display: block;
 }
 
-// Add this CSS to your styles.css file
+/* Add this CSS to your styles.css file */
 
 .terms-container {
   margin-top: 15px;
