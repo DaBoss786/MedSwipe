@@ -394,6 +394,8 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
   // --- START OF NEW LOGIC ---
+  initializePaywallFreeAccessButton();
+
   // First, check if the URL is a deep link.
   const isDeepLinkHandled = await handleDeepLink();
 
@@ -816,45 +818,52 @@ function finishOnboarding() {
 
   window.startOnboardingQuiz = startOnboardingQuiz; // Make global if defined locally
 
-// --- Event Listener for New Paywall "Continue as Guest" Button ---
-const continueFreeAccessBtn = document.getElementById("continueFreeAccessBtn");
-if (continueFreeAccessBtn) {
-    continueFreeAccessBtn.addEventListener("click", function() {
-        console.log("Paywall 'Continue as Guest' button clicked.");
+// --- Event Listener Initializer for Paywall "Continue as Guest" Button ---
+function initializePaywallFreeAccessButton() {
+  const continueFreeAccessBtn = document.getElementById("continueFreeAccessBtn");
 
-        const newPaywallScreen = document.getElementById("newPaywallScreen");
-        const mainOptions = document.getElementById("mainOptions"); // Your main dashboard view
-
-        // Hide the paywall screen
-        if (newPaywallScreen) {
-            newPaywallScreen.style.display = "none";
-        }
-
-        // Show the main dashboard
-        if (mainOptions) {
-            mainOptions.style.display = "flex"; // Or "block"
-            // Ensure dashboard is initialized if it's the first time
-            // (initializeDashboard might already be called on auth state change,
-            // but an explicit call here can ensure UI elements are up-to-date for a guest)
-            if (typeof initializeDashboard === 'function') {
-                initializeDashboard();
-            }
-            // Ensure event listeners for dashboard elements are attached
-            if (typeof setupDashboardEventListenersExplicitly === 'function') {
-                setupDashboardEventListenersExplicitly();
-            } else if (typeof setupDashboardEvents === 'function') {
-                setupDashboardEvents();
-            }
-
-        } else {
-            console.error("Main options element (#mainOptions) not found.");
-        }
-
-        // Future: Here we would also set a flag or state indicating the user is "free_access_guest"
-        // to apply limitations on the dashboard. For now, it just navigates.
-    });
-} else {
+  if (!continueFreeAccessBtn) {
     console.error("Button with ID 'continueFreeAccessBtn' not found.");
+    return;
+  }
+
+  const newContinueFreeAccessBtn = continueFreeAccessBtn.cloneNode(true);
+  continueFreeAccessBtn.parentNode.replaceChild(newContinueFreeAccessBtn, continueFreeAccessBtn);
+
+  newContinueFreeAccessBtn.addEventListener("click", function() {
+    console.log("Paywall 'Continue as Guest' button clicked.");
+
+    const newPaywallScreen = document.getElementById("newPaywallScreen");
+    const mainOptions = document.getElementById("mainOptions"); // Your main dashboard view
+
+    // Hide the paywall screen
+    if (newPaywallScreen) {
+      newPaywallScreen.style.display = "none";
+    }
+
+    // Show the main dashboard
+    if (mainOptions) {
+      mainOptions.style.display = "flex"; // Or "block"
+      // Ensure dashboard is initialized if it's the first time
+      // (initializeDashboard might already be called on auth state change,
+      // but an explicit call here can ensure UI elements are up-to-date for a guest)
+      if (typeof initializeDashboard === 'function') {
+        initializeDashboard();
+      }
+      // Ensure event listeners for dashboard elements are attached
+      if (typeof setupDashboardEventListenersExplicitly === 'function') {
+        setupDashboardEventListenersExplicitly();
+      } else if (typeof setupDashboardEvents === 'function') {
+        setupDashboardEvents();
+      }
+
+    } else {
+      console.error("Main options element (#mainOptions) not found.");
+    }
+
+    // Future: Here we would also set a flag or state indicating the user is "free_access_guest"
+    // to apply limitations on the dashboard. For now, it just navigates.
+  });
 }
 
 // --- Quiz Setup Modal (quizSetupModal) - Click Outside to Close ---
