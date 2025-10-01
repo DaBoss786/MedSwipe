@@ -95,7 +95,7 @@ function renderXpLeaderboard(data, container) {
 function renderStreakLeaderboard(data, container) {
     container.innerHTML = `
         <div class="leaderboard-content">
-            <ul class="leaderboard-entry-list">${buildUserList(data.streakLeaderboard, 'longestStreak', 'Longest Streak')}</ul>
+            <ul class="leaderboard-entry-list">${buildUserList(data.streakLeaderboard, 'longestStreak', 'Days')}</ul>
         </div>
         ${buildYourRank(data.currentUserRanks.streak, 'longestStreak', 'Days')}
     `;
