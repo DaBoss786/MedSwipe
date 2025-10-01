@@ -1684,7 +1684,11 @@ exports.getLeaderboardData = onCall(
           userData.specialty === currentUserSpecialty // Must match specialty
         ) {
           const weeklyStats = calculateWeeklyStats(userData, weekStartMillis);
-          
+          const longestStreak = Math.max(
+            userData.streaks?.longestStreak || 0,
+            userData.streaks?.currentStreak || 0
+          );
+
           allEligibleUsersData.push({
             uid: doc.id,
             username: userData.username || "Anonymous",
@@ -1692,6 +1696,7 @@ exports.getLeaderboardData = onCall(
             weeklyXp: weeklyStats.weeklyXp,
             level: userData.stats?.level || 1,
             currentStreak: userData.streaks?.currentStreak || 0,
+            longestStreak,
             weeklyAnsweredCount: weeklyStats.weeklyAnsweredCount,
           });
         }
@@ -1733,7 +1738,7 @@ exports.getLeaderboardData = onCall(
       currentUserRanks.weeklyXp = weeklyXpResults.currentUserRank;
 
       // Streak Leaderboard
-      const streakResults = createLeaderboardWithRanking(allEligibleUsersData, 'currentStreak');
+      const streakResults = createLeaderboardWithRanking(allEligibleUsersData, 'longestStreak');
       const streakLeaderboard = streakResults.leaderboard;
       currentUserRanks.streak = streakResults.currentUserRank;
 

@@ -95,9 +95,9 @@ function renderXpLeaderboard(data, container) {
 function renderStreakLeaderboard(data, container) {
     container.innerHTML = `
         <div class="leaderboard-content">
-            <ul class="leaderboard-entry-list">${buildUserList(data.streakLeaderboard, 'currentStreak', 'Days')}</ul>
+            <ul class="leaderboard-entry-list">${buildUserList(data.streakLeaderboard, 'longestStreak', 'Longest Streak')}</ul>
         </div>
-        ${buildYourRank(data.currentUserRanks.streak, 'currentStreak', 'Days')}
+        ${buildYourRank(data.currentUserRanks.streak, 'longestStreak', 'Longest Streak')}
     `;
 }
 
@@ -130,7 +130,7 @@ async function initializeLeaderboardView() {
             <h2>Leaderboards</h2>
             <div id="leaderboardMainTabs" class="leaderboard-main-tabs">
                 <button class="leaderboard-main-tab active" data-content="xp">XP Rankings</button>
-                <button class="leaderboard-main-tab" data-content="streaks">Streaks</button>
+                <button class="leaderboard-main-tab" data-content="streaks">Longest Streaks</button>
                 <button class="leaderboard-main-tab" data-content="answered">Most Active</button>
             </div>
             <div id="leaderboardContentArea" class="leaderboard-content-area">
