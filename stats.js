@@ -97,7 +97,7 @@ function renderStreakLeaderboard(data, container) {
         <div class="leaderboard-content">
             <ul class="leaderboard-entry-list">${buildUserList(data.streakLeaderboard, 'longestStreak', 'Longest Streak')}</ul>
         </div>
-        ${buildYourRank(data.currentUserRanks.streak, 'longestStreak', 'Longest Streak')}
+        ${buildYourRank(data.currentUserRanks.streak, 'longestStreak', 'Days')}
     `;
 }
 
