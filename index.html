@@ -1095,26 +1095,6 @@
 <!-- Chart.js for the doughnut chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Stripe.js v3 -->
-<script src="https://js.stripe.com/v3/"></script>
-<!-- Initialize Stripe -->
-<script>
-  // Replace 'YOUR_PUBLISHABLE_KEY' with your actual Stripe Publishable Test Key
-  const stripePublishableKey = 'pk_live_51RFk9GJDkW3cIYXuIgsJ907sJeHhQ11J2NbaNVYSjwVpjFDhIRzCnE5ju8jFFddSkcls1Mb3DFH8M1LhueDpRiY700lPtYxU8A';
-  // Make stripe globally available
-  var stripe = null;
-
-  try {
-    stripe = Stripe(stripePublishableKey);
-    // Optional: You can log success here if you want, but it might appear before app.js logs
-    // console.log("Stripe.js initialized globally.");
-  } catch (error) {
-    console.error("Error initializing Stripe.js globally:", error);
-    // Alert the user immediately if Stripe fails to load
-    alert("Critical Error: Payment system failed to load. Please refresh the page.");
-    // You could potentially hide checkout buttons here too, though app.js also checks
-  }
-</script>
 
 <!-- App Scripts -->
 <script type="module" src="utils.js"></script>

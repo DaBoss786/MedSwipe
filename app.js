@@ -7,6 +7,7 @@ import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
+import { initializeStripe, redirectToBoardReviewCheckout, redirectToCmeCheckout } from './stripe-web.js';
 
 /**
  * Checks the URL for a question deep link and initializes a single-question quiz if found.
@@ -393,6 +394,26 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
+
+  // --- Payment Initialization ---
+// This is the primary "seam" for platform-specific payment logic.
+// The web app initializes Stripe here. A native build (e.g., iOS) would
+// conditionally skip this and instead initialize a different module like 'revenuecat-native.js'.
+
+// For Web Builds:
+
+initializeStripe().catch(error => {
+  console.error("Stripe failed to initialize. Web payment functionality will be disabled.", error);
+});
+
+// For Native Builds (Example):
+// if (isNativeApp) {
+//   const { initializeRevenueCat, redirectToPurchase } = await import('./revenuecat-native.js');
+//   initializeRevenueCat();
+//   // The button listeners below would then call redirectToPurchase() instead.
+// }
+// --- End Payment Initialization ---
+
   // --- START OF NEW LOGIC ---
   initializePaywallFreeAccessButton();
 
@@ -6088,232 +6109,6 @@ if (payPerCreditTabBtn && annualContent && payPerCreditContent) {
 // --- End Pricing Screen Tab Switching ---
 
 
-// --- Add your Stripe Price IDs (Test Mode) ---
-const STRIPE_ANNUAL_PRICE_ID = 'price_1RXcMOJDkW3cIYXuu4xEKrm4'; // Replace with your actual Annual Price ID (price_...)
-// New unit-price for credits:
-const STRIPE_CREDIT_PRICE_ID = 'price_1RXcdsJDkW3cIYXuKTLAM472'; // ← paste your new Price ID
-// --- NEW Board Review Price IDs ---
-const STRIPE_BR_MONTHLY_PRICE_ID = 'price_1RXcRSJDkW3cIYXuS6n0pM0t'; // <<< PASTE YOUR ID HERE
-const STRIPE_BR_3MONTH_PRICE_ID = 'price_1RXcPbJDkW3cIYXusuhRQzqx';   // <<< PASTE YOUR ID HERE
-const STRIPE_BR_ANNUAL_PRICE_ID = 'price_1RXcOnJDkW3cIYXusyl4eKpH';    // <<< PASTE YOUR ID HERE
-
-// ---
-
-    // Checkout Button
-// --- Listener for CME ANNUAL Subscription Button (Corrected with Metadata) ---
-const cmeCheckoutAnnualBtn = document.getElementById("cmeCheckoutAnnualBtn");
-
-if (cmeCheckoutAnnualBtn) {
-  cmeCheckoutAnnualBtn.addEventListener("click", async function () {
-    const selectedPriceId = STRIPE_ANNUAL_PRICE_ID;   // CME Annual Price ID
-    const planNameForMeta = "CME Annual Subscription"; // Descriptive name for metadata
-    const tierForMeta = "cme_annual";                  // Specific tier for metadata
-
-    console.log(
-      `Requesting CME checkout for ${planNameForMeta} (Tier: ${tierForMeta}) with Price ID: ${selectedPriceId}`
-    );
-
-    if (analytics) {
-      logEvent(analytics, 'begin_checkout', {
-          currency: 'USD',
-          value: 149.00,
-          item_id: selectedPriceId,
-          item_name: planNameForMeta,
-          tier: tierForMeta
-      });
-      console.log(`GA Event: begin_checkout (item: ${planNameForMeta})`);
-  }
-
-    const user = window.authFunctions.getCurrentUser();
-    if (!user || user.isAnonymous) {
-      alert("Please register or log in fully before purchasing a subscription.");
-      console.warn(
-        "CME Annual checkout attempted by anonymous or non-logged-in user."
-      );
-      return;
-    }
-
-    if (!window.stripe || !createCheckoutSessionFunction) {
-      alert("Error: Payment system not ready. Please refresh.");
-      console.error(
-        "Stripe object or createCheckoutSessionFunction reference missing for CME Annual."
-      );
-      return;
-    }
-
-    cmeCheckoutAnnualBtn.disabled = true;
-    cmeCheckoutAnnualBtn.textContent = "Preparing Checkout…";
-
-    try {
-      console.log("Forcing ID token refresh for CME Annual checkout…");
-      await getIdToken(user, true);
-      console.log("ID token refreshed.");
-
-      console.log(
-        "Calling createStripeCheckoutSession for CME Annual. User:",
-        user.uid
-      );
-      const result = await createCheckoutSessionFunction({
-        priceId: selectedPriceId,
-        planName: planNameForMeta, // <<< ADDED
-        tier: tierForMeta,         // <<< ADDED
-      });
-
-      const sessionId = result.data.sessionId;
-      console.log("Received Session ID for CME Annual:", sessionId);
-
-      if (!sessionId) {
-        throw new Error(
-          "Cloud function did not return a Session ID for CME Annual."
-        );
-      }
-
-      cmeCheckoutAnnualBtn.textContent = "Redirecting…";
-      const { error } = await window.stripe.redirectToCheckout({ sessionId });
-
-      if (error) {
-        console.error("Stripe redirectToCheckout error for CME Annual:", error);
-        alert(`Could not redirect to checkout: ${error.message}`);
-        cmeCheckoutAnnualBtn.disabled = false;
-        cmeCheckoutAnnualBtn.textContent = "Subscribe Annually";
-      }
-    } catch (error) {
-      console.error("Error during CME Annual checkout:", error);
-      let message = "Could not prepare CME Annual checkout. Please try again.";
-      if (error.code && error.message) {
-        message = `Error: ${error.message}`;
-      } else if (error.message) {
-        message = error.message;
-      }
-      alert(message);
-      cmeCheckoutAnnualBtn.disabled = false;
-      cmeCheckoutAnnualBtn.textContent = "Subscribe Annually";
-    }
-  });
-} else {
-  console.error(
-    "CME Annual Checkout button (#cmeCheckoutAnnualBtn) not found."
-  );
-}
-
-// --- Listener for CME BUY CREDITS Button (Corrected with Metadata) ---
-const cmeBuyCreditsBtn = document.getElementById("cmeBuyCreditsBtn");
-
-if (cmeBuyCreditsBtn) {
-  cmeBuyCreditsBtn.addEventListener("click", async function () {
-    const quantityInput = document.getElementById("creditQty");
-    let quantity = 1;
-
-    if (quantityInput) {
-      const parsedValue = Number(quantityInput.value);
-      if (
-        !isNaN(parsedValue) &&
-        parsedValue >= 1 &&
-        parsedValue <= 25 &&
-        Number.isInteger(parsedValue)
-      ) {
-        quantity = parsedValue;
-      } else {
-        alert("Please enter a whole number of credits between 1 and 25.");
-        if (quantityInput) quantityInput.value = "1"; // Reset to default
-        return;
-      }
-    }
-
-    const selectedPriceId = STRIPE_CREDIT_PRICE_ID; // CME Credit Price ID
-    const planNameForMeta = `CME Credits Purchase (${quantity})`; // Descriptive
-    const tierForMeta = "cme_credits"; // Specific tier
-
-    console.log(
-      `Requesting CME Credits checkout for ${quantity} credits (Tier: ${tierForMeta}) with Price ID: ${selectedPriceId}`
-    );
-
-    if (analytics) {
-      logEvent(analytics, 'begin_checkout', {
-          currency: 'USD',
-          value: quantity * 5.00, // Assuming $5 per credit
-          quantity: quantity,
-          item_id: selectedPriceId,
-          item_name: planNameForMeta,
-          tier: tierForMeta
-      });
-      console.log(`GA Event: begin_checkout (item: ${planNameForMeta})`);
-  }
-
-    const user = window.authFunctions.getCurrentUser();
-    if (!user || user.isAnonymous) {
-      alert("Please register or log in fully before purchasing credits.");
-      console.warn(
-        "CME Credits purchase attempted by anonymous or non-logged-in user."
-      );
-      return;
-    }
-
-    if (!window.stripe || !createCheckoutSessionFunction) {
-      alert("Error: Payment system not ready. Please refresh.");
-      console.error(
-        "Stripe object or createCheckoutSessionFunction reference missing for CME Credits."
-      );
-      return;
-    }
-
-    cmeBuyCreditsBtn.disabled = true;
-    cmeBuyCreditsBtn.textContent = "Preparing Purchase…";
-
-    try {
-      console.log("Forcing ID token refresh for CME Credits purchase…");
-      await getIdToken(user, true);
-      console.log("ID token refreshed.");
-
-      console.log(
-        "Calling createStripeCheckoutSession for CME Credits. User:",
-        user.uid
-      );
-      const result = await createCheckoutSessionFunction({
-        priceId: selectedPriceId,
-        quantity,
-        planName: planNameForMeta, // <<< ADDED
-        tier: tierForMeta,         // <<< ADDED
-      });
-
-      const sessionId = result.data.sessionId;
-      console.log("Received Session ID for CME Credits:", sessionId);
-
-      if (!sessionId) {
-        throw new Error(
-          "Cloud function did not return a Session ID for CME Credits."
-        );
-      }
-
-      cmeBuyCreditsBtn.textContent = "Redirecting…";
-      const { error } = await window.stripe.redirectToCheckout({ sessionId });
-
-      if (error) {
-        console.error("Stripe redirectToCheckout error for CME Credits:", error);
-        alert(`Could not redirect to checkout: ${error.message}`);
-        cmeBuyCreditsBtn.disabled = false;
-        cmeBuyCreditsBtn.textContent = "Buy Credits";
-      }
-    } catch (error) {
-      console.error("Error during CME Credits purchase:", error);
-      let message = "Could not prepare CME Credits purchase. Please try again.";
-      if (error.code && error.message) {
-        message = `Error: ${error.message}`;
-      } else if (error.message) {
-        message = error.message;
-      }
-      alert(message);
-      cmeBuyCreditsBtn.disabled = false;
-      cmeBuyCreditsBtn.textContent = "Buy Credits";
-    }
-  });
-} else {
-  console.error(
-    "CME Buy Credits button (#cmeBuyCreditsBtn) not found."
-  );
-}
-
-
 // --- Function to Show the CME Learn More Modal ---
 function showCmeLearnMoreModal() {
   console.log("Executing showCmeLearnMoreModal...");
@@ -6569,138 +6364,57 @@ if (boardReviewPricingBackBtn) {
 }
 // --- End Board Review Pricing Screen - Back Button Logic ---
 
-// --- Event Listeners for Board Review Pricing Screen Checkout Buttons ---
+// app.js - Add these new listeners
 
-// Helper function for Board Review Checkout
-async function handleBoardReviewCheckout(priceId, planName, tierName) { // Added tierName
-  if (analytics) {
-    let price = 0;
-    if (priceId === STRIPE_BR_MONTHLY_PRICE_ID) price = 14.99;
-    if (priceId === STRIPE_BR_3MONTH_PRICE_ID) price = 39.99; // Example price
-    if (priceId === STRIPE_BR_ANNUAL_PRICE_ID) price = 99.99; // Example price
+// --- NEW: Event Listeners wired to the stripe-web.js module ---
 
-    logEvent(analytics, 'begin_checkout', {
-        currency: 'USD',
-        value: price,
-        item_id: priceId,
-        item_name: planName,
-        tier: tierName
-    });
-    console.log(`GA Event: begin_checkout (item: ${planName})`);
-}
-  console.log(`Requesting Board Review checkout for ${planName} (Tier: ${tierName}) with Price ID: ${priceId}`);
-
-  const user = window.authFunctions.getCurrentUser();
-  if (!user || user.isAnonymous) {
-      alert("Please ensure you are fully registered and logged in before subscribing.");
-      // Optionally, redirect to login/registration or show the main paywall
-      // e.g., showLoginForm();
-      // or document.getElementById('newPaywallScreen').style.display = 'flex';
-      return;
-  }
-  // Ensure createCheckoutSessionFunction is available (it's imported in app.js from firebase-config.js)
-  if (!window.stripe || !createCheckoutSessionFunction) {
-      alert('Error: Payment system not ready. Please refresh.');
-      console.error('Stripe object or createCheckoutSessionFunction reference missing.');
-      return;
-  }
-
-  // Get all Board Review checkout buttons to manage their state
-  const brCheckoutButtons = [
-      document.getElementById("checkoutBrMonthlyBtn"),
-      document.getElementById("checkoutBr3MonthBtn"),
-      document.getElementById("checkoutBrAnnualBtn")
-  ];
-
-  // Disable all BR checkout buttons and show loading text on the clicked one
-  let clickedButton = null;
-  brCheckoutButtons.forEach(btn => {
-      if(btn) {
-          btn.disabled = true;
-          // Identify which button was clicked to set its text specifically
-          if ( (planName === 'Board Review Monthly' && btn.id === "checkoutBrMonthlyBtn") ||
-               (planName === 'Board Review 3-Month' && btn.id === "checkoutBr3MonthBtn") ||
-               (planName === 'Board Review Annual' && btn.id === "checkoutBrAnnualBtn") ) {
-              btn.textContent = 'Preparing...';
-              clickedButton = btn;
-          } else {
-              btn.style.opacity = 0.7; // Dim other buttons
-          }
-      }
+// CME Annual Checkout
+const cmeCheckoutAnnualBtn = document.getElementById("cmeCheckoutAnnualBtn");
+if (cmeCheckoutAnnualBtn) {
+  cmeCheckoutAnnualBtn.addEventListener("click", function(e) {
+    redirectToCmeCheckout('annual', e.currentTarget);
   });
-
-  try {
-      console.log("Forcing ID token refresh for Board Review checkout...");
-      await getIdToken(user, true); // Ensure fresh token (getIdToken is from firebase-config.js)
-      console.log("ID token refreshed.");
-
-      console.log("Calling createStripeCheckoutSession function for user:", user.uid, "Price ID:", priceId, "Plan:", planName, "Tier:", tierName);
-      const result = await createCheckoutSessionFunction({
-          priceId: priceId,
-          planName: planName, // Pass planName for metadata
-          tier: tierName      // Pass tier for metadata
-      });
-      const sessionId = result.data.sessionId;
-      console.log("Received Session ID for Board Review:", sessionId);
-
-      if (!sessionId) { throw new Error("Cloud function did not return a Session ID for Board Review."); }
-
-      if (clickedButton) clickedButton.textContent = 'Redirecting...';
-      const { error } = await window.stripe.redirectToCheckout({ sessionId: sessionId });
-
-      if (error) {
-          console.error("Stripe redirectToCheckout error for Board Review:", error);
-          alert(`Could not redirect to checkout: ${error.message}`);
-      }
-  } catch (error) {
-      console.error(`Error during Board Review checkout for ${planName}:`, error);
-      let message = `Could not prepare checkout for ${planName}. Please try again.`;
-      if (error.code && error.message) { message = `Error: ${error.message}`; }
-      else if (error.message) { message = error.message; }
-      alert(message);
-  } finally {
-      // Re-enable buttons and restore original text
-      const originalTexts = ['Subscribe Monthly', 'Subscribe 3-Month', 'Subscribe Annually'];
-      brCheckoutButtons.forEach((btn, index) => {
-          if(btn) {
-              btn.disabled = false;
-              btn.textContent = originalTexts[index];
-              btn.style.opacity = 1; // Restore opacity
-          }
-      });
-  }
 }
 
-// Monthly Board Review Checkout
+// CME Buy Credits Checkout
+const cmeBuyCreditsBtn = document.getElementById("cmeBuyCreditsBtn");
+if (cmeBuyCreditsBtn) {
+  cmeBuyCreditsBtn.addEventListener("click", function(e) {
+    const quantityInput = document.getElementById("creditQty");
+    const quantity = quantityInput ? parseInt(quantityInput.value, 10) : 1;
+    if (isNaN(quantity) || quantity < 1 || quantity > 24) {
+        alert("Please enter a whole number of credits between 1 and 24.");
+        return;
+    }
+    redirectToCmeCheckout('credits', e.currentTarget, quantity);
+  });
+}
+
+// Board Review Monthly Checkout
 const checkoutBrMonthlyBtn = document.getElementById("checkoutBrMonthlyBtn");
 if (checkoutBrMonthlyBtn) {
-  checkoutBrMonthlyBtn.addEventListener("click", function() {
-      handleBoardReviewCheckout(STRIPE_BR_MONTHLY_PRICE_ID, 'Board Review Monthly', 'board_review');
+  checkoutBrMonthlyBtn.addEventListener("click", function(e) {
+    redirectToBoardReviewCheckout('monthly', e.currentTarget);
   });
-} else {
-  console.error("Board Review Monthly Checkout button (#checkoutBrMonthlyBtn) not found.");
 }
 
-// 3-Month Board Review Checkout
+// Board Review 3-Month Checkout
 const checkoutBr3MonthBtn = document.getElementById("checkoutBr3MonthBtn");
 if (checkoutBr3MonthBtn) {
-  checkoutBr3MonthBtn.addEventListener("click", function() {
-      handleBoardReviewCheckout(STRIPE_BR_3MONTH_PRICE_ID, 'Board Review 3-Month', 'board_review');
+  checkoutBr3MonthBtn.addEventListener("click", function(e) {
+    redirectToBoardReviewCheckout('3-month', e.currentTarget);
   });
-} else {
-  console.error("Board Review 3-Month Checkout button (#checkoutBr3MonthBtn) not found.");
 }
 
-// Annual Board Review Checkout
+// Board Review Annual Checkout
 const checkoutBrAnnualBtn = document.getElementById("checkoutBrAnnualBtn");
 if (checkoutBrAnnualBtn) {
-  checkoutBrAnnualBtn.addEventListener("click", function() {
-      handleBoardReviewCheckout(STRIPE_BR_ANNUAL_PRICE_ID, 'Board Review Annual', 'board_review');
+  checkoutBrAnnualBtn.addEventListener("click", function(e) {
+    redirectToBoardReviewCheckout('annual', e.currentTarget);
   });
-} else {
-  console.error("Board Review Annual Checkout button (#checkoutBrAnnualBtn) not found.");
 }
-// --- End Board Review Checkout Button Listeners ---
+// --- END NEW LISTENERS ---
+
 
 // In app.js or a utils.js
 async function getActiveCmeYearIdFromFirestore() {
