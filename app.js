@@ -8,6 +8,9 @@ import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout} from './billing-service.js';
+import { detectNativeApp } from './platform.js';
+
+const isNativeApp = detectNativeApp();
 
 /**
  * Checks the URL for a question deep link and initializes a single-question quiz if found.
@@ -396,23 +399,19 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
 
   // --- Payment Initialization ---
-// This is the primary "seam" for platform-specific payment logic.
-// The web app initializes Stripe here. A native build (e.g., iOS) would
-// conditionally skip this and instead initialize a different module like 'revenuecat-native.js'.
-
-// For Web Builds:
-
-initializeBilling().catch(error => {
-  console.error("Stripe failed to initialize. Web payment functionality will be disabled.", error);
-});
-
-// For Native Builds (Example):
-// if (isNativeApp) {
-//   const { initializeRevenueCat, redirectToPurchase } = await import('./revenuecat-native.js');
-//   initializeRevenueCat();
-//   // The button listeners below would then call redirectToPurchase() instead.
-// }
-// --- End Payment Initialization ---
+  // The app dynamically picks the correct billing provider at runtime.
+  try {
+    if (isNativeApp) {
+      const revenueCatModule = await import('./revenuecat-native.js');
+      await revenueCatModule.initialize();
+    } else {
+      await initializeBilling();
+    }
+  } catch (error) {
+    const providerLabel = isNativeApp ? 'RevenueCat' : 'Stripe';
+    console.error(`${providerLabel} failed to initialize. Payment functionality will be limited.`, error);
+  }
+  // --- End Payment Initialization ---
 
   // --- START OF NEW LOGIC ---
   initializePaywallFreeAccessButton();

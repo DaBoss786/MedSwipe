@@ -1,33 +1,71 @@
 // billing-service.js
 // Central billing facade that allows the application to remain agnostic to the
 // underlying payment provider. The web build wires this facade to Stripe, while
-// future native builds (e.g., Capacitor + RevenueCat) can provide their own
-// implementation by exporting the same shape from a different module.
+// native builds (e.g., Capacitor + RevenueCat) provide their own implementation
+// transparently through this module.
 
-// In a more advanced setup we could dynamically choose the provider based on
-// runtime feature detection. For now we statically use the web Stripe module so
-// the rest of the app only talks to this thin interface.
-import {
-    initialize as initializeStripe,
-    startBoardReviewCheckout as startBoardReviewCheckoutWeb,
-    startCmeCheckout as startCmeCheckoutWeb
-  } from './stripe-web.js';
-  
-  export async function initialize() {
-    // Returning the provider promise allows callers to await readiness, which is
-    // especially helpful when a UI event fires before Stripe.js finishes loading.
-    return initializeStripe();
+import * as stripeProvider from './stripe-web.js';
+import { detectNativeApp } from './platform.js';
+
+const isNativeApp = detectNativeApp();
+
+let providerPromise = null;
+let resolvedProvider = null;
+
+function getProvider() {
+  if (resolvedProvider) {
+    return Promise.resolve(resolvedProvider);
   }
-  
-  export function startBoardReviewCheckout(planType, buttonElement) {
-    return startBoardReviewCheckoutWeb(planType, buttonElement);
+
+  if (!providerPromise) {
+    providerPromise = (async () => {
+      const providerModule = isNativeApp
+        ? await import('./revenuecat-native.js')
+        : stripeProvider;
+
+      resolvedProvider = providerModule;
+      return providerModule;
+    })().catch(error => {
+      providerPromise = null;
+      throw error;
+    });
   }
-  
-  export function startCmeCheckout(planType, buttonElement, quantity = 1) {
-    return startCmeCheckoutWeb(planType, buttonElement, quantity);
+
+  return providerPromise;
+}
+
+export async function initialize(...args) {
+  const provider = await getProvider();
+  if (typeof provider.initialize !== 'function') {
+    throw new Error('Selected billing provider does not implement initialize().');
   }
-  
-  // Native builds can later replace these exports with a RevenueCat-backed
-  // implementation by creating a platform-specific file (e.g.,
-  // `billing-service.native.js`) and adjusting the bundler or Capacitor config to
-  // resolve that version instead.
+  return provider.initialize(...args);
+}
+
+export function startBoardReviewCheckout(...args) {
+  return getProvider()
+    .then(provider => {
+      if (typeof provider.startBoardReviewCheckout !== 'function') {
+        throw new Error('Selected billing provider is missing startBoardReviewCheckout().');
+      }
+      return provider.startBoardReviewCheckout(...args);
+    })
+    .catch(error => {
+      console.error('Failed to start Board Review checkout.', error);
+      throw error;
+    });
+}
+
+export function startCmeCheckout(...args) {
+  return getProvider()
+    .then(provider => {
+      if (typeof provider.startCmeCheckout !== 'function') {
+        throw new Error('Selected billing provider is missing startCmeCheckout().');
+      }
+      return provider.startCmeCheckout(...args);
+    })
+    .catch(error => {
+      console.error('Failed to start CME checkout.', error);
+      throw error;
+    });
+}
