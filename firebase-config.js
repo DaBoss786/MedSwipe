@@ -50,7 +50,14 @@ waitForRecaptcha()
   })
   .catch(error => console.error("App Check init failed:", error));
 
-const analytics = getAnalytics(app);
+  let analytics = null;
+
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn("Firebase Analytics unavailable, continuing without it:", error);
+    analytics = null;
+  }
 const db = getFirestore(app);
 const auth = getAuth(app);
 const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
