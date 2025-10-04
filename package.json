@@ -6,7 +6,12 @@
     "lint": "eslint . --ext .js"
   },
   "dependencies": {
+    "@capacitor/app": "^7.1.0",
     "@capacitor/cli": "^7.4.3",
-    "@capacitor/core": "^7.4.3"
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/haptics": "^7.0.2",
+    "@capacitor/ios": "^7.4.3",
+    "@capacitor/keyboard": "^7.0.3",
+    "@capacitor/status-bar": "^7.0.3"
   }
 }
