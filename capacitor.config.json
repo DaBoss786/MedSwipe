@@ -1,15 +1,5 @@
 {
   "appId": "com.medswipeapp.app",
   "appName": "MedSwipe",
-  "webDir": ".",
-  "copyOptions": {
-    "ignore": [
-      "functions",
-      "functions/**",
-      "firebase.json",
-      "package.json",
-      "package-lock.json",
-      "CAPACITOR_IOS_CHECKLIST.md"
-    ]
-  }
+  "webDir": "docs"
 }

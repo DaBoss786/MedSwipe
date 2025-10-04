@@ -12,6 +12,7 @@
     "@capacitor/haptics": "^7.0.2",
     "@capacitor/ios": "^7.4.3",
     "@capacitor/keyboard": "^7.0.3",
-    "@capacitor/status-bar": "^7.0.3"
+    "@capacitor/status-bar": "^7.0.3",
+    "@revenuecat/purchases-capacitor": "^11.2.3"
   }
 }
