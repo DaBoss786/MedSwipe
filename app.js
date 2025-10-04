@@ -7,7 +7,7 @@ import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
-import { initializeStripe, redirectToBoardReviewCheckout, redirectToCmeCheckout } from './stripe-web.js';
+import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout} from './billing-service.js';
 
 /**
  * Checks the URL for a question deep link and initializes a single-question quiz if found.
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
 
 // For Web Builds:
 
-initializeStripe().catch(error => {
+initializeBilling().catch(error => {
   console.error("Stripe failed to initialize. Web payment functionality will be disabled.", error);
 });
 
@@ -6372,7 +6372,7 @@ if (boardReviewPricingBackBtn) {
 const cmeCheckoutAnnualBtn = document.getElementById("cmeCheckoutAnnualBtn");
 if (cmeCheckoutAnnualBtn) {
   cmeCheckoutAnnualBtn.addEventListener("click", function(e) {
-    redirectToCmeCheckout('annual', e.currentTarget);
+    startCmeCheckout('annual', e.currentTarget);
   });
 }
 
@@ -6386,7 +6386,7 @@ if (cmeBuyCreditsBtn) {
         alert("Please enter a whole number of credits between 1 and 24.");
         return;
     }
-    redirectToCmeCheckout('credits', e.currentTarget, quantity);
+    startCmeCheckout('credits', e.currentTarget, quantity);
   });
 }
 
@@ -6394,7 +6394,7 @@ if (cmeBuyCreditsBtn) {
 const checkoutBrMonthlyBtn = document.getElementById("checkoutBrMonthlyBtn");
 if (checkoutBrMonthlyBtn) {
   checkoutBrMonthlyBtn.addEventListener("click", function(e) {
-    redirectToBoardReviewCheckout('monthly', e.currentTarget);
+    startBoardReviewCheckout('monthly', e.currentTarget);
   });
 }
 
@@ -6402,7 +6402,7 @@ if (checkoutBrMonthlyBtn) {
 const checkoutBr3MonthBtn = document.getElementById("checkoutBr3MonthBtn");
 if (checkoutBr3MonthBtn) {
   checkoutBr3MonthBtn.addEventListener("click", function(e) {
-    redirectToBoardReviewCheckout('3-month', e.currentTarget);
+    startBoardReviewCheckout('3-month', e.currentTarget);
   });
 }
 
@@ -6410,7 +6410,7 @@ if (checkoutBr3MonthBtn) {
 const checkoutBrAnnualBtn = document.getElementById("checkoutBrAnnualBtn");
 if (checkoutBrAnnualBtn) {
   checkoutBrAnnualBtn.addEventListener("click", function(e) {
-    redirectToBoardReviewCheckout('annual', e.currentTarget);
+    startBoardReviewCheckout('annual', e.currentTarget);
   });
 }
 // --- END NEW LISTENERS ---

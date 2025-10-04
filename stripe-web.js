@@ -20,58 +20,72 @@ const STRIPE_BR_ANNUAL_PRICE_ID = 'price_1RXcOnJDkW3cIYXusyl4eKpH';
 // --- Module-level variables ---
 let stripe = null;
 let createCheckoutSessionFunction = null;
+let stripeInitPromise = null;
+
 
 /**
  * Dynamically loads the Stripe.js script and initializes the Stripe object.
  * This is the single entry point for setting up Stripe on the web.
- * @returns {Promise<void>} A promise that resolves when Stripe is ready, or rejects on failure.
+ * @returns {Promise<object>} A promise that resolves with the Stripe instance when ready, or rejects on failure.
  */
-export function initializeStripe() {
-  // Initialize the Firebase Cloud Function reference here, once.
-  if (!createCheckoutSessionFunction) {
-    try {
-      const functions = getFunctions();
-      createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
-    } catch (error) {
-      console.error("Could not initialize Firebase Cloud Function 'createStripeCheckoutSession':", error);
-    }
-  }
+export function initialize() {
+    if (!stripeInitPromise) {
+      stripeInitPromise = (async () => {
+        if (!createCheckoutSessionFunction) {
+          try {
+            const functions = getFunctions();
+            createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
+          } catch (error) {
+            console.error("Could not initialize Firebase Cloud Function 'createStripeCheckoutSession':", error);
+            throw error;
+          }
+        }
 
-  return new Promise((resolve, reject) => {
-    if (window.Stripe) {
-      if (!stripe) {
+        if (stripe) {
+            return stripe;
+          }
+    
+          if (window.Stripe) {
         const stripePublishableKey = 'pk_live_51RFk9GJDkW3cIYXuIgsJ907sJeHhQ11J2NbaNVYSjwVpjFDhIRzCnE5ju8jFFddSkcls1Mb3DFH8M1LhueDpRiY700lPtYxU8A';
         stripe = window.Stripe(stripePublishableKey);
         window.stripe = stripe;
         console.log("Stripe.js initialized successfully.");
-      }
-      resolve();
-      return;
+        return stripe;
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://js.stripe.com/v3/';
-    script.async = true;
-    script.onload = () => {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.async = true;
+      script.onload = resolve;
+      script.onerror = () => {
+        reject(new Error('Failed to load the Stripe.js script.'));
+      };
+      document.head.appendChild(script);
+    });
+
+    if (!window.Stripe) {
+      throw new Error('Stripe.js failed to load correctly.');
+      }
+
+
       const stripePublishableKey = 'pk_live_51RFk9GJDkW3cIYXuIgsJ907sJeHhQ11J2NbaNVYSjwVpjFDhIRzCnE5ju8jFFddSkcls1Mb3DFH8M1LhueDpRiY700lPtYxU8A';
       try {
         stripe = window.Stripe(stripePublishableKey);
-        window.stripe = stripe;
-        console.log("Stripe.js initialized successfully after load.");
-        resolve();
       } catch (error) {
         console.error("Error initializing Stripe.js after load:", error);
-        alert("Critical Error: Payment system failed to load. Please refresh the page.");
-        reject(error);
+        throw error;
       }
-    };
-    script.onerror = (error) => {
-      console.error("Failed to load the Stripe.js script:", error);
-      alert("Critical Error: Payment system failed to load. Please check your internet connection.");
-      reject(error);
-    };
-    document.head.appendChild(script);
-  });
+      window.stripe = stripe;
+      console.log("Stripe.js initialized successfully after load.");
+      return stripe;
+    })().catch((error) => {
+      stripeInitPromise = null;
+      throw error;
+    });
+  }
+
+  return stripeInitPromise;
 }
 
 /**
@@ -86,7 +100,12 @@ async function handleRedirectToCheckout(priceId, planName, tierName, quantity = 
     const auth = getAuth();
     const user = auth.currentUser;
 
-    const analytics = getAnalytics();
+    let analytics = null;
+    try {
+        analytics = getAnalytics();
+    } catch (error) {
+        console.warn('Analytics is unavailable; proceeding without logging checkout events.', error);
+    }
     if (analytics) {
         let price = 0;
         if (tierName === 'board_review') {
@@ -109,17 +128,19 @@ async function handleRedirectToCheckout(priceId, planName, tierName, quantity = 
         alert("Please register or log in before making a purchase.");
         return;
     }
-    if (!stripe || !createCheckoutSessionFunction) {
-        alert('Error: Payment system is not ready. Please refresh the page.');
-        return;
-    }
-
     if (buttonElement) {
         buttonElement.disabled = true;
         buttonElement.textContent = 'Preparing...';
     }
 
     try {
+        if (!stripe || !createCheckoutSessionFunction) {
+            await initialize();
+        }
+
+        if (!stripe || !createCheckoutSessionFunction) {
+            throw new Error('Payment system is not ready.');
+        }
         await getIdToken(user, true);
         const result = await createCheckoutSessionFunction({
             priceId: priceId, planName: planName,
@@ -149,7 +170,7 @@ async function handleRedirectToCheckout(priceId, planName, tierName, quantity = 
  * These are the public functions that app.js will call.
  */
 
-export function redirectToBoardReviewCheckout(planType, buttonElement) {
+export function startBoardReviewCheckout(planType, buttonElement) {
     let priceId, planName;
     switch (planType) {
         case 'monthly':
@@ -172,7 +193,7 @@ export function redirectToBoardReviewCheckout(planType, buttonElement) {
     handleRedirectToCheckout(priceId, planName, 'board_review', 1, buttonElement);
 }
 
-export function redirectToCmeCheckout(planType, buttonElement, quantity = 1) {
+export function startCmeCheckout(planType, buttonElement, quantity = 1) {
     let priceId, planName, tierName;
     switch (planType) {
         case 'annual':
