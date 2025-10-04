@@ -47,6 +47,153 @@ const storage = admin.storage();
 const bucket = storage.bucket(BUCKET_NAME);
 // --- End PDF Configuration ---
 
+// --- Shared Subscription Helpers -------------------------------------------------
+const timestampToMillis = (value) => {
+  if (!value) return 0;
+
+  if (typeof value.toMillis === "function") {
+    return value.toMillis();
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  if (value instanceof Date && Number.isFinite(value.getTime())) {
+    return value.getTime();
+  }
+
+  return 0;
+};
+
+const SUBSCRIPTION_CONFIG = {
+  cme: {
+    activeField: "cmeSubscriptionActive",
+    endField: "cmeSubscriptionEndDate",
+    trialField: "cmeSubscriptionTrialEndDate",
+    altTrialField: "boardReviewTrialEndDate",
+    trialTypeValue: "cme_annual",
+  },
+  boardReview: {
+    activeField: "boardReviewActive",
+    endField: "boardReviewSubscriptionEndDate",
+    trialField: "boardReviewTrialEndDate",
+    altTrialField: "cmeSubscriptionTrialEndDate",
+    trialTypeValue: "board_review",
+  },
+};
+
+const resolveEffectiveEnd = (userData = {}, config) => {
+  const subscriptionEndMs = timestampToMillis(userData[config.endField]);
+  if (subscriptionEndMs > 0) {
+    return { millis: subscriptionEndMs, source: "subscription" };
+  }
+
+  const trialEndMs = timestampToMillis(userData[config.trialField]);
+  if (trialEndMs > 0) {
+    return { millis: trialEndMs, source: "trial" };
+  }
+
+  const hasMatchingTrial =
+    !!userData.hasActiveTrial &&
+    (!config.trialTypeValue || userData.trialType === config.trialTypeValue);
+
+  if (hasMatchingTrial && config.altTrialField) {
+    const altTrialEndMs = timestampToMillis(userData[config.altTrialField]);
+    if (altTrialEndMs > 0) {
+      return { millis: altTrialEndMs, source: "alternateTrial" };
+    }
+  }
+
+  return { millis: 0, source: "none" };
+};
+
+const computeSubscriptionWindow = (userData = {}, config, nowMs = Date.now()) => {
+  const { millis, source } = resolveEffectiveEnd(userData, config);
+  const isActiveFlag = !!userData[config.activeField];
+  const stillActive = isActiveFlag && millis > nowMs;
+
+  return {
+    activeFlag: isActiveFlag,
+    stillActive,
+    effectiveEndMs: millis,
+    endSource: source,
+    usedTrialFallback: source === "trial" || source === "alternateTrial",
+  };
+};
+
+const determineAccessTier = (userData = {}) => {
+  const nowMs = Date.now();
+  const cmeWindow = computeSubscriptionWindow(userData, SUBSCRIPTION_CONFIG.cme, nowMs);
+  const boardWindow = computeSubscriptionWindow(userData, SUBSCRIPTION_CONFIG.boardReview, nowMs);
+  const credits = Number(userData.cmeCreditsAvailable || 0);
+
+  if (cmeWindow.stillActive) return "cme_annual";
+  if (boardWindow.stillActive) return "board_review";
+  if (credits > 0) return "cme_credits_only";
+  return "free_guest";
+};
+
+const formatWindowForResponse = (window) => ({
+  activeFlag: window.activeFlag,
+  stillActive: window.stillActive,
+  effectiveEndMillis: window.effectiveEndMs > 0 ? window.effectiveEndMs : null,
+  effectiveEndIso:
+    window.effectiveEndMs > 0 ? new Date(window.effectiveEndMs).toISOString() : null,
+  endSource: window.endSource,
+  usedTrialFallback: window.usedTrialFallback,
+});
+
+const recomputeAccessTierFromData = (userData = {}, nowMs = Date.now()) => {
+  const originalCmeWindow = computeSubscriptionWindow(userData, SUBSCRIPTION_CONFIG.cme, nowMs);
+  const originalBoardWindow = computeSubscriptionWindow(userData, SUBSCRIPTION_CONFIG.boardReview, nowMs);
+
+  const updates = {};
+
+  if (userData.cmeSubscriptionActive && !originalCmeWindow.stillActive) {
+    updates.cmeSubscriptionActive = false;
+  }
+
+  if (userData.boardReviewActive && !originalBoardWindow.stillActive) {
+    updates.boardReviewActive = false;
+  }
+
+  const updatedUserData = { ...userData, ...updates };
+  const updatedCmeWindow = computeSubscriptionWindow(updatedUserData, SUBSCRIPTION_CONFIG.cme, nowMs);
+  const updatedBoardWindow = computeSubscriptionWindow(updatedUserData, SUBSCRIPTION_CONFIG.boardReview, nowMs);
+
+  const newAccessTier = determineAccessTier(updatedUserData);
+
+  if (userData.accessTier !== newAccessTier) {
+    updates.accessTier = newAccessTier;
+  }
+
+  return {
+    updates,
+    newAccessTier,
+    originalCmeWindow,
+    updatedCmeWindow,
+    originalBoardWindow,
+    updatedBoardWindow,
+    updatedUserData,
+  };
+};
+
+exports.__TESTING__ = {
+  determineAccessTier,
+  recomputeAccessTierFromData,
+  computeSubscriptionWindow,
+  resolveEffectiveEnd,
+  timestampToMillis,
+};
+// --- End Shared Subscription Helpers --------------------------------------------
+
+
 // --- Helper Function to Get Active CME Year ID ---
 /**
  * Fetches all CME windows and determines which one is currently active.
@@ -370,33 +517,6 @@ exports.generateCmeCertificate = onCall(
         const dataObject = event.data.object;
         logger.info(`Received Stripe event: ${event.type}, ID: ${event.id}`);
     
-        // --- Helper function to determine accessTier based on user data ---
-        // REPLACE the old block with this one (This was part of your original provided code)
-        const determineAccessTier = (userData) => {
-          // helper: confirm a real Firestore Timestamp
-          const tsMs = (ts) =>
-            ts && typeof ts === "object" && typeof ts.toMillis === "function"
-              ? ts.toMillis()
-              : 0;            // treat missing/invalid as expired
-
-          const nowMs       = Date.now();
-          const cmeEndMs    = tsMs(userData.cmeSubscriptionEndDate);
-          const brEndMs     = tsMs(userData.boardReviewSubscriptionEndDate);
-          const credits     = userData.cmeCreditsAvailable || 0;
-
-          // 1. CME Annual (includes Board Review)
-          if (userData.cmeSubscriptionActive && cmeEndMs > nowMs) return "cme_annual";
-
-          // 2. Board-Review standalone
-          if (userData.boardReviewActive && brEndMs > nowMs)      return "board_review";
-
-          // 3. CME-credits-only (no active annual sub)
-          if (credits > 0 && !(userData.cmeSubscriptionActive && cmeEndMs > nowMs))
-              return "cme_credits_only";
-
-          // 4. Free / Guest
-          return "free_guest";
-        };
     
         // --- Handle checkout.session.completed ---
         if (event.type === "checkout.session.completed") {
@@ -2344,5 +2464,73 @@ exports.calculateAndSyncWeeklyDigest = onSchedule(
     } catch (error) {
       logger.error("Error during calculateAndSyncWeeklyDigest execution:", error);
     }
+  }
+);
+
+exports.recomputeAccessTier = onCall(
+  {
+    region: "us-central1",
+    memory: "256MiB",
+    timeoutSeconds: 120,
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const requestedUid = typeof request.data?.uid === "string" ? request.data.uid.trim() : "";
+    const targetUid = requestedUid || request.auth.uid;
+
+    if (!targetUid) {
+      throw new HttpsError("invalid-argument", "A user ID must be provided.");
+    }
+
+    const isAdminCaller = request.auth.token?.admin === true;
+    if (targetUid !== request.auth.uid && !isAdminCaller) {
+      throw new HttpsError("permission-denied", "Insufficient permissions to recompute this user.");
+    }
+
+    const userRef = db.collection("users").doc(targetUid);
+    const userSnapshot = await userRef.get();
+
+    if (!userSnapshot.exists) {
+      throw new HttpsError("not-found", "User record not found.");
+    }
+
+    const userData = userSnapshot.data() || {};
+    const nowMs = Date.now();
+
+    const recomputeDetails = recomputeAccessTierFromData(userData, nowMs);
+    const updates = { ...recomputeDetails.updates };
+    const newAccessTier = recomputeDetails.newAccessTier;
+
+    let wroteChanges = false;
+    if (Object.keys(updates).length > 0) {
+      updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+      await userRef.set(updates, { merge: true });
+      wroteChanges = true;
+    }
+
+    return {
+      success: true,
+      uid: targetUid,
+      accessTier: newAccessTier,
+      updated: wroteChanges,
+      updatedFields: wroteChanges
+        ? Object.keys(updates).filter((field) => field !== "updatedAt")
+        : [],
+      cme: {
+        before: formatWindowForResponse(recomputeDetails.originalCmeWindow),
+        after: formatWindowForResponse(recomputeDetails.updatedCmeWindow),
+      },
+      boardReview: {
+        before: formatWindowForResponse(recomputeDetails.originalBoardWindow),
+        after: formatWindowForResponse(recomputeDetails.updatedBoardWindow),
+      },
+      trial: {
+        hasActiveTrial: !!userData.hasActiveTrial,
+        trialType: userData.trialType || null,
+      },
+    };
   }
 );

@@ -37,6 +37,14 @@ try {
     console.error("Error creating finalizeRegistration function reference:", error);
 }
 
+let recomputeAccessTierFunction;
+try {
+    recomputeAccessTierFunction = httpsCallable(functions, 'recomputeAccessTier');
+} catch (error) {
+    console.error("Error creating recomputeAccessTier function reference:", error);
+}
+
+
 // ----------------------------------------------------
 // Global reference to the auth state listener
 let authStateListener = null;
@@ -449,11 +457,6 @@ function initAuth() {
           },
           cmeAnsweredQuestions: {},
           cmeClaimHistory: [],
-          // Initialize subscription fields to false/null
-          boardReviewActive: false,
-          boardReviewSubscriptionEndDate: null,
-          cmeSubscriptionActive: false,
-          cmeSubscriptionEndDate: null,
           cmeCreditsAvailable: 0,
         };
 
@@ -514,7 +517,6 @@ function initAuth() {
         if (brActive && brEndDate && brEndDate.toDate() < now) {
           console.log(`Client-side: Board Review for ${user.uid} expired.`);
           brActive = false;
-          userDataForWrite.boardReviewActive = false; // Mark for Firestore update
           // Optionally clear/update boardReviewTier if it was specific
         }
 
@@ -522,10 +524,10 @@ function initAuth() {
         if (cmeActive && cmeEndDate && cmeEndDate.toDate() < now) {
           console.log(`Client-side: CME Annual for ${user.uid} expired.`);
           cmeActive = false;
-          userDataForWrite.cmeSubscriptionActive = false; // Mark for Firestore update
           // If CME Annual expires, any BR access granted by it also expires
           if (existingData.boardReviewTier === "Granted by CME Annual") {
-             userDataForWrite.boardReviewActive = false;
+            brActive = false;
+
           }
         }
         
@@ -542,8 +544,7 @@ function initAuth() {
 
         // If client-side determined tier differs from stored, update Firestore
         if (effectiveAccessTier !== storedTier) {
-            console.log(`Client-side tier re-evaluation for ${user.uid}: Stored='${storedTier}', NewEffective='${effectiveAccessTier}'. Updating Firestore.`);
-            userDataForWrite.accessTier = effectiveAccessTier;
+          console.log(`Client-side tier re-evaluation for ${user.uid}: Stored='${storedTier}', NewEffective='${effectiveAccessTier}'. Requesting server reconciliation.`);
         }
         
         // Populate window.authState with current effective values
@@ -571,6 +572,43 @@ function initAuth() {
       } else {
          console.log(`User doc for ${user.uid} exists and is up-to-date. Effective Tier: ${window.authState.accessTier}`);
       }
+
+      if (recomputeAccessTierFunction) {
+        try {
+          const recomputeResult = await recomputeAccessTierFunction();
+          const payload = recomputeResult?.data;
+          if (payload && typeof payload === 'object') {
+            if (typeof payload.accessTier === 'string') {
+              window.authState.accessTier = payload.accessTier;
+            }
+            if (typeof payload.boardReviewActive === 'boolean') {
+              window.authState.boardReviewActive = payload.boardReviewActive;
+            }
+            if ('boardReviewSubscriptionEndDate' in payload) {
+              window.authState.boardReviewSubscriptionEndDate =
+                typeof payload.boardReviewSubscriptionEndDate === 'number'
+                  ? new Date(payload.boardReviewSubscriptionEndDate)
+                  : null;
+            }
+            if (typeof payload.cmeSubscriptionActive === 'boolean') {
+              window.authState.cmeSubscriptionActive = payload.cmeSubscriptionActive;
+            }
+            if ('cmeSubscriptionEndDate' in payload) {
+              window.authState.cmeSubscriptionEndDate =
+                typeof payload.cmeSubscriptionEndDate === 'number'
+                  ? new Date(payload.cmeSubscriptionEndDate)
+                  : null;
+            }
+            if ('cmeCreditsAvailable' in payload) {
+              const numericCredits = Number(payload.cmeCreditsAvailable) || 0;
+              window.authState.cmeCreditsAvailable = numericCredits;
+            }
+          }
+        } catch (err) {
+          console.error('Error invoking recomputeAccessTier Cloud Function:', err);
+        }
+      }
+
 
     } else {
       // ---------- No user signed in (or explicitly signed out) ----------
