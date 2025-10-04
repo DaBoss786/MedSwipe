@@ -24,6 +24,25 @@ const firebaseConfig = {
 // Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 
+function isNativeApp() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const capacitor = window.Capacitor;
+  if (capacitor && typeof capacitor.isNativePlatform === "function") {
+    try {
+      return capacitor.isNativePlatform();
+    } catch (error) {
+      console.warn("Capacitor.isNativePlatform() threw an error, falling back to UA sniffing:", error);
+    }
+  }
+
+  const userAgent = window.navigator?.userAgent || "";
+  return /Capacitor|iOSApp|AndroidApp/i.test(userAgent);
+}
+
+
 function waitForRecaptcha() {
   return new Promise((resolve, reject) => {
     let attempts = 0;
@@ -40,15 +59,19 @@ function waitForRecaptcha() {
   });
 }
 
-// Initialize App Check after reCAPTCHA is ready
-waitForRecaptcha()
-  .then(() => {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-      isTokenAutoRefreshEnabled: true
-    });
-  })
-  .catch(error => console.error("App Check init failed:", error));
+// Initialize App Check after reCAPTCHA is ready for web builds only
+if (!isNativeApp()) {
+  waitForRecaptcha()
+    .then(() => {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
+        isTokenAutoRefreshEnabled: true
+      });
+    })
+    .catch(error => console.error("App Check init failed:", error));
+} else {
+  console.info("Skipping Firebase App Check initialization for native runtime. TODO: integrate DeviceCheck/App Attest provider.");
+}
 
   let analytics = null;
 
