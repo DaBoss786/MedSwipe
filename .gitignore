@@ -67,3 +67,8 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Capacitor native config (contains the RevenueCat key)
+docs/native-config.js
+ios/App/App/public/native-config.js
+android/app/src/main/assets/native-config.js

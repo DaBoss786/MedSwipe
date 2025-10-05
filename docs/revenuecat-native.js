@@ -8,9 +8,9 @@ const globalWindow = typeof window !== 'undefined' ? window : undefined;
 
 const PRODUCT_IDENTIFIERS = {
   boardReview: {
-    monthly: 'medswipe.board_review.monthly',
-    '3-month': 'medswipe.board_review.quarterly',
-    annual: 'medswipe.board_review.annual'
+    monthly: 'medswipe.board.review.monthly',
+    '3-month': 'medswipe.board.review.quarterly',
+    annual: 'medswipe.board.review.annual'
   },
   cme: {
     annual: 'medswipe.cme.annual',
@@ -20,6 +20,9 @@ const PRODUCT_IDENTIFIERS = {
 
 let initialized = false;
 let cachedPlugin = null;
+let authListenerAttached = false;
+let lastSyncedAppUserId = undefined;
+let userSyncPromise = Promise.resolve();
 
 function ensureNativeRuntime() {
   if (!detectNativeApp()) {
@@ -51,6 +54,114 @@ function getPurchasesPlugin() {
   return plugin;
 }
 
+function extractFirebaseUid(authState = globalWindow?.authState) {
+  const user = authState?.user;
+  if (!user || typeof user.uid !== 'string') {
+    return null;
+  }
+
+  if (user.isAnonymous) {
+    return null;
+  }
+
+  const trimmed = user.uid.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+async function invokeLogin(plugin, appUserId) {
+  if (!appUserId) {
+    return false;
+  }
+
+  if (typeof plugin.logIn === 'function') {
+    try {
+      await plugin.logIn(appUserId);
+      return true;
+    } catch (error) {
+      // Some plugin versions expect an object parameter. Retry below.
+      try {
+        await plugin.logIn({ appUserID: appUserId });
+        return true;
+      } catch (secondaryError) {
+        throw secondaryError;
+      }
+    }
+  }
+
+  if (typeof plugin.identify === 'function') {
+    await plugin.identify(appUserId);
+    return true;
+  }
+
+  if (typeof plugin.setAppUserID === 'function') {
+    await plugin.setAppUserID(appUserId);
+    return true;
+  }
+
+  console.warn('RevenueCat plugin is missing a method to assign the app user ID.');
+  return false;
+}
+
+async function invokeLogout(plugin) {
+  if (typeof plugin.logOut === 'function') {
+    await plugin.logOut();
+    return true;
+  }
+
+  if (typeof plugin.reset === 'function') {
+    await plugin.reset();
+    return true;
+  }
+
+  console.warn('RevenueCat plugin is missing a method to clear the app user ID.');
+  return false;
+}
+
+async function syncAppUserIdWithAuth(plugin, authState) {
+  const targetAppUserId = extractFirebaseUid(authState);
+
+  if (targetAppUserId === lastSyncedAppUserId) {
+    return;
+  }
+
+  if (targetAppUserId) {
+    const didSync = await invokeLogin(plugin, targetAppUserId);
+    if (didSync) {
+      lastSyncedAppUserId = targetAppUserId;
+    }
+    return;
+  }
+
+  const didReset = await invokeLogout(plugin);
+  if (didReset || typeof lastSyncedAppUserId !== 'undefined') {
+    lastSyncedAppUserId = null;
+  }
+}
+
+function queueAppUserSync(plugin, authState) {
+  userSyncPromise = userSyncPromise
+    .catch(() => undefined)
+    .then(() => syncAppUserIdWithAuth(plugin, authState))
+    .catch((error) => {
+      console.error('RevenueCat app user sync failed.', error);
+    });
+
+  return userSyncPromise;
+}
+
+function attachAuthListener(plugin) {
+  if (authListenerAttached || typeof globalWindow?.addEventListener !== 'function') {
+    return;
+  }
+
+  authListenerAttached = true;
+
+  globalWindow.addEventListener('authStateChanged', (event) => {
+    queueAppUserSync(plugin, event?.detail || globalWindow?.authState);
+  });
+}
+
+
 async function configurePlugin(plugin) {
   const apiKey = globalWindow?.REVENUECAT_API_KEY || globalWindow?.__REVENUECAT_API_KEY__;
   if (!apiKey) {
@@ -58,17 +169,19 @@ async function configurePlugin(plugin) {
     return;
   }
 
+  const initialAppUserId = extractFirebaseUid();
+
   if (typeof plugin.configure === 'function') {
-    await plugin.configure({ apiKey, appUserID: globalWindow?.authState?.uid || null });
-    return;
+    await plugin.configure({ apiKey, appUserID: initialAppUserId });
+  } else if (typeof plugin.setup === 'function') {
+    await plugin.setup({ apiKey, appUserId: initialAppUserId });
+  } else {
+    console.warn('RevenueCat plugin does not expose a configure/setup method.');
   }
 
-  if (typeof plugin.setup === 'function') {
-    await plugin.setup({ apiKey, appUserId: globalWindow?.authState?.uid || null });
-    return;
-  }
-
-  console.warn('RevenueCat plugin does not expose a configure/setup method.');
+  lastSyncedAppUserId = initialAppUserId ?? null;
+  attachAuthListener(plugin);
+  await queueAppUserSync(plugin, globalWindow?.authState);
 }
 
 export async function initialize() {
