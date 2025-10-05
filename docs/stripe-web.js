@@ -213,3 +213,7 @@ export function startCmeCheckout(planType, buttonElement, quantity = 1) {
     if (buttonElement) buttonElement.dataset.originalText = buttonElement.textContent;
     handleRedirectToCheckout(priceId, planName, tierName, quantity, buttonElement);
 }
+
+export function restorePurchases() {
+  return Promise.resolve();
+}

@@ -387,6 +387,9 @@
       </div>
 
     </div>
+    <div class="paywall-restore-container">
+      <button id="restorePurchasesBtn" class="paywall-restore-btn" type="button">Restore Purchases</button>
+    </div>
   </div>
 </div>
 
@@ -1053,9 +1056,15 @@
   const urlParams = new URLSearchParams(window.location.search);
   const fromLanding = urlParams.get('from') === 'landing';
   const shouldRegister = urlParams.get('register') === 'true';
+  const isNativeApp = !!window.Capacitor && (window.Capacitor.isNativePlatform?.() ?? window.Capacitor.platform !== 'web');
+
+if (isNativeApp) {
+  document.body.classList.remove('hide-for-redirect');
+}
+
   
-  // Only redirect if explicitly coming to root page and not from landing AND not trying to register
-  if (!location.hash && !fromLanding && !shouldRegister) {
+  // Only redirect if explicitly coming to root page and not from landing, Capacitor AND not trying to register
+  if (!isNativeApp && !location.hash && !fromLanding && !shouldRegister) {
     
     // Hide ALL content immediately for potential redirects
     document.body.classList.add('hide-for-redirect');

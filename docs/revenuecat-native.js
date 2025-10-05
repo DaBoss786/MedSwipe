@@ -256,3 +256,25 @@ export async function startCmeCheckout(planType, _buttonElement, quantity = 1) {
     throw error;
   }
 }
+
+export async function restorePurchases() {
+  ensureNativeRuntime();
+  const plugin = getPurchasesPlugin();
+
+  try {
+    if (typeof plugin.restorePurchases === 'function') {
+      await plugin.restorePurchases();
+      return;
+    }
+
+    if (typeof plugin.syncPurchases === 'function') {
+      await plugin.syncPurchases();
+      return;
+    }
+
+    throw new Error('RevenueCat plugin does not expose a restore purchases method.');
+  } catch (error) {
+    console.error('RevenueCat restore purchases failed.', error);
+    throw error;
+  }
+}

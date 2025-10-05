@@ -7,7 +7,7 @@ import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
-import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout} from './billing-service.js';
+import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
 
 const isNativeApp = detectNativeApp();
@@ -6336,6 +6336,32 @@ showRegisterForm('board_review_pricing');
     });
 } else {
     console.error("Button with ID 'unlockBoardReviewBtn' not found.");
+}
+
+const restorePurchasesBtn = document.getElementById('restorePurchasesBtn');
+if (restorePurchasesBtn) {
+    if (isNativeApp) {
+        const originalText = restorePurchasesBtn.textContent;
+        restorePurchasesBtn.dataset.originalText = originalText;
+
+        restorePurchasesBtn.addEventListener('click', async () => {
+            restorePurchasesBtn.disabled = true;
+            restorePurchasesBtn.textContent = 'Restoring…';
+
+            try {
+                await restorePurchases();
+                alert('Your purchases have been restored successfully.');
+            } catch (error) {
+                console.error('Restore purchases failed.', error);
+                alert('We could not restore your purchases. Please try again later.');
+            } finally {
+                restorePurchasesBtn.disabled = false;
+                restorePurchasesBtn.textContent = restorePurchasesBtn.dataset.originalText || originalText;
+            }
+        });
+    } else {
+        restorePurchasesBtn.style.display = 'none';
+    }
 }
 
 // --- Board Review Pricing Screen - Back Button Logic ---

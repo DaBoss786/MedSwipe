@@ -4905,6 +4905,39 @@ html, body {
   background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
 }
 
+.paywall-restore-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.paywall-restore-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0C72D3;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.paywall-restore-btn:hover {
+  color: #064a91;
+  background-color: rgba(12, 114, 211, 0.08);
+  border-color: rgba(12, 114, 211, 0.15);
+}
+
+.paywall-restore-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
 .paywall-continue-guest-btn {
   display: block;
   width: 100%;

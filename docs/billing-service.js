@@ -68,4 +68,19 @@ export function startCmeCheckout(...args) {
       console.error('Failed to start CME checkout.', error);
       throw error;
     });
+
+  }
+
+  export function restorePurchases(...args) {
+    return getProvider()
+      .then(provider => {
+        if (typeof provider.restorePurchases !== 'function') {
+          throw new Error('Selected billing provider is missing restorePurchases().');
+        }
+        return provider.restorePurchases(...args);
+      })
+      .catch(error => {
+        console.error('Failed to restore purchases.', error);
+        throw error;
+      });
 }
