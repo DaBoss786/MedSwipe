@@ -2307,6 +2307,57 @@ exports.logWeeklyUserStats = onSchedule(
  *  Calculates weekly stats from snapshots and syncs them to MailerLite.
  * =================================================================================
  */
+
+const checkMailerLiteUnsubscribeStatus = async (email, mailerLiteApiKey) => {
+  if (!email || !mailerLiteApiKey) {
+    return { isUnsubscribed: false, found: false };
+  }
+
+  try {
+    const response = await axios.get(
+      `https://connect.mailerlite.com/api/subscribers/${encodeURIComponent(email)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${mailerLiteApiKey}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const status =
+      response.data?.data?.status ||
+      response.data?.status ||
+      "";
+
+    return {
+      isUnsubscribed: typeof status === "string" && status.toLowerCase() === "unsubscribed",
+      found: true,
+    };
+  } catch (error) {
+    const statusCode = error.response?.status;
+    const errorMessage = (error.response?.data?.message || "").toLowerCase();
+    const errorDetail = (error.response?.data?.errors?.email?.[0] || "").toLowerCase();
+
+    if (
+      errorMessage.includes("unsubscribed") ||
+      errorDetail.includes("unsubscribed")
+    ) {
+      return { isUnsubscribed: true, found: true };
+    }
+
+    if (statusCode === 404 || errorMessage.includes("not found")) {
+      return { isUnsubscribed: false, found: false };
+    }
+
+    logger.warn(
+      `Unable to determine MailerLite status for ${email}. Assuming subscribed.`,
+      error.response?.data || error.message
+    );
+
+    return { isUnsubscribed: false, found: true };
+  }
+};
+
 exports.calculateAndSyncWeeklyDigest = onSchedule(
   {
     schedule: "every sunday 08:00", // Runs at 8:00 AM every Sunday
@@ -2327,6 +2378,7 @@ exports.calculateAndSyncWeeklyDigest = onSchedule(
     const usersRef = db.collection("users");
     let successCount = 0;
     let skippedCount = 0;
+    let unsubscribedCount = 0;
 
     try {
       // 1. Get all eligible users: registered, have an email, and opted-in.
@@ -2426,7 +2478,30 @@ exports.calculateAndSyncWeeklyDigest = onSchedule(
                 // If eligibleCategories.length is 0, both will remain "N/A" by default.
                 // --- END: FINAL Logic ---
 
-        // 5. Prepare and sync the data to MailerLite
+        // 5. Respect MailerLite unsubscribe status before syncing
+        try {
+          const { isUnsubscribed } = await checkMailerLiteUnsubscribeStatus(
+            userEmail,
+            mailerLiteApiKey
+          );
+
+          if (isUnsubscribed) {
+            unsubscribedCount++;
+            skippedCount++;
+            logger.info(
+              `Skipping weekly digest sync for ${userId} (${userEmail}) because the user is unsubscribed in MailerLite.`
+            );
+            continue;
+          }
+        } catch (statusError) {
+          logger.error(
+            `Failed to check MailerLite status for ${userId} (${userEmail}).`,
+            statusError.response?.data || statusError.message
+          );
+          // Proceed with sync attempt even if status check fails unexpectedly
+        }
+
+        // 6. Prepare and sync the data to MailerLite
         const mailerLitePayload = {
           email: userEmail,
           fields: {
@@ -2437,7 +2512,6 @@ exports.calculateAndSyncWeeklyDigest = onSchedule(
             weakest_category: weakestCategory,
           },
           groups: [MAILERLITE_WEEKLY_DIGEST_GROUP_ID],
-          resubscribe: true, // Re-add them if they were removed by a previous automation
         };
 
         try {
@@ -2459,7 +2533,9 @@ exports.calculateAndSyncWeeklyDigest = onSchedule(
         }
       }
 
-      logger.info(`Weekly digest job finished. Successfully synced: ${successCount}, Skipped (no activity/data): ${skippedCount}.`);
+      logger.info(
+        `Weekly digest job finished. Successfully synced: ${successCount}, Skipped (no activity/data): ${skippedCount}, Unsubscribed: ${unsubscribedCount}.`
+      );
 
     } catch (error) {
       logger.error("Error during calculateAndSyncWeeklyDigest execution:", error);
