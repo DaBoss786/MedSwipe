@@ -231,6 +231,10 @@ async function purchaseProduct(productIdentifier, options = {}) {
   throw new Error('RevenueCat plugin is missing purchase APIs.');
 }
 
+// Invoked when a premium Board Review plan is selected inside the native shell.
+// Unlike the Stripe-backed web flow, this hands control to RevenueCat so the
+// user sees Apple's native purchase sheet (where the free-trial messaging and
+// confirmation live).
 export async function startBoardReviewCheckout(planType, _buttonElement) {
   ensureNativeRuntime();
   const productIdentifier = resolveBoardReviewProduct(planType);
@@ -243,6 +247,8 @@ export async function startBoardReviewCheckout(planType, _buttonElement) {
   }
 }
 
+// Mirrors startBoardReviewCheckout for CME products. All checkout UX is handled
+// by RevenueCat/StoreKit once this promise resolves.
 export async function startCmeCheckout(planType, _buttonElement, quantity = 1) {
   ensureNativeRuntime();
   const productIdentifier = resolveCmeProduct(planType);

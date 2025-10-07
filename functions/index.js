@@ -13,6 +13,9 @@ const { defineString } = require("firebase-functions/params");
 const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib");
 const crypto = require("crypto");
 const axios = require("axios"); // For MailerLite
+const { revenuecatWebhook } = require("./revenuecatWebhook");
+
+exports.revenuecatWebhook = revenuecatWebhook;
 
 
 // Initialize Firebase Admin SDK only once
@@ -116,11 +119,13 @@ const resolveEffectiveEnd = (userData = {}, config) => {
 const computeSubscriptionWindow = (userData = {}, config, nowMs = Date.now()) => {
   const { millis, source } = resolveEffectiveEnd(userData, config);
   const isActiveFlag = !!userData[config.activeField];
-  const stillActive = isActiveFlag && millis > nowMs;
+  const hasEndDate = millis > 0;
+  const endInFuture = hasEndDate && millis > nowMs;
 
   return {
     activeFlag: isActiveFlag,
-    stillActive,
+    stillActive: isActiveFlag,
+    fallbackActive: !isActiveFlag && endInFuture,
     effectiveEndMs: millis,
     endSource: source,
     usedTrialFallback: source === "trial" || source === "alternateTrial",
@@ -128,13 +133,10 @@ const computeSubscriptionWindow = (userData = {}, config, nowMs = Date.now()) =>
 };
 
 const determineAccessTier = (userData = {}) => {
-  const nowMs = Date.now();
-  const cmeWindow = computeSubscriptionWindow(userData, SUBSCRIPTION_CONFIG.cme, nowMs);
-  const boardWindow = computeSubscriptionWindow(userData, SUBSCRIPTION_CONFIG.boardReview, nowMs);
   const credits = Number(userData.cmeCreditsAvailable || 0);
 
-  if (cmeWindow.stillActive) return "cme_annual";
-  if (boardWindow.stillActive) return "board_review";
+  if (userData.cmeSubscriptionActive) return "cme_annual";
+  if (userData.boardReviewActive) return "board_review";
   if (credits > 0) return "cme_credits_only";
   return "free_guest";
 };
@@ -142,6 +144,7 @@ const determineAccessTier = (userData = {}) => {
 const formatWindowForResponse = (window) => ({
   activeFlag: window.activeFlag,
   stillActive: window.stillActive,
+  fallbackActive: window.fallbackActive,
   effectiveEndMillis: window.effectiveEndMs > 0 ? window.effectiveEndMs : null,
   effectiveEndIso:
     window.effectiveEndMs > 0 ? new Date(window.effectiveEndMs).toISOString() : null,
@@ -155,17 +158,9 @@ const recomputeAccessTierFromData = (userData = {}, nowMs = Date.now()) => {
 
   const updates = {};
 
-  if (userData.cmeSubscriptionActive && !originalCmeWindow.stillActive) {
-    updates.cmeSubscriptionActive = false;
-  }
-
-  if (userData.boardReviewActive && !originalBoardWindow.stillActive) {
-    updates.boardReviewActive = false;
-  }
-
-  const updatedUserData = { ...userData, ...updates };
-  const updatedCmeWindow = computeSubscriptionWindow(updatedUserData, SUBSCRIPTION_CONFIG.cme, nowMs);
-  const updatedBoardWindow = computeSubscriptionWindow(updatedUserData, SUBSCRIPTION_CONFIG.boardReview, nowMs);
+  const updatedUserData = { ...userData };
+  const updatedCmeWindow = originalCmeWindow;
+  const updatedBoardWindow = originalBoardWindow;
 
   const newAccessTier = determineAccessTier(updatedUserData);
 
@@ -192,7 +187,6 @@ exports.__TESTING__ = {
   timestampToMillis,
 };
 // --- End Shared Subscription Helpers --------------------------------------------
-
 
 // --- Helper Function to Get Active CME Year ID ---
 /**
