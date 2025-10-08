@@ -341,12 +341,17 @@ function pickRelevantSubscription(subscriptions) {
   }, null);
 }
 
-function determineAccessTierFromStates(boardState, cmeState, userData = {}, updates = {}) {
-  const hasActiveCme = resolveBooleanState(updates, userData, 'cmeSubscriptionActive');
+function determineAccessTierFromStates(
+    boardState,
+    cmeState,
+    userData = {},
+    updates = {},
+    creditIncrement = 0
+  ) {  const hasActiveCme = resolveBooleanState(updates, userData, 'cmeSubscriptionActive');
   const hasActiveBoard = resolveBooleanState(updates, userData, 'boardReviewActive');
   const credits = coerceNumber(userData?.cmeCreditsAvailable) || 0;
-  const creditIncrement = updates.cmeCreditsAvailable?._increase || 0;
-  const totalCredits = credits + creditIncrement;
+  const incrementalCredits = coerceNumber(creditIncrement) || 0;
+  const totalCredits = credits + incrementalCredits;
 
   if (cmeState && cmeState.isActive) {
     return 'cme_annual';
@@ -387,12 +392,15 @@ function transformRevenueCatToUserUpdates(subscriberPayload, webhookPayload, use
   const creditMeta = productId ? CREDIT_PRODUCT_CATALOG[productId] : null;
   const isPurchaseEvent = eventType && PURCHASE_EVENT_TYPES.has(eventType);
 
+  let creditIncrement = 0;
+
   if (creditMeta && isPurchaseEvent) {
     const quantity = extractQuantity(webhookPayload, productId, creditMeta);
     const creditsPerUnit = coerceNumber(creditMeta.creditsPerUnit) || 1;
     const creditsToGrant = quantity * creditsPerUnit;
 
     updates.cmeCreditsAvailable = FieldValue.increment(creditsToGrant);
+    creditIncrement = creditsToGrant;
 
     const { timestamp, source: timestampSource, millis } = extractTimestamp(webhookPayload);
     updates.lastCmeCreditPurchaseDate = timestamp;
@@ -599,7 +607,13 @@ function transformRevenueCatToUserUpdates(subscriberPayload, webhookPayload, use
   }
 
   // Determine access tier
-  updates.accessTier = determineAccessTierFromStates(boardState, cmeState, userData, updates);
+  updates.accessTier = determineAccessTierFromStates(
+    boardState,
+    cmeState,
+    userData,
+    updates,
+    creditIncrement
+  );
 
   // Build diagnostic info
   diagnostic.boardSubscription = boardState
