@@ -23,6 +23,9 @@ let cachedPlugin = null;
 let authListenerAttached = false;
 let lastSyncedAppUserId = undefined;
 let userSyncPromise = Promise.resolve();
+let offeringsCache = null;
+let offeringsPromise = null;
+const productCache = new Map();
 
 function ensureNativeRuntime() {
   if (!detectNativeApp()) {
@@ -184,6 +187,58 @@ async function configurePlugin(plugin) {
   await queueAppUserSync(plugin, globalWindow?.authState);
 }
 
+async function loadOfferings(plugin) {
+  if (offeringsCache) {
+    return offeringsCache;
+  }
+
+  if (!offeringsPromise) {
+    offeringsPromise = plugin
+      .getOfferings()
+      .then((result) => {
+        offeringsCache = result;
+        return result;
+      })
+      .catch((error) => {
+        offeringsPromise = null;
+        throw error;
+      });
+  }
+
+  return offeringsPromise;
+}
+
+async function fetchStoreProduct(plugin, productIdentifier) {
+  if (productCache.has(productIdentifier)) {
+    return productCache.get(productIdentifier);
+  }
+
+  if (typeof plugin.getProducts !== 'function') {
+    return null;
+  }
+
+  try {
+    const result = await plugin.getProducts({ productIdentifiers: [productIdentifier] });
+    const productsArray = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.products)
+      ? result.products
+      : [];
+    const match = productsArray.find(
+      (item) => item?.identifier === productIdentifier || item?.productIdentifier === productIdentifier
+    );
+
+    if (match) {
+      productCache.set(productIdentifier, match);
+      return match;
+    }
+  } catch (error) {
+    console.warn(`RevenueCat getProducts failed for "${productIdentifier}".`, error);
+  }
+
+  return null;
+}
+
 export async function initialize() {
   if (initialized) {
     return;
@@ -194,6 +249,9 @@ export async function initialize() {
 
   try {
     await configurePlugin(plugin);
+    await loadOfferings(plugin).catch((error) => {
+      console.warn('RevenueCat offerings could not be prefetched during initialization.', error);
+    });
     initialized = true;
   } catch (error) {
     console.error('Failed to configure RevenueCat.', error);
@@ -217,15 +275,51 @@ function resolveCmeProduct(planType) {
   return productId;
 }
 
-async function purchaseProduct(productIdentifier, options = {}) {
-  const plugin = getPurchasesPlugin();
-
-  if (typeof plugin.purchasePackage === 'function') {
-    return plugin.purchasePackage({ identifier: productIdentifier, options });
+function findPackageForProduct(offerings, productIdentifier) {
+  if (!offerings) {
+    return null;
   }
 
-  if (typeof plugin.purchaseProduct === 'function') {
-    return plugin.purchaseProduct({ productIdentifier, ...options });
+  const scanPackages = (packages = []) =>
+    packages.find((pkg) => pkg?.storeProduct?.identifier === productIdentifier) || null;
+
+  const currentPackage = scanPackages(offerings.current?.availablePackages);
+  if (currentPackage) {
+    return currentPackage;
+  }
+
+  const allOfferings = offerings.all ?? {};
+  for (const key of Object.keys(allOfferings)) {
+    const found = scanPackages(allOfferings[key]?.availablePackages);
+    if (found) {
+      return found;
+    }
+  }
+
+  return null;
+}
+
+async function purchaseProductByPackage(productIdentifier) {
+  const plugin = getPurchasesPlugin();
+  let offerings = null;
+  try {
+    offerings = await loadOfferings(plugin);
+  } catch (error) {
+    console.warn('RevenueCat offerings unavailable, falling back to direct product purchase.', error);
+  }
+
+  if (offerings) {
+    const targetPackage = findPackageForProduct(offerings, productIdentifier);
+    if (targetPackage && typeof plugin.purchasePackage === 'function') {
+      return plugin.purchasePackage({ aPackage: targetPackage });
+    }
+
+    console.warn(`RevenueCat package not found for product "${productIdentifier}". Falling back to direct purchase.`);
+  }
+
+  const storeProduct = await fetchStoreProduct(plugin, productIdentifier);
+  if (storeProduct && typeof plugin.purchaseStoreProduct === 'function') {
+    return plugin.purchaseStoreProduct({ product: storeProduct });
   }
 
   throw new Error('RevenueCat plugin is missing purchase APIs.');
@@ -240,7 +334,7 @@ export async function startBoardReviewCheckout(planType, _buttonElement) {
   const productIdentifier = resolveBoardReviewProduct(planType);
 
   try {
-    await purchaseProduct(productIdentifier);
+    await purchaseProductByPackage(productIdentifier);
   } catch (error) {
     console.error(`RevenueCat purchase failed for Board Review plan "${planType}".`, error);
     throw error;
@@ -253,10 +347,8 @@ export async function startCmeCheckout(planType, _buttonElement, quantity = 1) {
   ensureNativeRuntime();
   const productIdentifier = resolveCmeProduct(planType);
 
-  const purchaseOptions = quantity && quantity > 1 ? { quantity } : {};
-
   try {
-    await purchaseProduct(productIdentifier, purchaseOptions);
+    await purchaseProductByPackage(productIdentifier);
   } catch (error) {
     console.error(`RevenueCat purchase failed for CME plan "${planType}".`, error);
     throw error;

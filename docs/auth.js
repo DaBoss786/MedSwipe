@@ -22,12 +22,14 @@ import {
   linkWithCredential,
   GoogleAuthProvider,
   OAuthProvider,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   getAdditionalUserInfo
   // --- End added ---
 } from './firebase-config.js';
+import { isNativeApp } from './platform.js';
 
 // Create a reference to the new Cloud Function
 let finalizeRegistrationFunction;
@@ -77,6 +79,21 @@ export function generateGuestUsername() {
 // OAuth provider helpers
 const OAUTH_CONTEXT_STORAGE_KEY = 'medswipeOAuthContext';
 const OAUTH_REFERRAL_STORAGE_KEY = 'medswipeReferrerId';
+
+function getNativeAuthPlugin() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const capacitor = window.Capacitor || null;
+  if (!capacitor) {
+    return window.capacitorExports?.FirebaseAuthentication || null;
+  }
+  return (
+    capacitor.Plugins?.FirebaseAuthentication ||
+    window.capacitorExports?.FirebaseAuthentication ||
+    null
+  );
+}
 
 function createOAuthProvider(providerKey) {
   switch (providerKey) {
@@ -128,7 +145,9 @@ function deriveDisplayName(user, profile) {
 
 function shouldFallbackToRedirect(error) {
   const code = error?.code;
-  return code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment';
+  return code === 'auth/popup-blocked'
+    || code === 'auth/operation-not-supported-in-this-environment'
+    || code === 'auth/argument-error';
 }
 
 function isUserCancelledError(error) {
@@ -315,6 +334,88 @@ async function oauthSignIn(providerKey, options = {}) {
     }
   }
 
+  const nativePlugin = getNativeAuthPlugin();
+  const isNativeRuntime = Boolean(isNativeApp);
+
+  const startRedirectFlow = async () => {
+    try {
+      sessionStorage.setItem(
+        OAUTH_CONTEXT_STORAGE_KEY,
+        JSON.stringify({
+          providerKey,
+          flow,
+          marketingOptIn,
+          referrerId
+        })
+      );
+    } catch (storageErr) {
+      console.warn('Unable to persist OAuth redirect context:', storageErr);
+    }
+
+    try {
+      await signInWithRedirect(auth, provider);
+      return { status: 'redirect', provider: providerKey, flow };
+    } catch (redirectError) {
+      try {
+        sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
+      } catch (err) {
+        console.warn('Unable to clear OAuth context storage:', err);
+      }
+      throw redirectError;
+    }
+  };
+
+  if (isNativeRuntime) {
+    if (providerKey === 'google' && nativePlugin?.signInWithGoogle) {
+      try {
+        const nativeResult = await nativePlugin.signInWithGoogle({ skipNativeAuth: true });
+        const nativeCredential = nativeResult?.credential || {};
+        if (!nativeCredential.idToken && !nativeCredential.accessToken) {
+          throw new Error('Native Google sign-in did not return OAuth tokens.');
+        }
+        const firebaseCredential = GoogleAuthProvider.credential(
+          nativeCredential.idToken || undefined,
+          nativeCredential.accessToken || undefined
+        );
+        const userCredential = await signInWithCredential(auth, firebaseCredential);
+        return await handleOAuthResult(userCredential, {
+          providerKey,
+          flow,
+          marketingOptIn,
+          referrerId
+        });
+      } catch (nativeError) {
+        console.error('Native Google sign-in error:', nativeError);
+        throw nativeError;
+      }
+    } else if (providerKey === 'apple' && nativePlugin?.signInWithApple) {
+      try {
+        const nativeResult = await nativePlugin.signInWithApple({ skipNativeAuth: true });
+        const nativeCredential = nativeResult?.credential || {};
+        if (!nativeCredential.idToken) {
+          throw new Error('Native Apple sign-in did not return an ID token.');
+        }
+        const appleProvider = new OAuthProvider('apple.com');
+        const firebaseCredential = appleProvider.credential({
+          idToken: nativeCredential.idToken,
+          rawNonce: nativeCredential.nonce || undefined
+        });
+        const userCredential = await signInWithCredential(auth, firebaseCredential);
+        return await handleOAuthResult(userCredential, {
+          providerKey,
+          flow,
+          marketingOptIn,
+          referrerId
+        });
+      } catch (nativeError) {
+        console.error('Native Apple sign-in error:', nativeError);
+        throw nativeError;
+      }
+    }
+    console.info(`Native runtime detected for provider ${providerKey}. Falling back to redirect flow.`);
+    return startRedirectFlow();
+  }
+
   try {
     const result = await signInWithPopup(auth, provider);
     return await handleOAuthResult(result, {
@@ -325,37 +426,14 @@ async function oauthSignIn(providerKey, options = {}) {
     });
   } catch (error) {
     if (shouldFallbackToRedirect(error)) {
-      try {
-        sessionStorage.setItem(
-          OAUTH_CONTEXT_STORAGE_KEY,
-          JSON.stringify({
-            providerKey,
-            flow,
-            marketingOptIn,
-            referrerId
-          })
-        );
-      } catch (storageErr) {
-        console.warn('Unable to persist OAuth redirect context:', storageErr);
-      }
-
-      try {
-        await signInWithRedirect(auth, provider);
-        return { status: 'redirect', provider: providerKey, flow };
-      } catch (redirectError) {
-        try {
-          sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
-        } catch (err) {
-          console.warn('Unable to clear OAuth context storage:', err);
-        }
-        throw redirectError;
-      }
+      return startRedirectFlow();
     }
 
     if (isUserCancelledError(error)) {
       throw error;
     }
 
+    console.error(`OAuth sign-in failed for provider ${providerKey}:`, error);
     throw error;
   }
 }
@@ -796,4 +874,3 @@ window.authFunctions = {
 
 // Kick things off
 initAuth();
-

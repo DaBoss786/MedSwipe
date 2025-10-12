@@ -4,9 +4,9 @@
 // and this file will not be included in those builds.
 
 // --- Import Firebase dependencies ---
-import { getAuth, getIdToken } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js";
-import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
+import { getAuth, getIdToken } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
 
 console.log("Stripe Web Module Loaded.");
 

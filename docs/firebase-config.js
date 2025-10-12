@@ -1,14 +1,35 @@
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider
-} from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app-check.js";
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js";
 
 // Firebase App, Analytics, Firestore & Auth (Modular)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously, signOut, updateProfile, sendPasswordResetEmail, getIdToken, EmailAuthProvider, linkWithCredential, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, getAdditionalUserInfo } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-functions.js"; // Added Functions import
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInAnonymously,
+  signOut,
+  updateProfile,
+  sendPasswordResetEmail,
+  getIdToken,
+  EmailAuthProvider,
+  linkWithCredential,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithCredential,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  getAdditionalUserInfo
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js"; // Added Functions import
 
 // Firebase configuration
 const firebaseConfig = {
@@ -82,7 +103,15 @@ if (!isNativeApp()) {
     analytics = null;
   }
 const db = getFirestore(app);
-const auth = getAuth(app);
+const popupRedirectResolver =
+  typeof window !== "undefined" && window.capacitorExports
+    ? window.capacitorExports.cordovaPopupRedirectResolver
+    : undefined;
+
+const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence].filter(Boolean),
+  popupRedirectResolver: isNativeApp() ? popupRedirectResolver : undefined
+});
 const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
 
 console.log("Firebase initialized successfully");
@@ -122,6 +151,7 @@ export {
   linkWithCredential,
   GoogleAuthProvider,
   OAuthProvider,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,

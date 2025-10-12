@@ -1032,13 +1032,17 @@ setTimeout(() => {
                                                   
                                                   // Disable swiper touch while scrolling
                                                   answerContent.addEventListener('touchstart', function(e) {
-                                                      window.mySwiper.allowTouchMove = false;
+                                                      if (window.mySwiper) {
+                                                          window.mySwiper.allowTouchMove = false;
+                                                      }
                                                   }, { passive: true });
                                                   
                                                   // Re-enable when touch ends outside the content area
                                                   document.addEventListener('touchend', function(e) {
                                                       if (!answerContent.contains(e.target)) {
-                                                          window.mySwiper.allowTouchMove = originalTouchMove;
+                                                          if (window.mySwiper) {
+                                                              window.mySwiper.allowTouchMove = originalTouchMove;
+                                                          }
                                                       }
                                                   }, { passive: true });
                                               }

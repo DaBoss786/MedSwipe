@@ -1,5 +1,11 @@
 {
   "appId": "com.medswipeapp.app",
   "appName": "MedSwipe",
-  "webDir": "docs"
+  "webDir": "docs",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": true,
+      "providers": ["google.com", "apple.com"]
+    }
+  }
 }

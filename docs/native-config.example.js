@@ -5,5 +5,5 @@
 
     // Replace the placeholder with your actual RevenueCat public API key before
     // building the native app. Leave this file untouched in git.
-    window.REVENUECAT_API_KEY = 'REPLACE_WITH_REVENUECAT_API_KEY';
+    window.REVENUECAT_API_KEY = 'test_eGLOYXEgdQtUUrdLqBjYZZzuylh';
   })();
