@@ -4895,6 +4895,81 @@ html, body {
   font-weight: bold;
 }
 
+.subscription-activation-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 27, 51, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 10900;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.subscription-activation-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 16px 36px rgba(12, 27, 51, 0.25);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subscription-activation-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 4px solid rgba(12, 114, 211, 0.2);
+  border-top-color: #0C72D3;
+  animation: subscription-activation-spin 0.9s linear infinite;
+}
+
+@keyframes subscription-activation-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.subscription-activation-message {
+  font-size: 1rem;
+  color: #1b2b44;
+  margin: 0;
+}
+
+.subscription-activation-actions {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.subscription-activation-continue {
+  background: #0C72D3;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.subscription-activation-continue:hover {
+  background: #0959a6;
+  transform: translateY(-1px);
+}
+
+.subscription-activation-continue:active {
+  transform: translateY(0);
+}
+
 
 .paywall-select-btn {
   display: block;

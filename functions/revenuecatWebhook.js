@@ -903,14 +903,23 @@ const revenuecatWebhook = onRequest(
     const eventId = resolveEventId(eventPayload);
 
     if (!appUserId) {
-      logger.error('RevenueCat webhook missing app_user_id.', {
+      const diagnosticPayload = {
+        eventType,
+        eventId,
         rootKeys: Object.keys(req.body || {}),
         eventKeys: Object.keys(eventPayload || {}),
-        eventType,
         hasSubscriber: !!eventPayload?.subscriber,
         subscriberKeys: Object.keys(eventPayload?.subscriber || {}),
-      });
-      res.status(200).send({ received: true });
+      };
+
+      if (eventType === 'TRANSFER') {
+        logger.info('Ignoring RevenueCat TRANSFER webhook without app_user_id.', diagnosticPayload);
+        res.status(200).send({ received: true, ignored: 'transfer_without_app_user_id' });
+        return;
+      }
+
+      logger.warn('RevenueCat webhook missing app_user_id.', diagnosticPayload);
+      res.status(200).send({ received: true, error: 'missing_app_user_id' });
       return;
     }
 

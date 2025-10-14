@@ -28,6 +28,14 @@ let offeringsPromise = null;
 const productCache = new Map();
 const PURCHASE_REFRESH_ATTEMPTS = 6;
 const PURCHASE_REFRESH_DELAY_MS = 850;
+const ACTIVATION_OVERLAY_ID = 'subscriptionActivationOverlay';
+const ACTIVATION_OVERLAY_MESSAGE_CLASS = 'subscription-activation-message';
+const ACTIVATION_OVERLAY_SPINNER_CLASS = 'subscription-activation-spinner';
+const ACTIVATION_OVERLAY_ACTIONS_CLASS = 'subscription-activation-actions';
+const ACTIVATION_OVERLAY_CONTINUE_CLASS = 'subscription-activation-continue';
+const ACTIVATION_SUCCESS_MESSAGE = 'Subscription activated!';
+const ACTIVATION_FALLBACK_MESSAGE = 'Almost done - tap Continue to finish.';
+const ACTIVATION_SUCCESS_HIDE_DELAY_MS = 350;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -68,25 +76,185 @@ function hasUpgradeOccurred(initial, current, expectation) {
   }
 }
 
-async function refreshAccessTierAfterPurchase(expectation) {
-  const refreshFn = getRefreshAuthStateFn();
-  if (!refreshFn) {
+function getActivationOverlayElements(createIfMissing = true) {
+  const doc = globalWindow?.document;
+  if (!doc || !doc.body) {
+    return null;
+  }
+
+  let overlay = doc.getElementById(ACTIVATION_OVERLAY_ID);
+  if (!overlay && createIfMissing) {
+    overlay = doc.createElement('div');
+    overlay.id = ACTIVATION_OVERLAY_ID;
+    overlay.className = 'subscription-activation-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="subscription-activation-card">
+        <div class="${ACTIVATION_OVERLAY_SPINNER_CLASS}" role="status" aria-live="polite"></div>
+        <p class="${ACTIVATION_OVERLAY_MESSAGE_CLASS}">Activating your subscription...</p>
+        <div class="${ACTIVATION_OVERLAY_ACTIONS_CLASS}" style="display: none;">
+          <button type="button" class="${ACTIVATION_OVERLAY_CONTINUE_CLASS}">Continue</button>
+        </div>
+      </div>
+    `;
+    doc.body.appendChild(overlay);
+  }
+
+  if (!overlay) {
+    return null;
+  }
+
+  const messageEl = overlay.querySelector(`.${ACTIVATION_OVERLAY_MESSAGE_CLASS}`);
+  const spinnerEl = overlay.querySelector(`.${ACTIVATION_OVERLAY_SPINNER_CLASS}`);
+  const actionsEl = overlay.querySelector(`.${ACTIVATION_OVERLAY_ACTIONS_CLASS}`);
+  const continueBtn = overlay.querySelector(`.${ACTIVATION_OVERLAY_CONTINUE_CLASS}`);
+
+  return { overlay, messageEl, spinnerEl, actionsEl, continueBtn };
+}
+
+function hideActivationOverlay() {
+  const elements = getActivationOverlayElements(false);
+  if (!elements) {
     return;
   }
 
+  const { overlay, spinnerEl, actionsEl, continueBtn } = elements;
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+  }
+  if (spinnerEl) {
+    spinnerEl.style.display = 'block';
+  }
+  if (actionsEl) {
+    actionsEl.style.display = 'none';
+  }
+  if (continueBtn && continueBtn.__subscriptionActivationHandler) {
+    continueBtn.removeEventListener('click', continueBtn.__subscriptionActivationHandler);
+    delete continueBtn.__subscriptionActivationHandler;
+  }
+}
+
+if (globalWindow) {
+  globalWindow.hideSubscriptionActivationOverlay = hideActivationOverlay;
+}
+
+function showActivationOverlay() {
+  const elements = getActivationOverlayElements(true);
+  if (!elements) {
+    return null;
+  }
+
+  const { overlay, messageEl, spinnerEl, actionsEl, continueBtn } = elements;
+  if (overlay) {
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden', 'false');
+  }
+  if (messageEl) {
+    messageEl.textContent = 'Activating your subscription...';
+  }
+  if (spinnerEl) {
+    spinnerEl.style.display = 'block';
+  }
+  if (actionsEl) {
+    actionsEl.style.display = 'none';
+  }
+  if (continueBtn && continueBtn.__subscriptionActivationHandler) {
+    continueBtn.removeEventListener('click', continueBtn.__subscriptionActivationHandler);
+    delete continueBtn.__subscriptionActivationHandler;
+  }
+
+  return {
+    markSuccess() {
+      const successElements = getActivationOverlayElements(false);
+      if (!successElements) {
+        return;
+      }
+      const { messageEl: m, spinnerEl: s, actionsEl: a } = successElements;
+      if (m) {
+        m.textContent = ACTIVATION_SUCCESS_MESSAGE;
+      }
+      if (s) {
+        s.style.display = 'none';
+      }
+      if (a) {
+        a.style.display = 'none';
+      }
+      setTimeout(() => {
+        hideActivationOverlay();
+      }, ACTIVATION_SUCCESS_HIDE_DELAY_MS);
+    },
+    showFallback(onContinue) {
+      const fallbackElements = getActivationOverlayElements(false);
+      if (!fallbackElements) {
+        return;
+      }
+      const { messageEl: m, spinnerEl: s, actionsEl: a, continueBtn: c } = fallbackElements;
+      if (m) {
+        m.textContent = ACTIVATION_FALLBACK_MESSAGE;
+      }
+      if (s) {
+        s.style.display = 'none';
+      }
+      if (a) {
+        a.style.display = 'flex';
+      }
+      if (c) {
+        if (c.__subscriptionActivationHandler) {
+          c.removeEventListener('click', c.__subscriptionActivationHandler);
+        }
+        const handler = () => {
+          if (typeof onContinue === 'function') {
+            try {
+              onContinue();
+            } catch (error) {
+              console.warn('Subscription activation continue handler failed.', error);
+            }
+          }
+          hideActivationOverlay();
+        };
+        c.__subscriptionActivationHandler = handler;
+        c.addEventListener('click', handler, { once: true });
+      }
+    },
+    hide: hideActivationOverlay
+  };
+}
+
+function hidePaywallScreens() {
+  const doc = globalWindow?.document;
+  if (!doc) {
+    return;
+  }
+
+  ['newPaywallScreen', 'boardReviewPricingScreen', 'cmePricingScreen'].forEach((id) => {
+    const node = doc.getElementById(id);
+    if (node) {
+      node.style.display = 'none';
+    }
+  });
+}
+
+async function refreshAccessTierAfterPurchase(expectation) {
+  const refreshFn = getRefreshAuthStateFn();
+  if (!refreshFn) {
+    return { refreshed: false, upgraded: false, reason: 'missing-refresh-function' };
+  }
+
   const initialSnapshot = captureAccessSnapshot();
+  let currentSnapshot = initialSnapshot;
 
   for (let attempt = 0; attempt < PURCHASE_REFRESH_ATTEMPTS; attempt++) {
     try {
       await refreshFn({ forceDispatch: attempt === 0 });
     } catch (error) {
       console.warn('refreshAuthStateFromFirestore failed during post-purchase sync.', error);
-      break;
+      return { refreshed: false, upgraded: false, reason: 'refresh-error', error };
     }
 
-    const currentSnapshot = captureAccessSnapshot();
+    currentSnapshot = captureAccessSnapshot();
     if (hasUpgradeOccurred(initialSnapshot, currentSnapshot, expectation)) {
-      return;
+      return { refreshed: true, upgraded: true, snapshot: currentSnapshot };
     }
 
     if (attempt < PURCHASE_REFRESH_ATTEMPTS - 1) {
@@ -96,8 +264,10 @@ async function refreshAccessTierAfterPurchase(expectation) {
 
   console.warn('Post-purchase refresh did not detect an access change.', {
     expectation,
-    state: captureAccessSnapshot(),
+    state: currentSnapshot,
   });
+
+  return { refreshed: true, upgraded: false, snapshot: currentSnapshot, reason: 'timeout' };
 }
 
 async function triggerRevenueCatSync() {
@@ -112,6 +282,7 @@ async function triggerRevenueCatSync() {
 }
 
 async function handlePostPurchase(expectation) {
+  const overlay = showActivationOverlay();
   try {
     await triggerRevenueCatSync();
   } catch (error) {
@@ -119,9 +290,20 @@ async function handlePostPurchase(expectation) {
   }
 
   try {
-    await refreshAccessTierAfterPurchase(expectation);
+    const { upgraded } = await refreshAccessTierAfterPurchase(expectation);
+    if (upgraded) {
+      hidePaywallScreens();
+      overlay?.markSuccess();
+      return;
+    }
+    overlay?.showFallback(() => {
+      hideActivationOverlay();
+    });
   } catch (error) {
     console.warn('Failed to refresh access tier after purchase.', error);
+    overlay?.showFallback(() => {
+      hideActivationOverlay();
+    });
   }
 }
 

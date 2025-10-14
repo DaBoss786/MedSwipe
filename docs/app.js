@@ -4517,6 +4517,19 @@ function ensureAllScreensHidden(exceptScreenId) {
   });
 }
 
+function hidePaywallScreens() {
+  ['newPaywallScreen', 'boardReviewPricingScreen', 'cmePricingScreen'].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = 'none';
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.hidePaywallScreens = hidePaywallScreens;
+}
+
 // function clearDebugStyles() {
 //   console.log("Clearing debug background colors...");
 //   document.querySelectorAll('*').forEach(el => {
@@ -5010,6 +5023,10 @@ function handleUserRouting(authState) {
     // 2. If the user has a paid or promotional tier, always show the main dashboard.
     if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
         console.log('User has a premium tier. Showing main dashboard.');
+        hidePaywallScreens();
+        if (typeof window.hideSubscriptionActivationOverlay === 'function') {
+            window.hideSubscriptionActivationOverlay();
+        }
         if (mainOptions) {
             mainOptions.style.display = 'flex';
             setTimeout(() => {
