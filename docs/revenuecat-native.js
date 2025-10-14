@@ -235,6 +235,56 @@ function hidePaywallScreens() {
   });
 }
 
+function beginButtonProcessing(button) {
+  if (!button || typeof button !== 'object') {
+    return () => {};
+  }
+
+  if (button.dataset.processing === 'true') {
+    return () => {};
+  }
+
+  const originalContent = button.innerHTML;
+  const wasDisabled = button.disabled ? 'true' : 'false';
+  const originalMinWidth = button.style.minWidth;
+  const measuredWidth = button.getBoundingClientRect()?.width || 0;
+
+  button.dataset.processing = 'true';
+  button.dataset.originalContent = originalContent;
+  button.dataset.wasDisabled = wasDisabled;
+  button.dataset.originalMinWidth = originalMinWidth || '';
+
+  if (measuredWidth > 0) {
+    button.style.minWidth = `${measuredWidth}px`;
+  }
+
+  button.innerHTML = 'Processing...';
+  button.disabled = true;
+  button.classList.add('is-processing');
+  button.setAttribute('aria-busy', 'true');
+
+  return () => {
+    if (!button || button.dataset.processing !== 'true') {
+      return;
+    }
+
+    button.innerHTML = button.dataset.originalContent || button.innerHTML;
+    if (button.dataset.wasDisabled !== 'true') {
+      button.disabled = false;
+    } else {
+      button.disabled = true;
+    }
+    button.classList.remove('is-processing');
+    button.removeAttribute('aria-busy');
+    button.style.minWidth = button.dataset.originalMinWidth || '';
+
+    delete button.dataset.processing;
+    delete button.dataset.originalContent;
+    delete button.dataset.wasDisabled;
+    delete button.dataset.originalMinWidth;
+  };
+}
+
 async function refreshAccessTierAfterPurchase(expectation) {
   const refreshFn = getRefreshAuthStateFn();
   if (!refreshFn) {
@@ -640,9 +690,10 @@ async function purchaseProductByPackage(productIdentifier) {
 // Unlike the Stripe-backed web flow, this hands control to RevenueCat so the
 // user sees Apple's native purchase sheet (where the free-trial messaging and
 // confirmation live).
-export async function startBoardReviewCheckout(planType, _buttonElement) {
+export async function startBoardReviewCheckout(planType, buttonElement) {
   ensureNativeRuntime();
   const productIdentifier = resolveBoardReviewProduct(planType);
+  const releaseButton = beginButtonProcessing(buttonElement);
 
   try {
     const plugin = getPurchasesPlugin();
@@ -657,16 +708,19 @@ export async function startBoardReviewCheckout(planType, _buttonElement) {
   } catch (error) {
     console.error(`RevenueCat purchase failed for Board Review plan "${planType}".`, error);
     throw error;
+  } finally {
+    releaseButton();
   }
 }
 
 // Mirrors startBoardReviewCheckout for CME products. All checkout UX is handled
 // by RevenueCat/StoreKit once this promise resolves.
-export async function startCmeCheckout(planType, _buttonElement, quantity = 1) {
+export async function startCmeCheckout(planType, buttonElement, quantity = 1) {
   ensureNativeRuntime();
   const productIdentifier = resolveCmeProduct(planType);
   const expectation =
     planType === 'annual' ? 'cme_annual' : planType === 'credits' ? 'cme_credits' : null;
+  const releaseButton = beginButtonProcessing(buttonElement);
 
   try {
     const plugin = getPurchasesPlugin();
@@ -681,6 +735,8 @@ export async function startCmeCheckout(planType, _buttonElement, quantity = 1) {
   } catch (error) {
     console.error(`RevenueCat purchase failed for CME plan "${planType}".`, error);
     throw error;
+  } finally {
+    releaseButton();
   }
 }
 
