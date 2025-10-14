@@ -26,6 +26,104 @@ let userSyncPromise = Promise.resolve();
 let offeringsCache = null;
 let offeringsPromise = null;
 const productCache = new Map();
+const PURCHASE_REFRESH_ATTEMPTS = 6;
+const PURCHASE_REFRESH_DELAY_MS = 850;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getRefreshAuthStateFn() {
+  const direct = globalWindow?.refreshAuthStateFromFirestore;
+  if (typeof direct === 'function') {
+    return direct;
+  }
+  const nested = globalWindow?.authFunctions?.refreshAuthStateFromFirestore;
+  return typeof nested === 'function' ? nested : null;
+}
+
+function captureAccessSnapshot() {
+  const state = globalWindow?.authState || {};
+  return {
+    accessTier: state.accessTier || 'free_guest',
+    boardReviewActive: !!state.boardReviewActive,
+    cmeSubscriptionActive: !!state.cmeSubscriptionActive,
+    cmeCreditsAvailable: Number(state.cmeCreditsAvailable || 0),
+  };
+}
+
+function hasUpgradeOccurred(initial, current, expectation) {
+  switch (expectation) {
+    case 'board_review':
+      return current.boardReviewActive || current.accessTier === 'board_review' || current.accessTier === 'cme_annual';
+    case 'cme_annual':
+      return current.cmeSubscriptionActive || current.accessTier === 'cme_annual';
+    case 'cme_credits':
+      return current.cmeCreditsAvailable > initial.cmeCreditsAvailable;
+    default:
+      return current.accessTier !== initial.accessTier ||
+        current.boardReviewActive !== initial.boardReviewActive ||
+        current.cmeSubscriptionActive !== initial.cmeSubscriptionActive ||
+        current.cmeCreditsAvailable !== initial.cmeCreditsAvailable;
+  }
+}
+
+async function refreshAccessTierAfterPurchase(expectation) {
+  const refreshFn = getRefreshAuthStateFn();
+  if (!refreshFn) {
+    return;
+  }
+
+  const initialSnapshot = captureAccessSnapshot();
+
+  for (let attempt = 0; attempt < PURCHASE_REFRESH_ATTEMPTS; attempt++) {
+    try {
+      await refreshFn({ forceDispatch: attempt === 0 });
+    } catch (error) {
+      console.warn('refreshAuthStateFromFirestore failed during post-purchase sync.', error);
+      break;
+    }
+
+    const currentSnapshot = captureAccessSnapshot();
+    if (hasUpgradeOccurred(initialSnapshot, currentSnapshot, expectation)) {
+      return;
+    }
+
+    if (attempt < PURCHASE_REFRESH_ATTEMPTS - 1) {
+      await sleep(PURCHASE_REFRESH_DELAY_MS);
+    }
+  }
+
+  console.warn('Post-purchase refresh did not detect an access change.', {
+    expectation,
+    state: captureAccessSnapshot(),
+  });
+}
+
+async function triggerRevenueCatSync() {
+  const plugin = getPurchasesPlugin();
+  if (typeof plugin.syncPurchases === 'function') {
+    await plugin.syncPurchases();
+    return;
+  }
+  if (typeof plugin.getCustomerInfo === 'function') {
+    await plugin.getCustomerInfo();
+  }
+}
+
+async function handlePostPurchase(expectation) {
+  try {
+    await triggerRevenueCatSync();
+  } catch (error) {
+    console.warn('RevenueCat sync after purchase failed.', error);
+  }
+
+  try {
+    await refreshAccessTierAfterPurchase(expectation);
+  } catch (error) {
+    console.warn('Failed to refresh access tier after purchase.', error);
+  }
+}
 
 function ensureNativeRuntime() {
   if (!detectNativeApp()) {
@@ -150,6 +248,37 @@ function queueAppUserSync(plugin, authState) {
     });
 
   return userSyncPromise;
+}
+
+async function ensureAppUserSyncedBeforePurchase(plugin) {
+  const authState = globalWindow?.authState;
+  const targetUid = extractFirebaseUid(authState);
+
+  if (!targetUid) {
+    console.warn('RevenueCat purchase attempted without a registered Firebase UID.');
+    return false;
+  }
+
+  try {
+    await queueAppUserSync(plugin, authState);
+  } catch (error) {
+    console.warn('RevenueCat queueAppUserSync failed before purchase.', error);
+  }
+
+  if (lastSyncedAppUserId === targetUid) {
+    return true;
+  }
+
+  try {
+    const didLogin = await invokeLogin(plugin, targetUid);
+    if (didLogin) {
+      lastSyncedAppUserId = targetUid;
+    }
+    return didLogin;
+  } catch (error) {
+    console.error('RevenueCat logIn before purchase failed.', error);
+    return false;
+  }
 }
 
 function attachAuthListener(plugin) {
@@ -334,7 +463,15 @@ export async function startBoardReviewCheckout(planType, _buttonElement) {
   const productIdentifier = resolveBoardReviewProduct(planType);
 
   try {
-    await purchaseProductByPackage(productIdentifier);
+    const plugin = getPurchasesPlugin();
+    const synced = await ensureAppUserSyncedBeforePurchase(plugin);
+    if (!synced) {
+      console.warn('Proceeding with RevenueCat purchase without confirmed app user sync.');
+    }
+
+    const purchaseResult = await purchaseProductByPackage(productIdentifier);
+    await handlePostPurchase('board_review');
+    return purchaseResult;
   } catch (error) {
     console.error(`RevenueCat purchase failed for Board Review plan "${planType}".`, error);
     throw error;
@@ -346,9 +483,19 @@ export async function startBoardReviewCheckout(planType, _buttonElement) {
 export async function startCmeCheckout(planType, _buttonElement, quantity = 1) {
   ensureNativeRuntime();
   const productIdentifier = resolveCmeProduct(planType);
+  const expectation =
+    planType === 'annual' ? 'cme_annual' : planType === 'credits' ? 'cme_credits' : null;
 
   try {
-    await purchaseProductByPackage(productIdentifier);
+    const plugin = getPurchasesPlugin();
+    const synced = await ensureAppUserSyncedBeforePurchase(plugin);
+    if (!synced) {
+      console.warn('Proceeding with RevenueCat purchase without confirmed app user sync.');
+    }
+
+    const purchaseResult = await purchaseProductByPackage(productIdentifier);
+    await handlePostPurchase(expectation);
+    return purchaseResult;
   } catch (error) {
     console.error(`RevenueCat purchase failed for CME plan "${planType}".`, error);
     throw error;

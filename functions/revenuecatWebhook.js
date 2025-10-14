@@ -4,7 +4,7 @@
 const { onRequest } = require('firebase-functions/v2/https');
 const { logger } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
-const functions = require('firebase-functions');
+const crypto = require('crypto');
 
 // Other imports
 const axios = require('axios');
@@ -18,7 +18,8 @@ const db = admin.firestore();
 const { Timestamp, FieldValue } = admin.firestore;
 
 // For v2 functions, use environment variables instead of functions.config()
-const WEBHOOK_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET || '';
+const WEBHOOK_SIGNATURE_SECRET = process.env.REVENUECAT_WEBHOOK_SECRET || '';
+const WEBHOOK_AUTH_HEADER = process.env.REVENUECAT_WEBHOOK_AUTH_HEADER || '';
 const REVENUECAT_API_KEY = process.env.REVENUECAT_API_KEY || '';
 
 // -----------------------------------------------------------------------------
@@ -70,35 +71,108 @@ const CREDIT_PRODUCT_CATALOG = {
 // -----------------------------------------------------------------------------
 // Helper: Verify webhook authorization header
 // -----------------------------------------------------------------------------
+function timingSafeEqual(a, b) {
+  try {
+    const bufA = Buffer.from(String(a));
+    const bufB = Buffer.from(String(b));
+
+    if (bufA.length !== bufB.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch (error) {
+    logger.warn('timingSafeEqual comparison failed.', { error: error.message });
+    return false;
+  }
+}
+
 function verifyRevenueCatWebhook(req) {
+  const rawSignatureSecret = (WEBHOOK_SIGNATURE_SECRET || '').trim();
+  const rawAuthSecret = (WEBHOOK_AUTH_HEADER || '').trim();
+
+  const normalizedSignatureSecret = rawSignatureSecret.startsWith('Bearer ')
+    ? rawSignatureSecret.slice(7).trim()
+    : rawSignatureSecret;
+
+  const normalizedAuthSecret = rawAuthSecret.startsWith('Bearer ')
+    ? rawAuthSecret.slice(7).trim()
+    : rawAuthSecret;
+
+  const effectiveAuthSecret = normalizedAuthSecret || normalizedSignatureSecret;
+  const signatureSecret = normalizedSignatureSecret;
+
+  if (!effectiveAuthSecret && !signatureSecret) {
+    logger.error(
+      'RevenueCat webhook secrets are not configured. Set REVENUECAT_WEBHOOK_AUTH_HEADER and/or REVENUECAT_WEBHOOK_SECRET.'
+    );
+    return false;
+  }
+
   const headerSecret = (req.headers.authorization || '').trim();
+  const signatureHeader = (req.headers['x-revenuecat-signature'] || '').trim();
+  let attemptedVerification = false;
 
-  if (!WEBHOOK_SECRET) {
-    logger.error('RevenueCat webhook secret is not configured.');
-    return false;
-  }
+  if (headerSecret && effectiveAuthSecret) {
+    attemptedVerification = true;
 
-  if (!headerSecret) {
-    logger.warn('Missing Authorization header on RevenueCat webhook.');
-    return false;
-  }
+    const normalizedHeader = headerSecret.startsWith('Bearer ')
+      ? headerSecret.slice(7).trim()
+      : headerSecret;
 
-  // Allow either raw secret or Bearer token format
-  const normalizedHeader = headerSecret.startsWith('Bearer ')
-    ? headerSecret.slice(7)
-    : headerSecret;
+    if (timingSafeEqual(normalizedHeader, effectiveAuthSecret)) {
+      return true;
+    }
 
-  const normalizedSecret = WEBHOOK_SECRET.startsWith('Bearer ')
-    ? WEBHOOK_SECRET.slice(7)
-    : WEBHOOK_SECRET;
-
-  const isAuthorized = normalizedHeader === normalizedSecret;
-
-  if (!isAuthorized) {
     logger.warn('RevenueCat webhook authorization failed.');
+  } else if (headerSecret && !effectiveAuthSecret) {
+    attemptedVerification = true;
+    logger.warn(
+      'Authorization header provided on RevenueCat webhook, but no REVENUECAT_WEBHOOK_AUTH_HEADER (or fallback secret) configured.'
+    );
   }
 
-  return isAuthorized;
+  if (signatureHeader && signatureSecret) {
+    attemptedVerification = true;
+
+    const rawBody = req.rawBody;
+
+    if (!rawBody || !rawBody.length) {
+      logger.warn('Missing rawBody for RevenueCat signature verification.');
+      return false;
+    }
+
+    try {
+      const computedSignature = crypto
+        .createHmac('sha256', signatureSecret)
+        .update(rawBody)
+        .digest('base64');
+
+      if (timingSafeEqual(signatureHeader, computedSignature)) {
+        return true;
+      }
+
+      logger.warn('RevenueCat webhook signature verification failed.');
+    } catch (error) {
+      logger.error('RevenueCat webhook signature verification threw an error.', {
+        error: error.message,
+      });
+      return false;
+    }
+  } else if (signatureHeader && !signatureSecret) {
+    attemptedVerification = true;
+    logger.warn(
+      'RevenueCat webhook included X-RevenueCat-Signature header, but REVENUECAT_WEBHOOK_SECRET is not configured.'
+    );
+  }
+
+  if (!attemptedVerification) {
+    logger.warn(
+      'Missing Authorization or X-RevenueCat-Signature header on RevenueCat webhook.'
+    );
+  }
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -723,6 +797,85 @@ function resolveEventId(eventPayload) {
   return eventPayload.id || eventPayload.event_id || eventPayload.webhook_id || eventPayload.transaction_id || null;
 }
 
+function coerceAppUserId(candidate) {
+  if (!candidate) {
+    return null;
+  }
+  if (typeof candidate === 'string') {
+    const trimmed = candidate.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (Array.isArray(candidate)) {
+    for (const item of candidate) {
+      const resolved = coerceAppUserId(item);
+      if (resolved) {
+        return resolved;
+      }
+    }
+  }
+  return null;
+}
+
+function resolveAppUserId(body) {
+  if (!body) {
+    return null;
+  }
+
+  const event = body.event || {};
+  const subscriber = event.subscriber || body.subscriber || {};
+  const purchasedProduct = event.purchased_product || {};
+  const transaction = event.transaction || purchasedProduct.transaction || {};
+  const storeTransaction =
+    event.store_transaction ||
+    purchasedProduct.store_transaction ||
+    body.store_transaction ||
+    {};
+
+  const subscriberAttrs =
+    event.subscriber_attributes ||
+    body.subscriber_attributes ||
+    subscriber.subscriber_attributes ||
+    {};
+
+  const candidates = [
+    event.app_user_id,
+    event.appUserId,
+    event.appUserID,
+    event.original_app_user_id,
+    event.alias,
+    event.aliases,
+    body.app_user_id,
+    body.appUserId,
+    body.appUserID,
+    body.original_app_user_id,
+    subscriber.app_user_id,
+    subscriber.original_app_user_id,
+    subscriber.alias,
+    subscriber.aliases,
+    purchasedProduct.app_user_id,
+    purchasedProduct.appUserId,
+    transaction.app_user_id,
+    transaction.appUserId,
+    transaction.appUserID,
+    storeTransaction.app_user_id,
+    storeTransaction.appUserId,
+    storeTransaction.appUserID,
+    subscriberAttrs.firebase_uid?.value,
+    subscriberAttrs.firebaseUid?.value,
+    subscriberAttrs.firebase_uid,
+    subscriberAttrs.firebaseUid,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = coerceAppUserId(candidate);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+}
+
 // -----------------------------------------------------------------------------
 // Main webhook handler
 // -----------------------------------------------------------------------------
@@ -730,7 +883,7 @@ const revenuecatWebhook = onRequest(
     { 
       timeoutSeconds: 60, 
       memory: '256MiB',
-      secrets: ['REVENUECAT_WEBHOOK_SECRET', 'REVENUECAT_API_KEY']
+      secrets: ['REVENUECAT_WEBHOOK_SECRET', 'REVENUECAT_API_KEY', 'REVENUECAT_WEBHOOK_AUTH_HEADER']
     }, 
     async (req, res) => {
   try {
@@ -745,19 +898,44 @@ const revenuecatWebhook = onRequest(
     }
 
     const eventPayload = req.body?.event || req.body;
-    const appUserId = eventPayload?.app_user_id || req.body?.app_user_id;
+    const appUserId = resolveAppUserId(req.body);
     const eventType = eventPayload?.event_type || eventPayload?.type || 'UNKNOWN';
     const eventId = resolveEventId(eventPayload);
 
     if (!appUserId) {
-      logger.error('RevenueCat webhook missing app_user_id.', { body: req.body });
+      logger.error('RevenueCat webhook missing app_user_id.', {
+        rootKeys: Object.keys(req.body || {}),
+        eventKeys: Object.keys(eventPayload || {}),
+        eventType,
+        hasSubscriber: !!eventPayload?.subscriber,
+        subscriberKeys: Object.keys(eventPayload?.subscriber || {}),
+      });
       res.status(200).send({ received: true });
+      return;
+    }
+
+    if (typeof appUserId === 'string' && appUserId.startsWith('$RCAnonymousID:')) {
+      logger.warn('Skipping RevenueCat webhook for anonymous app_user_id.', {
+        appUserId,
+        eventType,
+        eventId,
+      });
+      res.status(200).send({ received: true, ignored: 'anonymous_app_user_id' });
       return;
     }
 
     if (!eventId) {
       logger.warn('RevenueCat webhook missing event id. Continuing without idempotency protection.', { appUserId });
     }
+
+    logger.info('Processing RevenueCat webhook event.', {
+      appUserId,
+      eventType,
+      eventId,
+      hasSubscriber: !!eventPayload?.subscriber,
+      rootKeys: Object.keys(req.body || {}),
+      eventKeys: Object.keys(eventPayload || {}),
+    });
 
     // Fetch current user data to pass to transformation function
     let userData = {};
@@ -816,4 +994,5 @@ module.exports = {
   transformRevenueCatToUserUpdates,
   updateFirestoreWithUserSubscription,
   resolveEventId,
+  resolveAppUserId,
 };

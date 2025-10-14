@@ -12,6 +12,19 @@ import { detectNativeApp } from './platform.js';
 
 const isNativeApp = detectNativeApp();
 
+if (isNativeApp && window.Capacitor?.isPluginAvailable?.('StatusBar')) {
+  const statusBarPlugin = window.Capacitor?.Plugins?.StatusBar;
+  statusBarPlugin
+    ?.setOverlaysWebView({ overlay: false })
+    .catch((err) => console.warn('StatusBar overlay toggle failed', err));
+  statusBarPlugin
+    ?.setBackgroundColor({ color: '#ffffff' })
+    .catch((err) => console.warn('StatusBar background update failed', err));
+  statusBarPlugin
+    ?.setStyle({ style: 'DARK' })
+    .catch((err) => console.warn('StatusBar style update failed', err));
+}
+
 /**
  * Checks the URL for a question deep link and initializes a single-question quiz if found.
  * @returns {Promise<boolean>} - Returns true if a deep link was handled, false otherwise.
@@ -6495,5 +6508,3 @@ if (viewAccreditationInfoBtn) {
 } else {
     console.error("View Accreditation button on Info Screen (#viewAccreditationInfoBtn) not found.");
 }
-
-

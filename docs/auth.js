@@ -755,6 +755,141 @@ function initAuth() {
   };
 } // End of initAuth
 
+function timestampToDate(value) {
+  if (!value) {
+    return null;
+  }
+  if (typeof value?.toDate === 'function') {
+    return value.toDate();
+  }
+  if (value instanceof Date) {
+    return value;
+  }
+  const millis = Number(value);
+  if (Number.isFinite(millis) && millis > 0) {
+    return new Date(millis);
+  }
+  return null;
+}
+
+function snapshotCurrentAuthState() {
+  const state = window?.authState || {};
+  return {
+    accessTier: state.accessTier,
+    boardReviewActive: !!state.boardReviewActive,
+    boardReviewSubscriptionEndDate: state.boardReviewSubscriptionEndDate instanceof Date
+      ? state.boardReviewSubscriptionEndDate
+      : null,
+    cmeSubscriptionActive: !!state.cmeSubscriptionActive,
+    cmeSubscriptionEndDate: state.cmeSubscriptionEndDate instanceof Date
+      ? state.cmeSubscriptionEndDate
+      : null,
+    cmeCreditsAvailable: Number(state.cmeCreditsAvailable || 0)
+  };
+}
+
+function datesMatch(a, b) {
+  if (!a && !b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  const left = a instanceof Date ? a.getTime() : a;
+  const right = b instanceof Date ? b.getTime() : b;
+  return left === right;
+}
+
+export async function refreshAuthStateFromFirestore(options = {}) {
+  const { forceDispatch = false } = options || {};
+
+  if (!auth || !db) {
+    console.warn('refreshAuthStateFromFirestore called before Firebase initialized.');
+    return { refreshed: false, reason: 'uninitialized' };
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    return { refreshed: false, reason: 'no-user' };
+  }
+
+  if (currentUser.isAnonymous) {
+    return { refreshed: false, reason: 'anonymous-user' };
+  }
+
+  let snapshot;
+  try {
+    snapshot = await getDoc(doc(db, 'users', currentUser.uid));
+  } catch (error) {
+    console.error('refreshAuthStateFromFirestore: failed to fetch user doc.', error);
+    return { refreshed: false, reason: 'firestore-error', error };
+  }
+
+  if (!snapshot.exists()) {
+    return { refreshed: false, reason: 'missing-doc' };
+  }
+
+  if (!window.authState) {
+    window.authState = {};
+  }
+
+  const data = snapshot.data() || {};
+  const previous = snapshotCurrentAuthState();
+
+  const accessTier = typeof data.accessTier === 'string'
+    ? data.accessTier
+    : previous.accessTier || 'free_guest';
+
+  const boardReviewActive = !!data.boardReviewActive || data.boardReviewTier === 'Granted by CME Annual';
+  const boardReviewSubscriptionEndDate = timestampToDate(data.boardReviewSubscriptionEndDate);
+  const cmeSubscriptionActive = !!data.cmeSubscriptionActive;
+  const cmeSubscriptionEndDate = timestampToDate(data.cmeSubscriptionEndDate);
+  const cmeCreditsAvailable = Number(data.cmeCreditsAvailable || 0);
+
+  window.authState.accessTier = accessTier;
+  window.authState.boardReviewActive = boardReviewActive;
+  window.authState.boardReviewSubscriptionEndDate = boardReviewSubscriptionEndDate;
+  window.authState.cmeSubscriptionActive = cmeSubscriptionActive;
+  window.authState.cmeSubscriptionEndDate = cmeSubscriptionEndDate;
+  window.authState.cmeCreditsAvailable = cmeCreditsAvailable;
+  window.authState.isLoading = false;
+
+  const changed =
+    previous.accessTier !== accessTier ||
+    previous.boardReviewActive !== boardReviewActive ||
+    previous.cmeSubscriptionActive !== cmeSubscriptionActive ||
+    previous.cmeCreditsAvailable !== cmeCreditsAvailable ||
+    !datesMatch(previous.boardReviewSubscriptionEndDate, boardReviewSubscriptionEndDate) ||
+    !datesMatch(previous.cmeSubscriptionEndDate, cmeSubscriptionEndDate);
+
+  if (forceDispatch || changed) {
+    window.dispatchEvent(
+      new CustomEvent('authStateChanged', {
+        detail: {
+          user: window.authState.user,
+          isRegistered: window.authState.isRegistered,
+          isLoading: window.authState.isLoading,
+          accessTier: window.authState.accessTier,
+          boardReviewActive: window.authState.boardReviewActive,
+          boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
+          cmeSubscriptionActive: window.authState.cmeSubscriptionActive,
+          cmeSubscriptionEndDate: window.authState.cmeSubscriptionEndDate,
+          cmeCreditsAvailable: window.authState.cmeCreditsAvailable
+        }
+      })
+    );
+  }
+
+  return {
+    refreshed: true,
+    changed,
+    accessTier,
+    boardReviewActive,
+    cmeSubscriptionActive,
+    cmeCreditsAvailable
+  };
+}
+
 // ----------------------------------------------------
 // Convenience accessors
 function isUserRegistered() {
@@ -860,10 +995,12 @@ async function logoutUser() {
 // Expose functions globally if needed by UI scripts
 // Provide guest username helper globally for modules that rely on dynamic import
 window.generateGuestUsername = generateGuestUsername;
+window.refreshAuthStateFromFirestore = refreshAuthStateFromFirestore;
 
 window.authFunctions = {
   isUserRegistered,
   getCurrentUser,
+  refreshAuthStateFromFirestore,
   registerUser,
   loginUser,
   logoutUser,
