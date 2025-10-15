@@ -439,6 +439,35 @@ html, body {
   margin-top: 10px;
 }
 
+.modalForm--scrollable {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: clamp(60px, 20vh, 140px);
+  box-sizing: border-box;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .modalForm--scrollable {
+    padding-bottom: calc(clamp(60px, 20vh, 140px) + env(safe-area-inset-bottom));
+  }
+}
+
+.modalForm--scrollable .btnRow {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .modalForm--scrollable {
+    top: 8vh;
+    transform: translate(-50%, 0);
+  }
+}
+
 .modalForm button {
   margin-left: 10px;
   padding: 8px 15px;

@@ -265,6 +265,11 @@ async function processOAuthRedirectResult() {
     console.warn('Invalid stored OAuth context payload:', err);
   }
 
+  if (isNativeApp && !context) {
+    // Native builds use the Capacitor plugin for OAuth; skip redirect polling unless we actually initiated one.
+    return null;
+  }
+
   try {
     const redirectResult = await getRedirectResult(auth);
     if (!redirectResult) {
