@@ -1443,6 +1443,7 @@ DEPENDENCIES:
   - FirebaseFirestore
   - FirebaseFunctions
   - FirebaseStorage
+  - GTMSessionFetcher/Core (~> 3.4)
   - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
@@ -1540,6 +1541,6 @@ SPEC CHECKSUMS:
   RevenueCat: 02c8d0082d3373bcbc831faa600943d6ba6cad6e
   RevenuecatPurchasesCapacitor: 886039ffdb6fcbc28d0a3bb9b616bd7f2f5246ec
 
-PODFILE CHECKSUM: 427df70aa62e6edf53090384c9704983544a40e5
+PODFILE CHECKSUM: 8cce990a97e65dd015caefdec3b03b9c4c77e466
 
 COCOAPODS: 1.16.2
