@@ -348,14 +348,51 @@ function extractSubscriberMetadata(webhookPayload) {
   return { metadata, provided };
 }
 
+function parseDateLike(value) {
+  const millis = toMillis(value);
+  if (millis) {
+    return millis;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function getExpirationMillis(subscription = {}) {
+  const candidateKeys = [
+    'expiration_at_ms',
+    'expires_at_ms',
+    'expires_date_ms',
+    'expiration_date_ms',
+    'expires_date',
+    'expiration_date',
+  ];
+
+  for (const key of candidateKeys) {
+    if (key in subscription) {
+      const millis = parseDateLike(subscription[key]);
+      if (millis) {
+        return millis;
+      }
+    }
+  }
+
+  return null;
+}
+
 function evaluateSubscription(productIdentifier, subscription) {
   const catalogEntry = PRODUCT_CATALOG[productIdentifier];
   if (!catalogEntry) {
     return null;
   }
 
-  const expirationMs =
-    toMillis(subscription.expiration_at_ms) || toMillis(subscription.expires_at_ms);
+  const expirationMs = getExpirationMillis(subscription);
   const startMs =
     toMillis(subscription.purchased_at_ms) ||
     toMillis(subscription.original_purchase_date_ms) ||
