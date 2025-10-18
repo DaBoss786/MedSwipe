@@ -12,6 +12,36 @@ import { detectNativeApp } from './platform.js';
 
 const isNativeApp = detectNativeApp();
 
+/**
+ * Opens a URL using the Capacitor Browser plugin when available,
+ * otherwise falls back to the standard window.open behavior.
+ * @param {string} url - The URL to open.
+ * @returns {Promise<void> | void}
+ */
+function openInAppBrowser(url) {
+  if (!url) {
+    return;
+  }
+
+  const capacitorBrowser =
+    window.Capacitor?.Browser ?? window.Capacitor?.Plugins?.Browser;
+
+  if (
+    isNativeApp &&
+    window.Capacitor?.isPluginAvailable?.('Browser') &&
+    capacitorBrowser?.open
+  ) {
+    return capacitorBrowser.open({ url }).catch((error) => {
+      console.warn('Capacitor Browser plugin failed, falling back to window.open', error);
+      window.open(url, '_blank');
+    });
+  }
+
+  window.open(url, '_blank');
+}
+
+window.openInAppBrowser = openInAppBrowser;
+
 if (isNativeApp && window.Capacitor?.isPluginAvailable?.('StatusBar')) {
   const statusBarPlugin = window.Capacitor?.Plugins?.StatusBar;
   statusBarPlugin
@@ -3467,9 +3497,9 @@ async function handleCertificateDownload(buttonElement, filePath, fileName) {
 
       if (result.data.success && result.data.downloadUrl) {
           const signedUrl = result.data.downloadUrl;
-          console.log("Received signed URL, opening in new tab.");
-          // Open the URL in a new tab, which will start the download or display the PDF
-          window.open(signedUrl, '_blank');
+          console.log("Received signed URL, opening in appropriate browser.");
+          // Open the URL using the Capacitor Browser plugin when available
+          await openInAppBrowser(signedUrl);
       } else {
           throw new Error(result.data.error || "Failed to get a valid download link from the server.");
       }
@@ -5569,11 +5599,16 @@ async function handleCmeClaimSubmission(event) {
             <p style="color: #28a745; font-weight: bold; margin-bottom: 10px;">
                 Your CME certificate is ready!
             </p>
-            <a href="${signedUrl}" target="_blank" download="${pdfFileName}" class="auth-primary-btn" style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
-                Download Certificate
-            </a>
+            <button type="button" id="downloadCertificateButton" class="auth-primary-btn" style="display: inline-block; padding: 10px 15px; text-decoration: none; margin-top: 5px; background-color: #28a745; border: none;">
+                            Download Certificate
+            </button>
             <p style="font-size: 0.8em; color: #666; margin-top: 10px;">(Link opens in a new tab and is valid for 15 minutes.)</p>
         `;
+
+        const downloadButton = document.getElementById('downloadCertificateButton');
+        if (downloadButton) {
+            downloadButton.addEventListener('click', () => openInAppBrowser(signedUrl));
+        }
     }
 
     // --- 5. Refresh Dashboard Data ---
@@ -6121,6 +6156,18 @@ if (isNativeApp) {
         if (payPerCreditFormGroup) {
             payPerCreditFormGroup.style.display = 'none';
         }
+    }
+    const cmePaywallPriceDetail = document.getElementById('cmePaywallPriceDetail');
+    if (cmePaywallPriceDetail) {
+        cmePaywallPriceDetail.style.display = 'none';
+        cmePaywallPriceDetail.setAttribute('aria-hidden', 'true');
+        cmePaywallPriceDetail.setAttribute('hidden', '');
+    }
+    const cmeLandingPriceNote = document.getElementById('cmeLandingPriceNote');
+    if (cmeLandingPriceNote) {
+        cmeLandingPriceNote.style.display = 'none';
+        cmeLandingPriceNote.setAttribute('aria-hidden', 'true');
+        cmeLandingPriceNote.setAttribute('hidden', '');
     }
 }
 
