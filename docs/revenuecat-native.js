@@ -717,6 +717,13 @@ export async function startBoardReviewCheckout(planType, buttonElement) {
 // by RevenueCat/StoreKit once this promise resolves.
 export async function startCmeCheckout(planType, buttonElement, quantity = 1) {
   ensureNativeRuntime();
+  if (planType === 'credits') {
+    console.warn('CME credit purchases are disabled in the native app. Redirect users to the web checkout for credits.');
+    if (globalWindow?.alert) {
+      globalWindow.alert('Buying CME credits is only available on the MedSwipe website.');
+    }
+    return;
+  }
   const productIdentifier = resolveCmeProduct(planType);
   const expectation =
     planType === 'annual' ? 'cme_annual' : planType === 'credits' ? 'cme_credits' : null;

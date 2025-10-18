@@ -6103,6 +6103,26 @@ const annualTabBtn = document.getElementById('cmeAnnualBtn');
 const payPerCreditTabBtn = document.getElementById('cmePayPerCreditBtn');
 const annualContent = document.getElementById('cmeAnnualContent');
 const payPerCreditContent = document.getElementById('cmePayPerCreditContent');
+const cmePricingToggleContainer = document.querySelector('.cme-pricing-toggle');
+
+if (isNativeApp) {
+    if (cmePricingToggleContainer) {
+        cmePricingToggleContainer.style.justifyContent = 'center';
+    }
+    if (payPerCreditTabBtn) {
+        payPerCreditTabBtn.style.display = 'none';
+        payPerCreditTabBtn.setAttribute('aria-hidden', 'true');
+        payPerCreditTabBtn.setAttribute('tabindex', '-1');
+    }
+    if (payPerCreditContent) {
+        payPerCreditContent.style.display = 'none';
+        payPerCreditContent.setAttribute('aria-hidden', 'true');
+        const payPerCreditFormGroup = payPerCreditContent.querySelector('.form-group');
+        if (payPerCreditFormGroup) {
+            payPerCreditFormGroup.style.display = 'none';
+        }
+    }
+}
 
 // Listener for Annual Tab
 if (annualTabBtn && annualContent && payPerCreditContent) {
@@ -6121,7 +6141,7 @@ if (annualTabBtn && annualContent && payPerCreditContent) {
 }
 
 // Listener for Pay-Per-Credit Tab
-if (payPerCreditTabBtn && annualContent && payPerCreditContent) {
+if (!isNativeApp && payPerCreditTabBtn && annualContent && payPerCreditContent) {
     payPerCreditTabBtn.addEventListener('click', () => {
         console.log("Pay-Per-Credit tab clicked");
         // Update button states
@@ -6132,7 +6152,7 @@ if (payPerCreditTabBtn && annualContent && payPerCreditContent) {
         payPerCreditContent.style.display = 'block'; // Or 'flex'
         annualContent.style.display = 'none';
     });
-} else {
+  } else if (!isNativeApp) {
      console.error("Missing elements for Pay-Per-Credit tab functionality.");
 }
 // --- End Pricing Screen Tab Switching ---
@@ -6433,7 +6453,7 @@ if (cmeCheckoutAnnualBtn) {
 
 // CME Buy Credits Checkout
 const cmeBuyCreditsBtn = document.getElementById("cmeBuyCreditsBtn");
-if (cmeBuyCreditsBtn) {
+if (!isNativeApp && cmeBuyCreditsBtn) {
   cmeBuyCreditsBtn.addEventListener("click", function(e) {
     const quantityInput = document.getElementById("creditQty");
     const quantity = quantityInput ? parseInt(quantityInput.value, 10) : 1;
@@ -6443,6 +6463,8 @@ if (cmeBuyCreditsBtn) {
     }
     startCmeCheckout('credits', e.currentTarget, quantity);
   });
+} else if (isNativeApp && cmeBuyCreditsBtn) {
+  cmeBuyCreditsBtn.style.display = 'none';
 }
 
 // Board Review Monthly Checkout
