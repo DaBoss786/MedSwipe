@@ -11,7 +11,7 @@ import {
   recordChoiceSelection
 } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
-import { playSuccess, playMedium, playLight } from './haptics.js';
+import { playMedium, playLight, playTap } from './haptics.js';
 
 // Quiz management variables
 let allQuestions = [];
@@ -650,11 +650,7 @@ function addOptionListeners() {
     const options = card.querySelectorAll('.option-btn');
     const selected = this.getAttribute('data-option');
     const isCorrect = (selected === correct);
-    if (isCorrect) {
-      playSuccess();
-    } else {
-      playMedium();
-    }
+    playTap();
     const timeSpent = Date.now() - questionStartTime;
     
     // Record which specific choice was selected for statistics
@@ -714,6 +710,11 @@ function addOptionListeners() {
             option.appendChild(percentageSpan); // Adds the percentage to the button
         }
     });
+    if (isCorrect) {
+      requestAnimationFrame(() => {
+        playMedium();
+      });
+    }
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
           console.log("Found hint element:", hint); // Debug log
