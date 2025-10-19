@@ -404,9 +404,15 @@ function evaluateSubscription(productIdentifier, subscription) {
   const willRenew = subscription.will_renew;
 
   const now = Date.now();
-  const isTrialing =
-    String(subscription.period_type || '').toLowerCase() === 'trial' &&
-    (!!trialEndMs ? trialEndMs > now : true);
+  const inTrialPeriod = String(subscription.period_type || '').toLowerCase() === 'trial';
+  let isTrialing = false;
+  if (inTrialPeriod) {
+    if (trialEndMs) {
+      isTrialing = trialEndMs > now;
+    } else if (expirationMs) {
+      isTrialing = expirationMs > now;
+    }
+  }
   const isActive = !!expirationMs && expirationMs > now;
   const cancelAtPeriodEnd = willRenew === false || (!!cancellationMs && (!expirationMs || expirationMs > now));
 
