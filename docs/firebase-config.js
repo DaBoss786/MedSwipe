@@ -11,6 +11,7 @@ import {
   initializeAuth,
   indexedDBLocalPersistence,
   browserLocalPersistence,
+  browserPopupRedirectResolver,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -110,7 +111,9 @@ const popupRedirectResolver =
 
 const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence].filter(Boolean),
-  popupRedirectResolver: isNativeApp() ? popupRedirectResolver : undefined
+  popupRedirectResolver: isNativeApp()
+    ? popupRedirectResolver
+    : browserPopupRedirectResolver
 });
 const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
 

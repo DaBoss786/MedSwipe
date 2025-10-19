@@ -13,6 +13,34 @@ import { playTap } from './haptics.js';
 
 const isNativeApp = detectNativeApp();
 
+let dashboardSetupTimeout = null;
+
+function queueDashboardRefresh() {
+  if (dashboardSetupTimeout) {
+    clearTimeout(dashboardSetupTimeout);
+  }
+
+  dashboardSetupTimeout = setTimeout(() => {
+    dashboardSetupTimeout = null;
+
+    if (typeof setupDashboardEvents === 'function') {
+      setupDashboardEvents();
+    }
+
+    if (typeof checkAndUpdateStreak === 'function' && auth && auth.currentUser) {
+      try {
+        checkAndUpdateStreak();
+      } catch (error) {
+        console.error("Error updating streak:", error);
+      }
+    }
+
+    if (typeof initializeDashboard === 'function') {
+      initializeDashboard();
+    }
+  }, 250);
+}
+
 document.addEventListener('click', async (event) => {
   if (!(event.target instanceof Element)) {
     return;
@@ -572,7 +600,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   if (typeof window.selectedExperienceLevel === 'undefined') {
     window.selectedExperienceLevel = null;
   }
-  
+
   // Update the auth state change listener to properly handle welcome screen
 window.addEventListener('authStateChanged', function(event) {
   console.log('Auth state changed in app.js:', event.detail);
@@ -615,6 +643,7 @@ window.addEventListener('authStateChanged', function(event) {
       
       // For all other normal page loads and auth changes, use our centralized router
       handleUserRouting(event.detail);
+      queueDashboardRefresh();
       
     }, 2000); // 2-second delay for splash screen
   }
@@ -4273,30 +4302,6 @@ function fixStreakCalendar(streaks) {
   }
 }
 
-// Initialize the app
-window.addEventListener('load', function() {
-  // Check streak after Firebase auth is initialized
-  const checkAuthAndInitAll = function() {
-    if (auth && auth.currentUser) {
-      checkAndUpdateStreak();
-      setupDashboardEvents();
-      initializeDashboard();
-    } else {
-      // If auth isn't ready yet, check again in 1 second
-      setTimeout(checkAuthAndInitAll, 1000);
-    }
-  };
-  
-  // Start checking for auth
-  checkAuthAndInitAll();
-  
-  // Also try after a delay to ensure all DOM elements are ready
-  setTimeout(function() {
-    setupDashboardEvents();
-    initializeDashboard();
-  }, 2000);
-});
-
 // Function to get IDs of questions due for review
 async function getDueQuestionIds() {
   if (!auth || !auth.currentUser || !db) {
@@ -4468,6 +4473,8 @@ function forceReinitializeDashboard() {
       }, 50);
     }, 50);
   }
+
+  queueDashboardRefresh();
 }
 
 // Create a more robust function that explicitly attaches all needed listeners
