@@ -1,5 +1,6 @@
 // user.js - TOP OF FILE
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc, updateProfile } from './firebase-config.js'; // Adjust path if needed
+import { setHapticsEnabled } from './haptics.js';
 
 // user.js - After imports
 
@@ -1320,6 +1321,7 @@ async function saveProfileChanges() {
   const experienceSelect = document.getElementById('editExperienceLevel');
   const saveButton = document.getElementById('saveProfileChangesBtn');
   const messageEl = document.getElementById('editProfileMessage');
+  const hapticsToggle = document.getElementById('editHapticsToggle');
 
   // Get the new values
   const newUsername = usernameInput.value.trim();
@@ -1329,6 +1331,7 @@ async function saveProfileChanges() {
 const hardInterval = parseInt(document.getElementById('editHardInterval').value, 10);
 const mediumInterval = parseInt(document.getElementById('editMediumInterval').value, 10);
 const easyInterval = parseInt(document.getElementById('editEasyInterval').value, 10);
+const hapticsEnabled = hapticsToggle ? hapticsToggle.checked : true;
 
   // --- 1. Client-Side Validation ---
   if (newUsername.length < 3) {
@@ -1369,7 +1372,8 @@ if (!(hardInterval < mediumInterval && mediumInterval < easyInterval)) {
         hardInterval: hardInterval,
         mediumInterval: mediumInterval,
         easyInterval: easyInterval
-      }
+      },
+      hapticsEnabled
     });
 
     // --- 4. Handle Success ---
@@ -1380,6 +1384,14 @@ if (!(hardInterval < mediumInterval && mediumInterval < easyInterval)) {
 document.getElementById('viewHardInterval').textContent = hardInterval;
 document.getElementById('viewMediumInterval').textContent = mediumInterval;
 document.getElementById('viewEasyInterval').textContent = easyInterval;
+  const viewHapticsStatusEl = document.getElementById('viewHapticsStatus');
+  if (viewHapticsStatusEl) {
+    viewHapticsStatusEl.textContent = hapticsEnabled ? 'On' : 'Off';
+  }
+  setHapticsEnabled(hapticsEnabled);
+  if (window.authState) {
+    window.authState.hapticsEnabled = hapticsEnabled;
+  }
 
     // Manually trigger the username update in the user menu.
     // We need to get the latest auth state to pass to the function.
@@ -1391,14 +1403,14 @@ document.getElementById('viewEasyInterval').textContent = easyInterval;
     }
 
     // Show success message and switch back to view mode
-    messageEl.textContent = 'Profile updated successfully!';
+    messageEl.textContent = 'Settings updated successfully!';
     messageEl.classList.add('success');
     
     // Switch back to view mode after a short delay
     setTimeout(() => {
       document.getElementById('profileViewMode').style.display = 'block';
       document.getElementById('profileEditMode').style.display = 'none';
-      document.getElementById('editProfileTitle').textContent = 'Your Profile';
+      document.getElementById('editProfileTitle').textContent = 'Account Settings';
       // Clear the success message after another delay
       setTimeout(() => {
         messageEl.textContent = '';

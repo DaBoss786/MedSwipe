@@ -11,6 +11,7 @@ import {
   recordChoiceSelection
 } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
+import { playSuccess, playMedium, playLight } from './haptics.js';
 
 // Quiz management variables
 let allQuestions = [];
@@ -485,6 +486,11 @@ async function initializeQuiz(questions, quizType = 'regular') {
   // This code now runs *after* mySwiper is created.
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
+    const previousIndex = window.mySwiper.previousIndex;
+
+    if (typeof previousIndex === 'number' && activeIndex > previousIndex && activeIndex % 2 === 0) {
+      playLight();
+    }
     
     if (activeIndex % 2 === 0) {
       questionStartTime = Date.now();
@@ -644,6 +650,11 @@ function addOptionListeners() {
     const options = card.querySelectorAll('.option-btn');
     const selected = this.getAttribute('data-option');
     const isCorrect = (selected === correct);
+    if (isCorrect) {
+      playSuccess();
+    } else {
+      playMedium();
+    }
     const timeSpent = Date.now() - questionStartTime;
     
     // Record which specific choice was selected for statistics

@@ -1,6 +1,7 @@
 // user-profile.js - Fixed version
 import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc } from './firebase-config.js'; // Adjust path if needed
 import { closeUserMenu } from './utils.js';
+import { setHapticsEnabled } from './haptics.js';
 
   function updateUserProfileUI(authState) {
     // We're skipping the profile creation since you don't want it
@@ -39,13 +40,27 @@ async function updateUserMenuInfo(authState) {
           const userDocRef = doc(db, 'users', user.uid);
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
-              const firestoreUsername = userDocSnap.data().username;
+              const userData = userDocSnap.data() || {};
+              const firestoreUsername = userData.username;
               if (typeof firestoreUsername === 'string' && firestoreUsername.trim()) {
                   displayName = firestoreUsername.trim();
               }
+              if (typeof userData.hapticsEnabled === 'boolean') {
+                  setHapticsEnabled(userData.hapticsEnabled);
+                  if (window.authState) {
+                      window.authState.hapticsEnabled = userData.hapticsEnabled;
+                  }
+              } else if (window.authState) {
+                  delete window.authState.hapticsEnabled;
+              }
+          } else if (window.authState) {
+              delete window.authState.hapticsEnabled;
           }
       } catch (error) {
           console.error('Error fetching username for user menu:', error);
+          if (window.authState) {
+              delete window.authState.hapticsEnabled;
+          }
       }
   }
 

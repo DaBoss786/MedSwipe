@@ -1609,7 +1609,8 @@ exports.updateUserProfile = onCall(
       'streaks',
       'specialty',
       'experienceLevel',
-      'spacedRepetitionSettings'
+      'spacedRepetitionSettings',
+      'hapticsEnabled'
     ];
     
     // 3. Validate input data
@@ -1625,6 +1626,10 @@ exports.updateUserProfile = onCall(
       }
       // Trim the username to save a clean version
       updateData.username = newUsername.trim();
+    }
+    if (updateData.hapticsEnabled !== undefined && typeof updateData.hapticsEnabled !== 'boolean') {
+      logger.warn(`User ${uid} tried to update hapticsEnabled with invalid value:`, updateData.hapticsEnabled);
+      throw new HttpsError("invalid-argument", "Haptics preference must be true or false.");
     }
     // You could add similar validation for experienceLevel if needed, e.g.,
     // if (updateData.experienceLevel !== undefined && !['PGY-1', 'PGY-2', ...].includes(updateData.experienceLevel)) { ... }

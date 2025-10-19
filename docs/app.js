@@ -9,8 +9,35 @@ import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from
 import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
+import { playTap } from './haptics.js';
 
 const isNativeApp = detectNativeApp();
+
+document.addEventListener('click', async (event) => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  const interactive = event.target.closest('button, [role="button"], .dashboard-card, #logoClick');
+  if (!interactive) {
+    return;
+  }
+
+  if (interactive.classList.contains('option-btn')) {
+    return;
+  }
+
+  if (interactive.matches('button') && interactive.disabled) {
+    return;
+  }
+
+  const ariaDisabledAttr = interactive.getAttribute('aria-disabled');
+  if (ariaDisabledAttr && ariaDisabledAttr.toLowerCase() === 'true') {
+    return;
+  }
+
+  await playTap();
+});
 
 /**
  * Opens a URL using the Capacitor Browser plugin when available,
@@ -4817,7 +4844,7 @@ function ensureForgotPasswordModalExists() {
 }
 
 
-// This function controls the Edit Profile modal's logic
+// This function controls the Account Settings modal logic
 async function showEditProfileModal() {
   const modal = document.getElementById('editProfileModal');
   const messageEl = document.getElementById('editProfileMessage');
@@ -4825,7 +4852,7 @@ async function showEditProfileModal() {
   // 1. AUTHENTICATION CHECK
   // Ensure a registered user is logged in.
   if (!auth.currentUser || auth.currentUser.isAnonymous) {
-    alert("Please log in to edit your profile.");
+    alert("Please log in to update your account settings.");
     return;
   }
   const uid = auth.currentUser.uid;
@@ -4836,7 +4863,7 @@ async function showEditProfileModal() {
   messageEl.className = 'auth-error'; // Reset to default error style
   document.getElementById('profileViewMode').style.display = 'block';
   document.getElementById('profileEditMode').style.display = 'none';
-  document.getElementById('editProfileTitle').textContent = 'Your Profile';
+  document.getElementById('editProfileTitle').textContent = 'Account Settings';
 
   // 3. FETCH USER DATA FROM FIRESTORE
   try {
@@ -4847,6 +4874,7 @@ async function showEditProfileModal() {
       const userData = userDocSnap.data();
       const currentUsername = userData.username || 'Not Set';
       const currentExperience = userData.experienceLevel || 'Not Set';
+      const hapticsEnabled = userData.hapticsEnabled !== false;
 
       // 4. POPULATE MODAL FIELDS
       // Populate both the view and edit fields with the fetched data.
@@ -4854,6 +4882,17 @@ async function showEditProfileModal() {
       document.getElementById('viewExperienceLevel').textContent = currentExperience;
       document.getElementById('editUsername').value = currentUsername;
       document.getElementById('editExperienceLevel').value = currentExperience;
+      const viewHapticsStatusEl = document.getElementById('viewHapticsStatus');
+      const editHapticsToggleEl = document.getElementById('editHapticsToggle');
+      if (viewHapticsStatusEl) {
+        viewHapticsStatusEl.textContent = hapticsEnabled ? 'On' : 'Off';
+      }
+      if (editHapticsToggleEl) {
+        editHapticsToggleEl.checked = hapticsEnabled;
+      }
+      if (window.authState) {
+        window.authState.hapticsEnabled = hapticsEnabled;
+      }
 
         // Get custom intervals or use defaults
   const settings = userData.spacedRepetitionSettings || {};
@@ -4877,11 +4916,11 @@ async function showEditProfileModal() {
     } else {
       // This case is unlikely for a logged-in user but is good practice to handle.
       console.error("User document not found for UID:", uid);
-      alert("Could not load your profile data. Please try again.");
+      alert("Could not load your account settings. Please try again.");
     }
   } catch (error) {
     console.error("Error fetching user profile:", error);
-    alert("An error occurred while fetching your profile.");
+    alert("An error occurred while fetching your account settings.");
   }
 }
 
@@ -4894,12 +4933,27 @@ function setupEditProfileModalListeners() {
   const editMode = document.getElementById('profileEditMode');
   const title = document.getElementById('editProfileTitle');
   const messageEl = document.getElementById('editProfileMessage');
+  const editHapticsToggle = document.getElementById('editHapticsToggle');
+  const viewHapticsStatus = document.getElementById('viewHapticsStatus');
+
+  const syncEditFieldsWithView = () => {
+    document.getElementById('editUsername').value = document.getElementById('viewUsername').textContent;
+    document.getElementById('editExperienceLevel').value = document.getElementById('viewExperienceLevel').textContent;
+    document.getElementById('editHardInterval').value = document.getElementById('viewHardInterval').textContent;
+    document.getElementById('editMediumInterval').value = document.getElementById('viewMediumInterval').textContent;
+    document.getElementById('editEasyInterval').value = document.getElementById('viewEasyInterval').textContent;
+    if (editHapticsToggle && viewHapticsStatus) {
+      const hapticsText = viewHapticsStatus.textContent.trim().toLowerCase();
+      editHapticsToggle.checked = hapticsText !== 'off';
+    }
+  };
 
   // Function to switch to Edit Mode
   const switchToEditMode = () => {
+    syncEditFieldsWithView();
     viewMode.style.display = 'none';
     editMode.style.display = 'block';
-    title.textContent = 'Edit Your Profile';
+    title.textContent = 'Edit Account Settings';
     messageEl.textContent = ''; // Clear any previous messages
   };
 
@@ -4907,7 +4961,7 @@ function setupEditProfileModalListeners() {
   const switchToViewMode = () => {
     viewMode.style.display = 'block';
     editMode.style.display = 'none';
-    title.textContent = 'Your Profile';
+    title.textContent = 'Account Settings';
   };
 
   // EVENT LISTENERS FOR BUTTONS
@@ -4926,14 +4980,18 @@ function setupEditProfileModalListeners() {
     switchToEditMode();
   });
 
+  const changeHapticsLink = document.getElementById('changeHapticsLink');
+  if (changeHapticsLink) {
+    changeHapticsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      switchToEditMode();
+    });
+  }
+
   document.getElementById('cancelProfileChangesBtn').addEventListener('click', () => {
     // Before switching, reset edit fields to their original values from the view fields
-    document.getElementById('editUsername').value = document.getElementById('viewUsername').textContent;
-    document.getElementById('editExperienceLevel').value = document.getElementById('viewExperienceLevel').textContent;
+    syncEditFieldsWithView();
     switchToViewMode();
-    document.getElementById('editHardInterval').value = document.getElementById('viewHardInterval').textContent;
-document.getElementById('editMediumInterval').value = document.getElementById('viewMediumInterval').textContent;
-document.getElementById('editEasyInterval').value = document.getElementById('viewEasyInterval').textContent;
   });
 
   document.getElementById('closeEditProfileModal').addEventListener('click', () => {
