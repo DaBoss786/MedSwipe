@@ -520,6 +520,24 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     const onboardingUsernameError = document.getElementById('onboardingUsernameError');
     // --- END NEW element references ---
 
+    function resolveAutoOnboardingUsername() {
+      const candidates = [
+        typeof window.selectedUsername === 'string' ? window.selectedUsername.trim() : '',
+        typeof window.authState?.username === 'string' ? window.authState.username.trim() : '',
+        typeof window.authState?.user?.displayName === 'string'
+          ? window.authState.user.displayName.trim()
+          : ''
+      ];
+
+      for (const candidate of candidates) {
+        if (candidate && candidate.length >= 3) {
+          return candidate;
+        }
+      }
+
+      return generateGuestUsername();
+    }
+
   // Initialize window properties if they don't exist, to be safe
   if (typeof window.selectedSpecialty === 'undefined') {
     window.selectedSpecialty = null;
@@ -690,7 +708,36 @@ if (experienceContinueBtn && experiencePickScreen && usernamePickScreen) {
       experiencePickScreen.style.display = 'none';
       usernamePickScreen.style.display = 'flex';
       usernamePickScreen.style.opacity = '1';
-      if(onboardingUsernameInput) onboardingUsernameInput.focus(); // Auto-focus the input field
+      if (onboardingUsernameInput) {
+        const defaultUsername = resolveAutoOnboardingUsername();
+        onboardingUsernameInput.value = defaultUsername;
+        window.selectedUsername = defaultUsername;
+
+        if (onboardingUsernameError) {
+          onboardingUsernameError.textContent = '';
+        }
+
+        try {
+          onboardingUsernameInput.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (error) {
+          if (defaultUsername.trim().length >= 3 && usernameContinueBtn) {
+            usernameContinueBtn.disabled = false;
+          }
+        }
+
+        if (usernameContinueBtn && defaultUsername.trim().length < 3) {
+          usernameContinueBtn.disabled = true;
+        }
+
+        try {
+          const cursorPos = defaultUsername.length;
+          onboardingUsernameInput.setSelectionRange(cursorPos, cursorPos);
+        } catch (error) {
+          // Some browsers may not support setSelectionRange on certain input types.
+        }
+
+        onboardingUsernameInput.focus();
+      }
     }, 500);
   });
 }
