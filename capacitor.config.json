@@ -6,6 +6,10 @@
     "FirebaseAuthentication": {
       "skipNativeAuth": true,
       "providers": ["google.com", "apple.com"]
+    },
+    "FirebaseAppCheck": {
+      "isTokenAutoRefreshEnabled": true,
+      "nativeProvider": "appleAppAttestWithDeviceCheckFallback"
     }
   }
 }

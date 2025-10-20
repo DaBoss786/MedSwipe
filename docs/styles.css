@@ -146,6 +146,11 @@ html, body {
   background: linear-gradient(to bottom right, #F3FAFF, #E6F0FA);
 }
 
+:root {
+  --primary-button-gradient: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  --primary-button-gradient-hover: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+}
+
 /* Base press feedback for all buttons without altering their native styling */
 button {
   transition: transform 0.18s ease;
@@ -162,13 +167,14 @@ button:not(:disabled):active {
   .start-quiz-btn,
   .dashboard-start-btn,
   .cme-dashboard-buttons button,
+  .welcome-primary-btn,
+  .welcome-secondary-btn,
   .leaderboard-main-tab,
   .leaderboard-tab
 ) {
   position: relative;
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
   box-shadow: 0 10px 20px rgba(15, 76, 129, 0.18), 0 4px 8px rgba(0, 0, 0, 0.12);
-  background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
 }
 
 :is(
@@ -177,6 +183,8 @@ button:not(:disabled):active {
   .start-quiz-btn,
   .dashboard-start-btn,
   .cme-dashboard-buttons button,
+  .welcome-primary-btn,
+  .welcome-secondary-btn,
   .leaderboard-main-tab,
   .leaderboard-tab
 ):not(:disabled)::before {
@@ -196,6 +204,8 @@ button:not(:disabled):active {
   .start-quiz-btn,
   .dashboard-start-btn,
   .cme-dashboard-buttons button,
+  .welcome-primary-btn,
+  .welcome-secondary-btn,
   .leaderboard-main-tab,
   .leaderboard-tab
 ):not(:disabled):hover {
@@ -210,6 +220,8 @@ button:not(:disabled):active {
   .start-quiz-btn,
   .dashboard-start-btn,
   .cme-dashboard-buttons button,
+  .welcome-primary-btn,
+  .welcome-secondary-btn,
   .leaderboard-main-tab,
   .leaderboard-tab
 ):not(:disabled):active {
@@ -224,6 +236,8 @@ button:not(:disabled):active {
   .start-quiz-btn,
   .dashboard-start-btn,
   .cme-dashboard-buttons button,
+  .welcome-primary-btn,
+  .welcome-secondary-btn,
   .leaderboard-main-tab,
   .leaderboard-tab
 ):not(:disabled):active::before {
@@ -392,12 +406,14 @@ button:not(:disabled):active {
   cursor: pointer;
   color: #fff;
   width: 220px;
-  transition: background-color 0.2s ease;
-  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  transition: background 0.2s ease;
+  background-color: #0C72D3;
+  background-image: var(--primary-button-gradient);
+  background-repeat: no-repeat;
 }
 
 #mainOptions button:hover {
-  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+  background-image: var(--primary-button-gradient-hover);
 }
 
 /* Swiper Container */
@@ -1256,12 +1272,14 @@ button:not(:disabled):active {
   cursor: pointer;
   color: #fff;
   width: 220px;
-  transition: background-color 0.2s ease;
-  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  transition: background 0.2s ease;
+  background-color: #0C72D3;
+  background-image: var(--primary-button-gradient);
+  background-repeat: no-repeat;
 }
 
 .start-quiz-btn:hover {
-  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+  background-image: var(--primary-button-gradient-hover);
 }
 
 /* About Us View */
@@ -1988,13 +2006,15 @@ button:not(:disabled):active {
   cursor: pointer;
   color: #fff;
   width: 220px;
-  transition: background-color 0.2s ease;
-  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  transition: background 0.2s ease;
+  background-color: #0C72D3;
+  background-image: var(--primary-button-gradient);
+  background-repeat: no-repeat;
   margin-top: -5px; /* Move button up slightly */
 }
 
 .dashboard-start-btn:hover {
-  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+  background-image: var(--primary-button-gradient-hover);
 }
 
 /* Button container on the CME Dashboard */
@@ -2884,28 +2904,33 @@ button:not(:disabled):active {
   cursor: pointer;
   color: #fff;
   width: 100%;
-  transition: background-color 0.2s ease;
-  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  transition: background 0.2s ease;
+  background-color: #0C72D3;
+  background-image: var(--primary-button-gradient);
+  background-repeat: no-repeat;
 }
 
 .welcome-primary-btn:hover {
-  background: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+  background-image: var(--primary-button-gradient-hover);
 }
 
 .welcome-secondary-btn {
   font-size: 1.2rem;
   padding: 12px 20px;
-  border: 1px solid #0C72D3;
+  border: 1px solid rgba(12, 114, 211, 0.45);
   border-radius: 6px;
   cursor: pointer;
-  color: #0C72D3;
+  color: #1f2a3d;
   width: 100%;
-  background-color: white;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  background-color: #ffffff;
+  background-image: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .welcome-secondary-btn:hover {
-  background-color: #f0f7ff;
+  background-color: #f0f6ff;
+  color: #0C72D3;
+  border-color: #0C72D3;
 }
 
 /* Adjust margin-top to avoid the toolbar pushing content down */

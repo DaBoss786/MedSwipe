@@ -1168,6 +1168,9 @@ PODS:
   - CapacitorBrowser (7.0.2):
     - Capacitor
   - CapacitorCordova (7.4.3)
+  - CapacitorFirebaseAppCheck (7.3.1):
+    - Capacitor
+    - FirebaseAppCheck (~> 11.7.0)
   - CapacitorFirebaseAuthentication (7.3.1):
     - Capacitor
     - CapacitorFirebaseAuthentication/Lite (= 7.3.1)
@@ -1435,6 +1438,7 @@ DEPENDENCIES:
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorFirebaseAppCheck (from `../../node_modules/@capacitor-firebase/app-check`)"
   - "CapacitorFirebaseAuthentication (from `../../node_modules/@capacitor-firebase/authentication`)"
   - "CapacitorFirebaseAuthentication/Google (from `../../node_modules/@capacitor-firebase/authentication`)"
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
@@ -1493,6 +1497,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/browser"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorFirebaseAppCheck:
+    :path: "../../node_modules/@capacitor-firebase/app-check"
   CapacitorFirebaseAuthentication:
     :path: "../../node_modules/@capacitor-firebase/authentication"
   CapacitorHaptics:
@@ -1513,6 +1519,7 @@ SPEC CHECKSUMS:
   CapacitorApp: 26587c2ce485d88ddb39adb21cac64f8e481afe3
   CapacitorBrowser: 22541e48442de44dc629c214388290d6eecc6ae9
   CapacitorCordova: 435121e81a2df4d0034f0fb11fcefab5104cfdb5
+  CapacitorFirebaseAppCheck: 58bb803fdf4bb20247adc259e952e478e225400e
   CapacitorFirebaseAuthentication: d966e29421168f94621b8df9bc8ddf602b261fc7
   CapacitorHaptics: b3fb2869e72c4466e18ce9ccbeb60a3d8723b3d4
   CapacitorKeyboard: 62f36104f26d53d8b3a2a43f2a69fe714f1777d5
@@ -1547,6 +1554,6 @@ SPEC CHECKSUMS:
   RevenueCat: 02c8d0082d3373bcbc831faa600943d6ba6cad6e
   RevenuecatPurchasesCapacitor: 886039ffdb6fcbc28d0a3bb9b616bd7f2f5246ec
 
-PODFILE CHECKSUM: d1a58c1163f92b2a65f3f975a2453a147926386b
+PODFILE CHECKSUM: 0417e0ee3c5540bce27769b956db4a43705431c9
 
 COCOAPODS: 1.16.2

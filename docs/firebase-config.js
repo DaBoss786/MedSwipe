@@ -81,8 +81,56 @@ function waitForRecaptcha() {
   });
 }
 
+async function initializeNativeAppCheck(appInstance) {
+  const plugin = window.Capacitor?.Plugins?.FirebaseAppCheck;
+  if (!plugin) {
+    console.warn("Capacitor Firebase App Check plugin not available; falling back to web provider.");
+    return false;
+  }
+
+  try {
+    await plugin.initialize({ isTokenAutoRefreshEnabled: true });
+  } catch (error) {
+    console.error("Unable to initialize native App Check plugin:", error);
+    return false;
+  }
+
+  initializeAppCheck(appInstance, {
+    provider: {
+      getToken: async (forceRefresh = false) => {
+        const { token, expireTimeMillis } = await plugin.getToken({ forceRefresh });
+        if (!token) {
+          throw new Error("Native App Check plugin returned an empty token.");
+        }
+        return {
+          token,
+          expireTimeMillis: expireTimeMillis ?? Date.now() + 60_000
+        };
+      }
+    },
+    isTokenAutoRefreshEnabled: true
+  });
+
+  console.log("Native App Check initialized via Capacitor plugin.");
+  return true;
+}
+
 // Initialize App Check after reCAPTCHA is ready for web builds only
-if (!isNativeApp()) {
+if (isNativeApp()) {
+  initializeNativeAppCheck(app).then((result) => {
+    if (!result) {
+      console.info("Native App Check unavailable; attempting web reCAPTCHA provider instead.");
+      waitForRecaptcha()
+        .then(() => {
+          initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
+            isTokenAutoRefreshEnabled: true
+          });
+        })
+        .catch(error => console.error("App Check init failed:", error));
+    }
+  });
+} else {
   waitForRecaptcha()
     .then(() => {
       initializeAppCheck(app, {
@@ -91,8 +139,6 @@ if (!isNativeApp()) {
       });
     })
     .catch(error => console.error("App Check init failed:", error));
-} else {
-  console.info("Skipping Firebase App Check initialization for native runtime. TODO: integrate DeviceCheck/App Attest provider.");
 }
 
   let analytics = null;
