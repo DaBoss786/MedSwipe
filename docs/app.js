@@ -9,7 +9,113 @@ import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from
 import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
-import { playTap } from './haptics.js';
+import { playTap, playLight } from './haptics.js';
+
+const PRESSABLE_SELECTOR = [
+  '#welcomeScreen button',
+  '#mainOptions button',
+  '#cmeDashboardView button',
+  '.quiz-summary-card button'
+].join(', ');
+
+const activePointerPresses = new Map();
+const pointerHandledElements = new WeakSet();
+
+function findPressableElement(target) {
+  if (!(target instanceof Element)) {
+    return null;
+  }
+  return target.closest(PRESSABLE_SELECTOR);
+}
+
+function isPressableDisabled(element) {
+  if (!element) {
+    return true;
+  }
+
+  if (element.matches('button')) {
+    if (element.disabled) {
+      return true;
+    }
+
+    const ariaDisabled = element.getAttribute('aria-disabled');
+    if (ariaDisabled && ariaDisabled.toLowerCase() === 'true') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+document.addEventListener('pointerdown', (event) => {
+  if (!event.isPrimary) {
+    return;
+  }
+
+  if (event.pointerType === 'mouse' && event.button !== 0) {
+    return;
+  }
+
+  const pressable = findPressableElement(event.target);
+  if (!pressable || isPressableDisabled(pressable)) {
+    return;
+  }
+
+  const chain = [];
+  let current = pressable;
+  while (current && !chain.includes(current)) {
+    chain.push(current);
+    pointerHandledElements.add(current);
+    current = current.parentElement
+      ? current.parentElement.closest(PRESSABLE_SELECTOR)
+      : null;
+  }
+
+  activePointerPresses.set(event.pointerId, {
+    pressable,
+    chain
+  });
+  playTap();
+});
+
+document.addEventListener('pointerup', (event) => {
+  const activePress = activePointerPresses.get(event.pointerId);
+  if (!activePress) {
+    return;
+  }
+
+  const { pressable, chain } = activePress;
+  activePointerPresses.delete(event.pointerId);
+
+  const releaseTarget = findPressableElement(event.target);
+  const releasedOnPressable =
+    releaseTarget &&
+    (releaseTarget === pressable || pressable.contains(releaseTarget));
+
+  if (releasedOnPressable) {
+    requestAnimationFrame(() => {
+      playLight();
+    });
+  }
+
+  setTimeout(() => {
+    chain.forEach((element) => {
+      pointerHandledElements.delete(element);
+    });
+  }, 0);
+});
+
+document.addEventListener('pointercancel', (event) => {
+  const activePress = activePointerPresses.get(event.pointerId);
+  if (!activePress) {
+    return;
+  }
+
+  activePointerPresses.delete(event.pointerId);
+  activePress.chain.forEach((element) => {
+    pointerHandledElements.delete(element);
+  });
+});
 
 const isNativeApp = detectNativeApp();
 
@@ -48,6 +154,11 @@ document.addEventListener('click', async (event) => {
 
   const interactive = event.target.closest('button, [role="button"], .dashboard-card, #logoClick');
   if (!interactive) {
+    return;
+  }
+
+  const pressableAncestor = findPressableElement(interactive);
+  if (pressableAncestor && pointerHandledElements.has(pressableAncestor)) {
     return;
   }
 
@@ -620,15 +731,15 @@ window.addEventListener('authStateChanged', function(event) {
   const isRegistrationInProgress = document.getElementById('postRegistrationLoadingScreen')?.style.display === 'flex';
   if (!event.detail.isLoading && !isRegistrationInProgress) {
     
-    // This outer timeout handles the splash screen fade-out
-    setTimeout(function() {
-      const splashScreen = document.getElementById('splashScreen');
-      if (splashScreen) {
-        splashScreen.classList.add('fade-out');
-        setTimeout(() => {
-          if (splashScreen) splashScreen.style.display = 'none';
-        }, 500);
-      }
+        // This outer timeout handles the splash screen fade-out
+        setTimeout(function() {
+          const splashScreen = document.getElementById('splashScreen');
+          if (splashScreen) {
+            splashScreen.classList.add('fade-out');
+            setTimeout(() => {
+              if (splashScreen) splashScreen.style.display = 'none';
+            }, 500);
+          }
       
       // Handle direct ?register=true link
       const urlParams = new URLSearchParams(window.location.search);
