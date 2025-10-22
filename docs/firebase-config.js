@@ -1,7 +1,5 @@
-import {
-  initializeAppCheck,
-  ReCaptchaEnterpriseProvider
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check.js";
+// Import App Check configuration
+import { initializeAppCheckForPlatform } from './app-check-config.js';
 
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -11,7 +9,6 @@ import {
   initializeAuth,
   indexedDBLocalPersistence,
   browserLocalPersistence,
-  browserPopupRedirectResolver,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -30,7 +27,7 @@ import {
   getRedirectResult,
   getAdditionalUserInfo
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js"; // Added Functions import
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -64,92 +61,31 @@ function isNativeApp() {
   return /Capacitor|iOSApp|AndroidApp/i.test(userAgent);
 }
 
-
-function waitForRecaptcha() {
-  return new Promise((resolve, reject) => {
-    let attempts = 0;
-    const checkRecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.enterprise) {
-        resolve();
-      } else if (++attempts < 50) {
-        setTimeout(checkRecaptcha, 100);
-      } else {
-        reject(new Error("ReCAPTCHA timeout"));
-      }
-    };
-    checkRecaptcha();
-  });
-}
-
-async function initializeNativeAppCheck(appInstance) {
-  const plugin = window.Capacitor?.Plugins?.FirebaseAppCheck;
-  if (!plugin) {
-    console.warn("Capacitor Firebase App Check plugin not available; falling back to web provider.");
-    return false;
-  }
-
-  try {
-    await plugin.initialize({ isTokenAutoRefreshEnabled: true });
-  } catch (error) {
-    console.error("Unable to initialize native App Check plugin:", error);
-    return false;
-  }
-
-  initializeAppCheck(appInstance, {
-    provider: {
-      getToken: async (forceRefresh = false) => {
-        const { token, expireTimeMillis } = await plugin.getToken({ forceRefresh });
-        if (!token) {
-          throw new Error("Native App Check plugin returned an empty token.");
-        }
-        return {
-          token,
-          expireTimeMillis: expireTimeMillis ?? Date.now() + 60_000
-        };
-      }
-    },
-    isTokenAutoRefreshEnabled: true
+// Initialize App Check for the appropriate platform (web or iOS)
+// This now handles both ReCaptcha Enterprise (web) and App Attest (iOS)
+initializeAppCheckForPlatform(app)
+  .then(() => {
+    console.log("App Check initialization completed");
+  })
+  .catch(error => {
+    console.error("App Check initialization error:", error);
+    // Don't let App Check errors prevent the app from running
+    console.warn("App will continue without App Check protection");
   });
 
-  console.log("Native App Check initialized via Capacitor plugin.");
-  return true;
+// Initialize Analytics
+let analytics = null;
+try {
+  analytics = getAnalytics(app);
+} catch (error) {
+  console.warn("Firebase Analytics unavailable, continuing without it:", error);
+  analytics = null;
 }
 
-// Initialize App Check after reCAPTCHA is ready for web builds only
-if (isNativeApp()) {
-  initializeNativeAppCheck(app).then((result) => {
-    if (!result) {
-      console.info("Native App Check unavailable; attempting web reCAPTCHA provider instead.");
-      waitForRecaptcha()
-        .then(() => {
-          initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-            isTokenAutoRefreshEnabled: true
-          });
-        })
-        .catch(error => console.error("App Check init failed:", error));
-    }
-  });
-} else {
-  waitForRecaptcha()
-    .then(() => {
-      initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider("6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"),
-        isTokenAutoRefreshEnabled: true
-      });
-    })
-    .catch(error => console.error("App Check init failed:", error));
-}
-
-  let analytics = null;
-
-  try {
-    analytics = getAnalytics(app);
-  } catch (error) {
-    console.warn("Firebase Analytics unavailable, continuing without it:", error);
-    analytics = null;
-  }
+// Initialize Firestore
 const db = getFirestore(app);
+
+// Initialize Auth with appropriate persistence
 const popupRedirectResolver =
   typeof window !== "undefined" && window.capacitorExports
     ? window.capacitorExports.cordovaPopupRedirectResolver
@@ -157,20 +93,19 @@ const popupRedirectResolver =
 
 const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence].filter(Boolean),
-  popupRedirectResolver: isNativeApp()
-    ? popupRedirectResolver
-    : browserPopupRedirectResolver
+  popupRedirectResolver: isNativeApp() ? popupRedirectResolver : undefined
 });
-const functionsInstance = getFunctions(app); // Renamed to avoid conflicts
+
+// Initialize Functions
+const functionsInstance = getFunctions(app);
 
 console.log("Firebase initialized successfully");
 console.log("Firebase Functions Client SDK initialized");
-console.log("Checking for ReCAPTCHA:", window.grecaptcha ? "Found" : "Not found");
-console.log("Firebase App Check available:", typeof initializeAppCheck !== 'undefined' ? "Yes" : "No");
+console.log("Platform:", isNativeApp() ? "Native iOS/Android" : "Web");
 
 // Export initialized services for other modules to import
 export {
- app,
+  app,
   analytics,
   db,
   auth,
