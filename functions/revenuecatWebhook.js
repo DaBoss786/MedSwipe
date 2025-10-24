@@ -593,7 +593,6 @@ function transformRevenueCatToUserUpdates(subscriberPayload, webhookPayload, use
 
   let hasActiveTrial = false;
   let trialType = null;
-  let trialInfoAvailable = false;
 
   // Process Board Review Subscription
   if (boardState) {
@@ -618,7 +617,6 @@ function transformRevenueCatToUserUpdates(subscriberPayload, webhookPayload, use
     }
     updates.boardReviewWillCancelAtPeriodEnd = !!boardState.cancelAtPeriodEnd;
 
-    trialInfoAvailable = true;
     if (boardState.isTrialing && boardState.trialEndMs) {
       const trialEnd = timestampFromMillisOrNull(boardState.trialEndMs);
       if (trialEnd) {
@@ -654,7 +652,6 @@ function transformRevenueCatToUserUpdates(subscriberPayload, webhookPayload, use
     }
     updates.cmeSubscriptionWillCancelAtPeriodEnd = !!cmeState.cancelAtPeriodEnd;
 
-    trialInfoAvailable = true;
     if (cmeState.isTrialing && cmeState.trialEndMs) {
       const trialEnd = timestampFromMillisOrNull(cmeState.trialEndMs);
       if (trialEnd) {
@@ -713,14 +710,12 @@ function transformRevenueCatToUserUpdates(subscriberPayload, webhookPayload, use
   }
 
   // Set trial flags
-  if (trialInfoAvailable) {
-    if (hasActiveTrial && trialType) {
-      updates.hasActiveTrial = true;
-      updates.trialType = trialType;
-    } else {
-      updates.hasActiveTrial = FieldValue.delete();
-      updates.trialType = FieldValue.delete();
-    }
+  if (hasActiveTrial && trialType) {
+    updates.hasActiveTrial = true;
+    updates.trialType = trialType;
+  } else {
+    updates.hasActiveTrial = FieldValue.delete();
+    updates.trialType = FieldValue.delete();
   }
 
   // Determine access tier

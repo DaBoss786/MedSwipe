@@ -12,6 +12,46 @@ import { detectNativeApp } from './platform.js';
 let webAppCheckInstance = null;
 let nativeTokenListenerHandle = null;
 
+async function determineNativeDebugMode() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  // Allow manual override for edge cases (set in native-config.js or dev tools)
+  if (typeof window.APP_CHECK_FORCE_DEBUG === "boolean") {
+    return window.APP_CHECK_FORCE_DEBUG;
+  }
+
+  const capacitor = window.Capacitor;
+  if (!capacitor) {
+    return false;
+  }
+
+  const devicePlugin = capacitor.Plugins?.Device;
+  if (devicePlugin?.getInfo) {
+    try {
+      const info = await devicePlugin.getInfo();
+      if (typeof info?.isVirtual === "boolean") {
+        if (info.isVirtual) {
+          return true;
+        }
+        // Physical device: prefer secure provider unless override was set.
+        return false;
+      }
+    } catch (error) {
+      console.warn("⚠️ Unable to read Capacitor Device info for App Check:", error);
+    }
+  }
+
+  // Fallback heuristics for environments where Device plugin is unavailable.
+  const ua = window.navigator?.userAgent || "";
+  if (/Simulator|X86_64|x86_64|iPhone\sSimulator/i.test(ua)) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Initialize Firebase App Check for the appropriate platform
  * @param {FirebaseApp} app - The initialized Firebase app instance
@@ -87,11 +127,16 @@ async function initializeNativeAppCheck(app) {
     return false;
   }
 
+  const useDebugProvider = await determineNativeDebugMode();
+
   try {
     await nativeAppCheck.initialize({
-      // Provide a debug token here if you are testing on simulator/debug builds.
+      debug: useDebugProvider,
       isTokenAutoRefreshEnabled: true
     });
+    console.log(
+      `✅ Native App Check provider configured for ${useDebugProvider ? "debug" : "production"} mode.`
+    );
   } catch (error) {
     console.error("❌ Native App Check plugin initialization failed:", error);
     return false;

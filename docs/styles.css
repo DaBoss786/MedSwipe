@@ -147,8 +147,9 @@ html, body {
 }
 
 :root {
-  --primary-button-gradient: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
-  --primary-button-gradient-hover: linear-gradient(135deg, #66a6ff 0%, #0C72D3 100%);
+  --primary-button-base: #0B5FC8;
+  --primary-button-gradient: linear-gradient(135deg, #0B5FC8 0%, #3F9BFF 100%);
+  --primary-button-gradient-hover: linear-gradient(135deg, #3F9BFF 0%, #0B5FC8 100%);
 }
 
 /* Base press feedback for all buttons without altering their native styling */
