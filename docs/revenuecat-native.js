@@ -747,24 +747,50 @@ export async function startCmeCheckout(planType, buttonElement, quantity = 1) {
   }
 }
 
-export async function restorePurchases() {
+export async function restorePurchases(buttonElement) {
   ensureNativeRuntime();
-  const plugin = getPurchasesPlugin();
+  const releaseButton = beginButtonProcessing(buttonElement);
+
+  if (buttonElement) {
+    buttonElement.innerHTML = 'Restoring…';
+  }
 
   try {
+    const plugin = getPurchasesPlugin();
+
     if (typeof plugin.restorePurchases === 'function') {
       await plugin.restorePurchases();
-      return;
-    }
-
-    if (typeof plugin.syncPurchases === 'function') {
+    } else if (typeof plugin.syncPurchases === 'function') {
       await plugin.syncPurchases();
-      return;
+    } else {
+      throw new Error('RevenueCat plugin does not expose a restore purchases method.');
     }
 
-    throw new Error('RevenueCat plugin does not expose a restore purchases method.');
+    try {
+      await triggerRevenueCatSync();
+    } catch (syncError) {
+      console.warn('RevenueCat sync after restore failed.', syncError);
+    }
+
+    let accessResult = { refreshed: false, upgraded: false };
+    try {
+      accessResult = await refreshAccessTierAfterPurchase();
+      if (accessResult?.upgraded) {
+        hidePaywallScreens();
+      }
+    } catch (refreshError) {
+      console.warn('Failed to refresh access tier after restore.', refreshError);
+    }
+
+    return {
+      success: true,
+      refreshed: accessResult?.refreshed ?? false,
+      upgraded: accessResult?.upgraded ?? false,
+    };
   } catch (error) {
     console.error('RevenueCat restore purchases failed.', error);
     throw error;
+  } finally {
+    releaseButton();
   }
 }

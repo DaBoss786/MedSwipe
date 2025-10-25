@@ -6661,22 +6661,13 @@ showRegisterForm('board_review_pricing');
 const restorePurchasesBtn = document.getElementById('restorePurchasesBtn');
 if (restorePurchasesBtn) {
     if (isNativeApp) {
-        const originalText = restorePurchasesBtn.textContent;
-        restorePurchasesBtn.dataset.originalText = originalText;
-
         restorePurchasesBtn.addEventListener('click', async () => {
-            restorePurchasesBtn.disabled = true;
-            restorePurchasesBtn.textContent = 'Restoring…';
-
             try {
-                await restorePurchases();
+                await restorePurchases(restorePurchasesBtn);
                 alert('Your purchases have been restored successfully.');
             } catch (error) {
                 console.error('Restore purchases failed.', error);
                 alert('We could not restore your purchases. Please try again later.');
-            } finally {
-                restorePurchasesBtn.disabled = false;
-                restorePurchasesBtn.textContent = restorePurchasesBtn.dataset.originalText || originalText;
             }
         });
     } else {
