@@ -25,7 +25,8 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  getAdditionalUserInfo
+  getAdditionalUserInfo,
+  browserPopupRedirectResolver
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-functions.js";
 
@@ -86,14 +87,19 @@ try {
 const db = getFirestore(app);
 
 // Initialize Auth with appropriate persistence
-const popupRedirectResolver =
-  typeof window !== "undefined" && window.capacitorExports
-    ? window.capacitorExports.cordovaPopupRedirectResolver
+const nativePopupRedirectResolver =
+  typeof window !== "undefined"
+    ? window.capacitorExports?.cordovaPopupRedirectResolver
     : undefined;
+
+const popupRedirectResolver =
+  isNativeApp() && nativePopupRedirectResolver
+    ? nativePopupRedirectResolver
+    : browserPopupRedirectResolver;
 
 const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence].filter(Boolean),
-  popupRedirectResolver: isNativeApp() ? popupRedirectResolver : undefined
+  popupRedirectResolver
 });
 
 // Initialize Functions
