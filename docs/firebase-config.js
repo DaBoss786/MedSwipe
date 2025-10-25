@@ -92,10 +92,9 @@ const nativePopupRedirectResolver =
     ? window.capacitorExports?.cordovaPopupRedirectResolver
     : undefined;
 
-const popupRedirectResolver =
-  isNativeApp() && nativePopupRedirectResolver
-    ? nativePopupRedirectResolver
-    : browserPopupRedirectResolver;
+const popupRedirectResolver = isNativeApp()
+  ? nativePopupRedirectResolver || undefined
+  : browserPopupRedirectResolver;
 
 const auth = initializeAuth(app, {
   persistence: [indexedDBLocalPersistence, browserLocalPersistence].filter(Boolean),
