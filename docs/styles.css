@@ -5036,6 +5036,12 @@ button:not(:disabled):active {
   margin-left: 5px;
 }
 
+.paywall-option-card .price-secondary-line {
+  display: block;
+  margin-left: 0;
+  margin: -5px 0 15px;
+}
+
 .paywall-option-card ul {
   list-style: none;
   padding: 0;

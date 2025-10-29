@@ -113,6 +113,18 @@ async function fetchQuestionBank() {
   }
 }
 
+function isQuestionCmeEligible(question) {
+  const flag = question?.["CME Eligible"];
+  if (typeof flag === 'boolean') {
+    return flag;
+  }
+  if (typeof flag === 'string') {
+    const normalized = flag.trim().toLowerCase();
+    return normalized === 'yes' || normalized === 'true';
+  }
+  return false;
+}
+
 // MODIFIED loadQuestions function
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
@@ -191,6 +203,15 @@ async function loadQuestions(options = {}) {
     }
     // --- END of corrected logic block ---
 
+    if (options.quizType === 'cme') {
+      filteredQuestions = filteredQuestions.filter(isQuestionCmeEligible);
+
+      if (options.reviewIncorrectCmeOnly && Array.isArray(options.incorrectCmeQuestionIds) && options.incorrectCmeQuestionIds.length > 0) {
+        const targetIds = new Set(options.incorrectCmeQuestionIds.map(id => (id || '').trim()));
+        filteredQuestions = filteredQuestions.filter(q => targetIds.has((q["Question"] || '').trim()));
+      }
+    }
+
     // --- Universal Free User Filter (Now works on BOTH scenarios) ---
     const accessTier = window.authState?.accessTier || 'free_guest';
     if (accessTier === "free_guest") {
@@ -202,6 +223,9 @@ async function loadQuestions(options = {}) {
     if (filteredQuestions.length === 0) {
       let message = "No questions found matching your criteria.";
       // This is the message that was showing incorrectly.
+      if (options.quizType === 'cme') {
+        message = "No CME-eligible questions found for your selection. Please adjust your filters.";
+      }
       if (accessTier === "free_guest" && !options.category && !options.prefilteredQuestions) {
         message = "You've completed all available free questions! Upgrade your account to access hundreds more questions and unlock premium features.";
       }
