@@ -1464,6 +1464,46 @@ button:not(:disabled):active {
   color: #28a745; /* Green for success */
 }
 
+.auth-danger-btn {
+  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid #dc3545;
+  background: #fff5f6;
+  color: #dc3545;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auth-danger-btn:hover {
+  background: #ffe3e6;
+}
+
+.delete-account-section {
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid #f3d5d5;
+  text-align: center;
+}
+
+.auth-modal-content.small-modal {
+  max-width: 430px;
+  padding: 25px;
+}
+
+.delete-account-warning {
+  margin: 15px 0 25px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #5c5c5c;
+}
+
+.auth-buttons.horizontal {
+  flex-direction: row;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 /* Modern Leaderboard Styles */
 #leaderboardView {
   max-width: 800px;

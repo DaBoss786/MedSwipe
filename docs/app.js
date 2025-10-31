@@ -547,11 +547,13 @@ let selectedUsername = null;
 let createCheckoutSessionFunction;
 let createPortalSessionFunction;
 let getCertificateDownloadUrlFunction;
+let deleteAccountFunction;
 try {
     if (functions && httpsCallable) { // Check if imports exist
          createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
          createPortalSessionFunction = httpsCallable(functions, 'createStripePortalSession');
          getCertificateDownloadUrlFunction = httpsCallable(functions, 'getCertificateDownloadUrl');
+         deleteAccountFunction = httpsCallable(functions, 'deleteAccount');
          console.log("Callable function reference 'createStripeCheckoutSession' created.");
     } else {
          console.error("Firebase Functions or httpsCallable not imported correctly.");
@@ -5042,6 +5044,99 @@ async function showEditProfileModal() {
   }
 }
 
+let isDeletingAccount = false;
+
+function openDeleteAccountModal() {
+  if (!auth.currentUser || auth.currentUser.isAnonymous) {
+    alert("Please log in with a registered account to delete it.");
+    return;
+  }
+  const modal = document.getElementById('deleteAccountModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeDeleteAccountModal() {
+  const modal = document.getElementById('deleteAccountModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+async function handleAccountDeletion() {
+  if (isDeletingAccount) {
+    return;
+  }
+
+  if (!auth.currentUser || auth.currentUser.isAnonymous) {
+    alert("Please log in with a registered account to delete it.");
+    return;
+  }
+
+  if (!deleteAccountFunction) {
+    alert("Account deletion is temporarily unavailable. Please try again later.");
+    return;
+  }
+
+  const confirmation = prompt("Type DELETE to permanently remove your MedSwipe account.");
+  if (confirmation === null) {
+    return;
+  }
+
+  if (confirmation.trim().toUpperCase() !== 'DELETE') {
+    const messageEl = document.getElementById('editProfileMessage');
+    if (messageEl) {
+      messageEl.className = 'auth-error';
+      messageEl.textContent = 'Deletion cancelled. Type DELETE exactly to confirm.';
+    }
+    return;
+  }
+
+  const deleteButton = document.getElementById('deleteAccountBtn');
+  const messageEl = document.getElementById('editProfileMessage');
+
+  isDeletingAccount = true;
+  if (deleteButton) {
+    deleteButton.disabled = true;
+  }
+  if (messageEl) {
+    messageEl.className = '';
+    messageEl.textContent = 'Deleting your account…';
+  }
+
+  try {
+    await deleteAccountFunction();
+    if (messageEl) {
+      messageEl.className = 'success';
+      messageEl.textContent = 'Account deleted. Signing you out…';
+    }
+    try {
+      if (window.authFunctions?.logoutUser) {
+        await window.authFunctions.logoutUser();
+      } else if (auth?.signOut) {
+        await auth.signOut();
+      }
+    } catch (logoutError) {
+      console.warn('Sign-out after deletion failed, reloading anyway.', logoutError);
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 1200);
+  } catch (error) {
+    console.error('Account deletion failed:', error);
+    if (messageEl) {
+      messageEl.className = 'auth-error';
+      messageEl.textContent = error?.message || 'Unable to delete your account right now. Please try again.';
+    }
+    if (deleteButton) {
+      deleteButton.disabled = false;
+    }
+  } finally {
+    isDeletingAccount = false;
+  }
+}
+
 // This function sets up all the button clicks for the modal
 function setupEditProfileModalListeners() {
   const modal = document.getElementById('editProfileModal');
@@ -5131,6 +5226,37 @@ function setupEditProfileModalListeners() {
       console.error("saveProfileChanges function not found!");
     }
   });
+
+  const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+  if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', () => {
+      openDeleteAccountModal();
+    });
+  }
+
+  const cancelDeleteAccountBtn = document.getElementById('cancelDeleteAccountBtn');
+  if (cancelDeleteAccountBtn) {
+    cancelDeleteAccountBtn.addEventListener('click', () => {
+      closeDeleteAccountModal();
+    });
+  }
+
+  const confirmDeleteAccountBtn = document.getElementById('confirmDeleteAccountBtn');
+  if (confirmDeleteAccountBtn) {
+    confirmDeleteAccountBtn.addEventListener('click', async () => {
+      closeDeleteAccountModal();
+      await handleAccountDeletion();
+    });
+  }
+
+  const deleteAccountModal = document.getElementById('deleteAccountModal');
+  if (deleteAccountModal) {
+    deleteAccountModal.addEventListener('click', (event) => {
+      if (event.target === deleteAccountModal) {
+        closeDeleteAccountModal();
+      }
+    });
+  }
 }
 
 // Add event listeners when the page content is fully loaded

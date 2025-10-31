@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MedSwipe Plan Picker Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      color-scheme: light;
+      font-size: 16px;
+      --blue: #0c72d3;
+      --blue-muted: #4a8ee0;
+      --blue-soft: rgba(0, 122, 255, 0.14);
+      --bg: #eceff6;
+      --card: #ffffff;
+      --shadow: 0 18px 32px rgba(18, 25, 39, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #000;
+    }
+
+    .iphone-container {
+      position: relative;
+      width: 360px;
+      max-width: calc(100vw - 32px);
+      height: 760px;
+      background: #f2f3f7;
+      border-radius: 42px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(10, 33, 74, 0.24);
+    }
+
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 30px;
+      background: #1a1a1a;
+      border-radius: 0 0 20px 20px;
+      z-index: 1000;
+    }
+
+    .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 24px 6px;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .status-time {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .paywall-screen {
+      width: 100%;
+      height: 100%;
+      background: #f2f3f7;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .paywall-content {
+      padding: 64px 18px 100px;
+      text-align: center;
+    }
+
+    .paywall-logo {
+      display: block;
+      margin: 0 auto 18px;
+      height: 40px;
+      width: auto;
+      max-width: 140px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(12, 114, 211, 0.2);
+    }
+
+    .paywall-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+    }
+
+    .paywall-subtitle {
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: #8e8e93;
+      margin: 0 0 24px;
+    }
+
+    .plan-selector {
+      display: flex;
+      background: rgba(118, 118, 128, 0.12);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 26px;
+      gap: 4px;
+    }
+
+    .plan-selector-btn {
+      flex: 1;
+      padding: 9px 12px;
+      border: none;
+      background: transparent;
+      color: #1c1c1f;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .plan-selector-btn.active {
+      background: #ffffff;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14), 0 2px 4px rgba(0, 0, 0, 0.08);
+      color: var(--blue);
+    }
+
+    .paywall-options-container {
+      position: relative;
+      min-height: 480px;
+    }
+
+    .paywall-option-card {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 26px 22px 28px;
+      box-shadow: 0 10px 28px rgba(18, 25, 39, 0.12);
+      opacity: 0;
+      transform: translateX(100%) scale(0.95);
+      transition: transform 0.34s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.28s ease;
+      display: flex;
+      flex-direction: column;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .paywall-option-card.active {
+      display: flex;
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      animation: slideIn 0.36s ease-out;
+      pointer-events: auto;
+      visibility: visible;
+      position: relative;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(22px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .card-badge {
+      position: absolute;
+      top: -14px;
+      right: 20px;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ffffff;
+    }
+
+    .free-access-card .card-badge {
+      background: linear-gradient(135deg, #8e8e93 0%, #b0b3ba 100%);
+    }
+
+    .popular-badge {
+      background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+    }
+
+    .cme-eligible-badge {
+      background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+    }
+
+    .paywall-option-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 4px;
+      letter-spacing: -0.01em;
+      text-align: left;
+    }
+
+    .price-highlight {
+      font-size: 34px;
+      font-weight: 700;
+      color: #000;
+      margin: 14px 0 4px;
+      letter-spacing: -0.024em;
+      text-align: left;
+    }
+
+    .price-details {
+      display: block;
+      font-size: 15px;
+      color: #8e8e93;
+      font-weight: 400;
+      text-align: left;
+      margin-bottom: 10px;
+    }
+
+    .board-review-toggle {
+      display: flex;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 10px;
+      background: rgba(118, 118, 128, 0.12);
+      margin: 12px 0 8px;
+    }
+
+    .board-review-toggle button {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 8px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      color: #1c1c1f;
+      transition: all 0.28s ease;
+    }
+
+    .board-review-toggle button.active {
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+      color: var(--blue);
+    }
+
+    .feature-stack {
+      list-style: none;
+      margin: 18px 0 26px;
+      padding: 0;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feature-stack li {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #050505;
+      margin-bottom: 12px;
+      padding-left: 28px;
+      position: relative;
+      text-align: left;
+      opacity: 0;
+      animation: fadeInUp 0.32s ease-out forwards;
+    }
+
+    .feature-stack li:nth-child(1) { animation-delay: 0.05s; }
+    .feature-stack li:nth-child(2) { animation-delay: 0.1s; }
+    .feature-stack li:nth-child(3) { animation-delay: 0.15s; }
+    .feature-stack li:nth-child(4) { animation-delay: 0.2s; }
+    .feature-stack li:nth-child(5) { animation-delay: 0.25s; }
+    .feature-stack li:nth-child(6) { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .check-icon {
+      position: absolute;
+      left: 0;
+      top: 2px;
+      color: #34c759;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .paywall-select-btn,
+    .paywall-continue-guest-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 17px;
+      font-weight: 600;
+      border-radius: 12px;
+      letter-spacing: -0.01em;
+      transition: all 0.2s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .paywall-select-btn:active,
+    .paywall-continue-guest-btn:active {
+      transform: scale(0.97);
+      opacity: 0.92;
+    }
+
+    .free-access-card .paywall-continue-guest-btn {
+      background: #ffffff;
+      border: 1.6px solid #007aff;
+      color: #007aff;
+    }
+
+    .board-review-card .paywall-select-btn {
+      background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+      color: white;
+    }
+
+    .cme-module-card .paywall-select-btn {
+      background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+      color: white;
+    }
+
+    .inline-links {
+      display: none;
+      justify-content: flex-start;
+      gap: 16px;
+      margin: 18px 0 12px;
+    }
+
+    .text-link {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #007aff;
+      cursor: pointer;
+      text-decoration: underline;
+      letter-spacing: -0.01em;
+    }
+
+    .paywall-footer {
+      margin-top: 28px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      text-align: center;
+    }
+
+    .paywall-restore-btn {
+      font-size: 15px;
+      color: #007aff;
+      background: none;
+      border: none;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: -0.01em;
+    }
+
+    @media (max-width: 420px) {
+      .iphone-container {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .notch {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="iphone-container">
+    <div class="notch"></div>
+    <div class="status-bar" aria-hidden="true">
+      <div class="status-time">9:41</div>
+      <div class="status-icons">
+        <span>🛜</span>
+        <span>📶</span>
+        <span>🔋</span>
+      </div>
+    </div>
+
+    <div class="paywall-screen">
+      <div class="paywall-content">
+        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="paywall-logo" loading="lazy" />
+        <h1 class="paywall-title">Choose Your Plan</h1>
+        <p class="paywall-subtitle">Unlock your medical learning potential.</p>
+
+        <div class="plan-selector" role="tablist">
+          <button class="plan-selector-btn active" data-plan="free" role="tab" aria-selected="true">Free</button>
+          <button class="plan-selector-btn" data-plan="board" role="tab" aria-selected="false">Board Review</button>
+          <button class="plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
+        </div>
+
+        <div class="paywall-options-container">
+          <section class="paywall-option-card free-access-card active" data-plan-card="free" role="tabpanel">
+            <span class="card-badge">Always Included</span>
+            <h2>Free Access</h2>
+            <p class="price-highlight">
+              $0
+              <span class="price-details">forever</span>
+            </p>
+            <p class="price-details">A taste of our core learning tools.</p>
+            <ul id="freeFeatures" class="feature-stack"></ul>
+            <button class="paywall-continue-guest-btn">Try Free Version</button>
+          </section>
+
+          <section class="paywall-option-card board-review-card" data-plan-card="board" role="tabpanel" aria-hidden="true">
+            <span class="card-badge popular-badge" id="boardBadge">Most Popular</span>
+            <h2>Board Review Access</h2>
+            <div class="board-review-toggle" role="tablist">
+              <button class="active" data-cycle="monthly" aria-selected="true">Monthly</button>
+              <button data-cycle="quarterly" aria-selected="false">3-Month</button>
+              <button data-cycle="annual" aria-selected="false">Annual</button>
+            </div>
+            <p class="price-highlight">
+              <span id="boardPriceValue">$15</span>
+              <span class="price-details" id="boardPriceInterval"></span>
+            </p>
+            <span class="price-details" id="boardPriceCopy" style="display: none;"></span>
+            <ul id="boardFeatures" class="feature-stack"></ul>
+            <button class="paywall-select-btn" id="boardCta">Start 7-Day Free Trial</button>
+          </section>
+
+          <section class="paywall-option-card cme-module-card" data-plan-card="cme" role="tabpanel" aria-hidden="true">
+            <span class="card-badge cme-eligible-badge">CME Eligible</span>
+            <h2>CME Access</h2>
+            <p class="price-highlight">
+              $179
+              <span class="price-details">per year</span>
+            </p>
+            <ul id="cmeFeatures" class="feature-stack"></ul>
+            <button class="paywall-select-btn" id="cmeCta">Start 7-Day Free Trial</button>
+          </section>
+          <div class="inline-links" data-after-card="cme">
+            <button class="text-link" type="button" data-link="accreditation">Accreditation Statement</button>
+            <button class="text-link" type="button" data-link="learn-more">Learn More</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="paywall-footer">
+        <button class="paywall-restore-btn">Restore Purchases</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const planButtons = Array.from(document.querySelectorAll(".plan-selector-btn"));
+    const planCards = Array.from(document.querySelectorAll(".paywall-option-card"));
+    const freeFeaturesEl = document.getElementById("freeFeatures");
+    const boardFeaturesEl = document.getElementById("boardFeatures");
+    const cmeFeaturesEl = document.getElementById("cmeFeatures");
+    const boardToggle = document.querySelector(".board-review-toggle");
+    const boardToggleButtons = Array.from(boardToggle.querySelectorAll("button"));
+    const boardBadge = document.getElementById("boardBadge");
+    const boardPriceValue = document.getElementById("boardPriceValue");
+    const boardPriceInterval = document.getElementById("boardPriceInterval");
+    const boardPriceCopy = document.getElementById("boardPriceCopy");
+    const boardCta = document.getElementById("boardCta");
+    const cmeInfoLinks = document.querySelector('.inline-links[data-after-card="cme"]');
+
+    const planData = {
+      free: {
+        features: [
+          "Access foundational anatomy & general questions",
+          "Enjoy basic quiz functionality to see how MedSwipe works",
+          "Upgrade Anytime: Unlock advanced features like leaderboards, spaced repetition, and the full QBank"
+        ]
+      },
+      board: {
+        monthly: {
+          badge: "Most Popular",
+          price: "$15",
+          interval: "/month",
+          copy: "",
+          cta: "Start 7-Day Free Trial",
+          features: [
+            "Full Question Bank Access - 900+ Questions",
+            "Access to <i>Case Prep</i> mode",
+            "Compete Against Other Residents - Access to Leaderboards",
+            "Spaced Repetition and Advanced Category Analytics",
+            "Billed monthly, cancel anytime"
+          ]
+        },
+        quarterly: {
+          badge: "Save 10%",
+          price: "$40",
+          interval: "/3 months",
+          copy: "Save over 10% vs. monthly!",
+          cta: "Start 7-Day Free Trial",
+          features: [
+            "Full Question Bank Access - 900+ Questions",
+            "Access to <i>Case Prep</i> mode",
+            "Compete Against Other Residents - Access to Leaderboards",
+            "Spaced Repetition and Advanced Category Analytics",
+            "Billed every 3 months, auto-renews"
+          ]
+        },
+        annual: {
+          badge: "Best Value",
+          price: "$149",
+          interval: "/year",
+          copy: "Best Value! Save over 15% vs. monthly!",
+          cta: "Start 7-Day Free Trial",
+          features: [
+            "Full Question Bank Access - 900+ Questions",
+            "Access to <i>Case Prep</i> mode",
+            "Compete with Other Residents - Access to Leaderboards",
+            "Spaced Repetition and Advanced Category Analytics",
+            "Billed annually, auto-renews"
+          ]
+        }
+      },
+      cme: {
+        features: [
+          "Over 60% less than competitors",
+          "Earn up to 24 <i>AMA PRA Category 1 Credits</i>",
+          "Re-do missed questions and still gain credits",
+          "Download certificates anytime, anywhere",
+          "Includes everything in the Board Review Tier"
+        ]
+      }
+    };
+
+    function renderFeatures(listEl, items) {
+      listEl.innerHTML = "";
+      items.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.style.animationDelay = `${0.05 * (index + 1)}s`;
+        li.innerHTML = `<span class="check-icon">✔</span>${item}`;
+        listEl.appendChild(li);
+      });
+    }
+
+    function setActivePlan(planKey) {
+      planButtons.forEach((button) => {
+        const isActive = button.dataset.plan === planKey;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-selected", isActive);
+      });
+
+      planCards.forEach((card) => {
+        const matches = card.dataset.planCard === planKey;
+        card.classList.toggle("active", matches);
+        card.setAttribute("aria-hidden", matches ? "false" : "true");
+        if (matches) {
+          // force reflow to restart list animation
+          requestAnimationFrame(() => {
+            const features = Array.from(card.querySelectorAll("li"));
+            features.forEach((li, index) => {
+              li.style.animation = "none";
+              // trigger reflow
+              // eslint-disable-next-line no-unused-expressions
+              li.offsetHeight;
+              li.style.animation = "";
+              li.style.animationDelay = `${0.05 * (index + 1)}s`;
+            });
+          });
+        }
+      });
+
+      if (cmeInfoLinks) {
+        cmeInfoLinks.style.display = planKey === "cme" ? "flex" : "none";
+      }
+    }
+
+    function updateBoardPlan(cycleKey) {
+      const cycleData = planData.board[cycleKey];
+      boardToggleButtons.forEach((button) => {
+        const isActive = button.dataset.cycle === cycleKey;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-selected", isActive);
+      });
+
+      boardBadge.textContent = cycleData.badge;
+      boardPriceValue.textContent = cycleData.price;
+      boardPriceInterval.textContent = cycleData.interval;
+      boardPriceCopy.textContent = cycleData.copy;
+      boardPriceCopy.style.display = cycleData.copy ? "block" : "none";
+      boardCta.textContent = cycleData.cta;
+      renderFeatures(boardFeaturesEl, cycleData.features);
+    }
+
+    // Initialize static feature lists
+    renderFeatures(freeFeaturesEl, planData.free.features);
+    renderFeatures(cmeFeaturesEl, planData.cme.features);
+    updateBoardPlan("monthly");
+
+    planButtons.forEach((button) => {
+      button.addEventListener("click", () => setActivePlan(button.dataset.plan));
+    });
+
+    boardToggleButtons.forEach((button) => {
+      button.addEventListener("click", () => updateBoardPlan(button.dataset.cycle));
+    });
+
+    document.querySelectorAll(".text-link").forEach((linkButton) => {
+      linkButton.addEventListener("click", () => {
+        const linkType = linkButton.dataset.link;
+        const message =
+          linkType === "accreditation"
+            ? "This would open the Accreditation Statement modal."
+            : "This would open the CME Learn More modal.";
+        alert(message);
+      });
+    });
+  </script>
+</body>
+</html>

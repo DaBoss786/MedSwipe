@@ -998,6 +998,9 @@
       <div class="auth-buttons" style="margin-top: 30px;">
          <button type="button" id="editProfileDoneBtn" class="auth-primary-btn">Done</button>
       </div>
+      <div class="delete-account-section">
+        <button type="button" id="deleteAccountBtn" class="auth-danger-btn">Delete Account</button>
+      </div>
     </div>
 
     <!-- Edit Mode Content (Initially Hidden) -->
@@ -1054,6 +1057,20 @@
           <button type="button" id="cancelProfileChangesBtn" class="auth-secondary-btn">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Account Confirmation Modal -->
+<div id="deleteAccountModal" class="auth-modal" style="display: none;">
+  <div class="auth-modal-content small-modal">
+    <h3>Delete Account</h3>
+    <p class="delete-account-warning">
+      Deleting your MedSwipe account permanently removes your progress and purchases. This does not cancel your App Store subscription; visit Settings → Apple ID → Subscriptions to stop future charges.
+    </p>
+    <div class="auth-buttons horizontal">
+      <button type="button" id="cancelDeleteAccountBtn" class="auth-secondary-btn">Cancel</button>
+      <button type="button" id="confirmDeleteAccountBtn" class="auth-primary-btn">OK</button>
     </div>
   </div>
 </div>

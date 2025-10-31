@@ -50,6 +50,38 @@ const storage = admin.storage();
 const bucket = storage.bucket(BUCKET_NAME);
 // --- End PDF Configuration ---
 
+async function deleteDocsByQuery(collectionPath, field, value, batchSize = 100) {
+  if (!collectionPath || !field) {
+    return;
+  }
+
+  let processed = 0;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const snapshot = await db
+      .collection(collectionPath)
+      .where(field, "==", value)
+      .limit(batchSize)
+      .get();
+
+    if (snapshot.empty) {
+      break;
+    }
+
+    const batch = db.batch();
+    snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+    await batch.commit();
+    processed += snapshot.size;
+
+    if (snapshot.size < batchSize) {
+      break;
+    }
+  }
+
+  return processed;
+}
+
 // --- Shared Subscription Helpers -------------------------------------------------
 const timestampToMillis = (value) => {
   if (!value) return 0;
@@ -1884,6 +1916,167 @@ exports.getLeaderboardData = onCall(
         error.message
       );
     }
+  }
+);
+
+exports.deleteAccount = onCall(
+  {
+    region: "us-central1",
+    memory: "512MiB",
+    timeoutSeconds: 120,
+    secrets: ["STRIPE_SECRET_KEY", "MAILERLITE_API_KEY", "REVENUECAT_API_KEY"],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "You must be logged in to delete your account.");
+    }
+
+    const uid = request.auth.uid;
+    logger.info(`Account deletion requested for UID ${uid}`);
+
+    const userRef = db.collection("users").doc(uid);
+    const userDoc = await userRef.get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const email = userData?.email || null;
+    const stripeCustomerId = userData?.stripeCustomerId || null;
+    const mailerLiteSubscriberId = userData?.mailerLiteSubscriberId || null;
+
+    // Cancel Stripe subscriptions and delete customer if applicable
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (stripeSecret && stripeCustomerId) {
+      try {
+        const stripeClient = stripe(stripeSecret);
+        const subscriptions = await stripeClient.subscriptions.list({
+          customer: stripeCustomerId,
+          status: "all",
+          limit: 100,
+        });
+
+        for (const subscription of subscriptions.data) {
+          const cancellableStatuses = new Set([
+            "active",
+            "trialing",
+            "past_due",
+            "unpaid",
+          ]);
+          if (cancellableStatuses.has(subscription.status)) {
+            await stripeClient.subscriptions.cancel(subscription.id);
+            logger.info(
+              `Cancelled Stripe subscription ${subscription.id} for UID ${uid}`
+            );
+          }
+        }
+
+        await stripeClient.customers.del(stripeCustomerId);
+        logger.info(`Deleted Stripe customer ${stripeCustomerId} for UID ${uid}`);
+      } catch (error) {
+        logger.error(
+          `Failed to cancel Stripe customer ${stripeCustomerId} for UID ${uid}`,
+          error
+        );
+      }
+    } else if (stripeCustomerId) {
+      logger.warn(
+        "Stripe customer ID present but STRIPE_SECRET_KEY is not configured. Skipping Stripe cleanup."
+      );
+    }
+
+    // Remove subscriber from MailerLite if possible
+    const mailerLiteApiKey = process.env.MAILERLITE_API_KEY;
+    if (mailerLiteApiKey && email) {
+      try {
+        const headers = {
+          Authorization: `Bearer ${mailerLiteApiKey}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        };
+
+        if (mailerLiteSubscriberId) {
+          await axios.delete(
+            `https://connect.mailerlite.com/api/subscribers/${mailerLiteSubscriberId}`,
+            { headers }
+          );
+          logger.info(
+            `Removed MailerLite subscriber ${mailerLiteSubscriberId} for UID ${uid}`
+          );
+        } else {
+          await axios.post(
+            "https://connect.mailerlite.com/api/subscribers/unsubscribe",
+            { email },
+            { headers }
+          );
+          logger.info(
+            `Unsubscribed MailerLite subscriber with email ${email} for UID ${uid}`
+          );
+        }
+      } catch (error) {
+        logger.warn(
+          `Failed to update MailerLite subscription for UID ${uid}`,
+          error.response?.data || error.message
+        );
+      }
+    } else if (mailerLiteApiKey && !email) {
+      logger.warn(
+        `MailerLite API key available but user ${uid} has no email. Skipping MailerLite cleanup.`
+      );
+    }
+
+    // Remove user from RevenueCat
+    const revenuecatApiKey = process.env.REVENUECAT_API_KEY;
+    if (revenuecatApiKey) {
+      try {
+        await axios.delete(
+          `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(uid)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${revenuecatApiKey}`,
+            },
+          }
+        );
+        logger.info(`Removed RevenueCat subscriber for UID ${uid}`);
+      } catch (error) {
+        logger.warn(
+          `Failed to remove RevenueCat subscriber for UID ${uid}`,
+          error.response?.data || error.message
+        );
+      }
+    }
+
+    // Delete Firestore user document and subcollections
+    try {
+      await admin.firestore().recursiveDelete(userRef);
+      logger.info(`Deleted Firestore user document for UID ${uid}`);
+    } catch (error) {
+      logger.error(`Failed to delete Firestore document for UID ${uid}`, error);
+      throw new HttpsError(
+        "internal",
+        "Failed to remove user data. Please try again later."
+      );
+    }
+
+    // Remove auxiliary documents referencing the user
+    await Promise.allSettled([
+      deleteDocsByQuery("feedback", "userId", uid),
+      deleteDocsByQuery("contactMessages", "userId", uid),
+    ]);
+
+    // Delete Firebase Authentication user
+    try {
+      await admin.auth().deleteUser(uid);
+      logger.info(`Deleted Firebase Auth user for UID ${uid}`);
+    } catch (error) {
+      if (error.code === "auth/user-not-found") {
+        logger.warn(`Firebase Auth user already deleted for UID ${uid}`);
+      } else {
+        logger.error(`Failed to delete Firebase Auth user for UID ${uid}`, error);
+        throw new HttpsError(
+          "internal",
+          "Failed to remove authentication record. Please try again later."
+        );
+      }
+    }
+
+    return { status: "ok" };
   }
 );
 
