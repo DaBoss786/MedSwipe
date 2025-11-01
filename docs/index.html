@@ -399,13 +399,13 @@
     <p class="ios-paywall-subtitle">Unlock your medical learning potential.</p>
 
     <div class="ios-plan-selector" role="tablist">
-      <button class="ios-plan-selector-btn active" data-plan="free" role="tab" aria-selected="true">Free</button>
-      <button class="ios-plan-selector-btn" data-plan="board" role="tab" aria-selected="false">Board Review</button>
+      <button class="ios-plan-selector-btn" data-plan="free" role="tab" aria-selected="false">Free</button>
+      <button class="ios-plan-selector-btn active" data-plan="board" role="tab" aria-selected="true">Board Review</button>
       <button class="ios-plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
     </div>
 
     <div class="ios-paywall-card-stack">
-      <section class="ios-paywall-card free-access-card active" data-plan-card="free" role="tabpanel">
+      <section class="ios-paywall-card free-access-card" data-plan-card="free" role="tabpanel" aria-hidden="true">
         <span class="ios-card-badge">Always Included</span>
         <h2>Free Access</h2>
         <p class="ios-price-highlight">
@@ -417,7 +417,7 @@
         <button id="iosContinueFreeBtn" class="ios-paywall-secondary-btn">Try Free Version</button>
       </section>
 
-      <section class="ios-paywall-card board-review-card" data-plan-card="board" role="tabpanel" aria-hidden="true">
+      <section class="ios-paywall-card board-review-card active" data-plan-card="board" role="tabpanel" aria-hidden="false">
         <span class="ios-card-badge ios-popular-badge" id="iosBoardBadge">Most Popular</span>
         <h2>Board Review Access</h2>
         <div class="ios-board-toggle" role="tablist">
@@ -911,6 +911,11 @@
                 <span>Subscribe to Premium</span> <!-- More descriptive text -->
             </a>
         </li>
+        <li id="registerMenuItem" style="display: none;">
+          <a href="#">
+              <span>Register Now</span>
+          </a>
+        </li>
         <li id="guestLoginMenuItem" style="display: none;">
           <a href="#">
                <span>Log In</span>
@@ -929,6 +934,9 @@
           </a>
       </li>
       </ul>
+      <div class="user-menu-footer">
+        <div id="userUidDisplay" class="user-uid-display" style="display: none;">UID:</div>
+      </div>
     </div> <!-- End of user-menu-content -->
   </div>
   

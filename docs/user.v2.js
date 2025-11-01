@@ -614,31 +614,63 @@ async function updateUserMenu() {
     // Username display is handled by user-profile.js
 
     const subscribeMenuItem = document.getElementById("subscribeMenuItemUser");
+    const registerMenuItem = document.getElementById("registerMenuItem");
     const manageSubscriptionMenuItem = document.getElementById("manageSubscriptionBtn");
     const logoutUserBtnItem = document.getElementById("logoutUserBtn");
     const guestLoginMenuItem = document.getElementById("guestLoginMenuItem"); // Get the new Log In item
 
     // Ensure all menu items are found
     if (!subscribeMenuItem) console.warn("subscribeMenuItemUser not found in user.js");
+    if (!registerMenuItem) console.warn("registerMenuItem not found in user.js");
     if (!manageSubscriptionMenuItem) console.warn("manageSubscriptionBtn not found in user.js");
     if (!logoutUserBtnItem) console.warn("logoutUserBtn (li) not found in user.js");
     if (!guestLoginMenuItem) console.warn("guestLoginMenuItem not found in user.js");
 
 
-    if (subscribeMenuItem && manageSubscriptionMenuItem && logoutUserBtnItem && guestLoginMenuItem) {
+    if (subscribeMenuItem && registerMenuItem && manageSubscriptionMenuItem && logoutUserBtnItem && guestLoginMenuItem) {
         const accessTier = window.authState?.accessTier;
         const isAnonymousUser = window.authState?.user?.isAnonymous;
+        const hasPremiumAccess = typeof window.userHasAnyPremiumAccess === "function"
+            ? window.userHasAnyPremiumAccess()
+            : (accessTier && accessTier !== "free_guest");
+        const menuList = subscribeMenuItem.parentElement;
 
         // Default to hiding all dynamic items
         subscribeMenuItem.style.display = "none";
+        registerMenuItem.style.display = "none";
         manageSubscriptionMenuItem.style.display = "none";
         logoutUserBtnItem.style.display = "none";
         guestLoginMenuItem.style.display = "none"; // Hide Log In by default
 
         if (isAnonymousUser) {
-            // ANONYMOUS: Show "Subscribe to Premium" AND "Log In"
-            subscribeMenuItem.style.display = "block"; // Or "list-item"
-            guestLoginMenuItem.style.display = "block"; // Or "list-item"
+            if (hasPremiumAccess) {
+                // ANONYMOUS PREMIUM: Offer registration only
+                registerMenuItem.style.display = "block";
+                if (menuList) {
+                    const firstElement = menuList.firstElementChild;
+                    if (firstElement !== registerMenuItem) {
+                        menuList.insertBefore(registerMenuItem, firstElement);
+                    }
+                }
+            } else {
+                // ANONYMOUS FREE: Show Subscribe, Register, and Log In
+                subscribeMenuItem.style.display = "block"; // Or "list-item"
+                registerMenuItem.style.display = "block";
+                guestLoginMenuItem.style.display = "block"; // Or "list-item"
+
+                if (menuList) {
+                    const firstElement = menuList.firstElementChild;
+                    if (firstElement !== subscribeMenuItem) {
+                        menuList.insertBefore(subscribeMenuItem, firstElement);
+                    }
+                    if (subscribeMenuItem.nextElementSibling !== registerMenuItem) {
+                        menuList.insertBefore(registerMenuItem, subscribeMenuItem.nextElementSibling);
+                    }
+                    if (registerMenuItem.nextElementSibling !== guestLoginMenuItem) {
+                        menuList.insertBefore(guestLoginMenuItem, registerMenuItem.nextElementSibling);
+                    }
+                }
+            }
             // Logout button remains hidden for anonymous
         } else { // User is REGISTERED (not anonymous)
             logoutUserBtnItem.style.display = "block"; // Show logout for any registered user
@@ -667,6 +699,19 @@ async function updateUserMenu() {
                 showPaywallScreen();
             } else {
                 console.error("showPaywallScreen function not found.");
+            }
+        });
+
+        // Event listener for "Register Now" button
+        const newRegisterMenuItem = registerMenuItem.cloneNode(true);
+        registerMenuItem.parentNode.replaceChild(newRegisterMenuItem, registerMenuItem);
+        newRegisterMenuItem.addEventListener("click", function(e) {
+            e.preventDefault();
+            if (typeof closeUserMenu === 'function') closeUserMenu();
+            if (typeof window.showRegisterForm === 'function') {
+                window.showRegisterForm();
+            } else {
+                console.error("showRegisterForm function not found.");
             }
         });
 

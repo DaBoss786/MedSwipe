@@ -422,13 +422,13 @@
         <p class="paywall-subtitle">Unlock your medical learning potential.</p>
 
         <div class="plan-selector" role="tablist">
-          <button class="plan-selector-btn active" data-plan="free" role="tab" aria-selected="true">Free</button>
-          <button class="plan-selector-btn" data-plan="board" role="tab" aria-selected="false">Board Review</button>
+          <button class="plan-selector-btn" data-plan="free" role="tab" aria-selected="false">Free</button>
+          <button class="plan-selector-btn active" data-plan="board" role="tab" aria-selected="true">Board Review</button>
           <button class="plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
         </div>
 
         <div class="paywall-options-container">
-          <section class="paywall-option-card free-access-card active" data-plan-card="free" role="tabpanel">
+          <section class="paywall-option-card free-access-card" data-plan-card="free" role="tabpanel" aria-hidden="true">
             <span class="card-badge">Always Included</span>
             <h2>Free Access</h2>
             <p class="price-highlight">
@@ -440,7 +440,7 @@
             <button class="paywall-continue-guest-btn">Try Free Version</button>
           </section>
 
-          <section class="paywall-option-card board-review-card" data-plan-card="board" role="tabpanel" aria-hidden="true">
+          <section class="paywall-option-card board-review-card active" data-plan-card="board" role="tabpanel" aria-hidden="false">
             <span class="card-badge popular-badge" id="boardBadge">Most Popular</span>
             <h2>Board Review Access</h2>
             <div class="board-review-toggle" role="tablist">
@@ -621,6 +621,7 @@
     renderFeatures(freeFeaturesEl, planData.free.features);
     renderFeatures(cmeFeaturesEl, planData.cme.features);
     updateBoardPlan("monthly");
+    setActivePlan("board");
 
     planButtons.forEach((button) => {
       button.addEventListener("click", () => setActivePlan(button.dataset.plan));

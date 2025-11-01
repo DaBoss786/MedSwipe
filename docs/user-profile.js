@@ -15,9 +15,21 @@ async function updateUserMenuInfo(authState) {
       console.warn("usernameDisplay element not found in user menu.");
       return;
   }
+  const uidDisplay = document.getElementById('userUidDisplay');
+  const uidFooter = uidDisplay ? uidDisplay.parentElement : null;
+  if (!uidDisplay) {
+      console.warn("userUidDisplay element not found in user menu.");
+  }
 
   if (!authState || !authState.user) {
       usernameDisplay.textContent = 'Guest';
+      if (uidDisplay) {
+        uidDisplay.textContent = 'UID: Not available';
+        uidDisplay.style.display = 'none';
+    }
+    if (uidFooter) {
+        uidFooter.style.display = 'none';
+    }
       console.log("User menu username set to 'Guest' by user-profile.js (no authState.user).");
       if (window.authState) {
           window.authState.username = null;
@@ -77,6 +89,24 @@ async function updateUserMenuInfo(authState) {
   }
 
   usernameDisplay.textContent = displayName;
+
+  if (uidDisplay) {
+    if (user && user.uid) {
+        uidDisplay.textContent = `UID: ${user.uid}`;
+        uidDisplay.style.display = '';
+        if (uidFooter) {
+            uidFooter.style.display = '';
+        }
+    } else {
+        uidDisplay.textContent = 'UID: Not available';
+        uidDisplay.style.display = 'none';
+        if (uidFooter) {
+            uidFooter.style.display = 'none';
+        }
+    }
+} else if (uidFooter) {
+    uidFooter.style.display = 'none';
+}
 
   if (window.authState) {
       window.authState.username = displayName;

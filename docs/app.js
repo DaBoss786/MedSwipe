@@ -836,6 +836,8 @@ function initializeIosPaywallUI() {
 
   const planButtons = Array.from(iosRoot.querySelectorAll('.ios-plan-selector-btn'));
   const planCards = Array.from(iosRoot.querySelectorAll('.ios-paywall-card'));
+  const cardStack = iosRoot.querySelector('.ios-paywall-card-stack');
+  const baseStackHeight = cardStack ? parseFloat(window.getComputedStyle(cardStack).minHeight) || 520 : 520;
   const freeFeaturesEl = iosRoot.querySelector('#iosFreeFeatures');
   const boardFeaturesEl = iosRoot.querySelector('#iosBoardFeatures');
   const cmeFeaturesEl = iosRoot.querySelector('#iosCmeFeatures');
@@ -920,6 +922,19 @@ function initializeIosPaywallUI() {
     }
   };
 
+  function adjustCardStackHeight() {
+    if (!cardStack) {
+      return;
+    }
+    const activeCard = cardStack.querySelector('.ios-paywall-card.active');
+    if (!activeCard) {
+      cardStack.style.height = `${baseStackHeight}px`;
+      return;
+    }
+    const nextHeight = Math.max(activeCard.scrollHeight, baseStackHeight);
+    cardStack.style.height = `${Math.ceil(nextHeight)}px`;
+  }
+
   function renderFeatures(listEl, items) {
     if (!listEl) {
       return;
@@ -944,17 +959,19 @@ function initializeIosPaywallUI() {
       const matches = card.dataset.planCard === planKey;
       card.classList.toggle('active', matches);
       card.setAttribute('aria-hidden', matches ? 'false' : 'true');
-      if (matches) {
-        requestAnimationFrame(() => {
-          const features = Array.from(card.querySelectorAll('.ios-feature-stack li'));
-          features.forEach((feature, index) => {
-            feature.style.animation = 'none';
-            feature.offsetHeight;
-            feature.style.animation = '';
-            feature.style.animationDelay = `${0.05 * (index + 1)}s`;
-          });
-        });
+      if (!matches) {
+        return;
       }
+      requestAnimationFrame(() => {
+        const features = Array.from(card.querySelectorAll('.ios-feature-stack li'));
+        features.forEach((feature, index) => {
+          feature.style.animation = 'none';
+          feature.offsetHeight;
+          feature.style.animation = '';
+          feature.style.animationDelay = `${0.05 * (index + 1)}s`;
+        });
+        adjustCardStackHeight();
+      });
     });
 
     if (inlineLinks) {
@@ -999,12 +1016,14 @@ function initializeIosPaywallUI() {
       boardCta.textContent = cycleData.cta;
       boardCta.dataset.cycle = cycleData.checkoutKey;
     }
+    requestAnimationFrame(adjustCardStackHeight);
   }
 
   renderFeatures(freeFeaturesEl, planData.free.features);
   renderFeatures(cmeFeaturesEl, planData.cme.features);
   updateBoardPlan(currentBoardCycle);
-  setActivePlan('free');
+  setActivePlan('board');
+  requestAnimationFrame(adjustCardStackHeight);
 
   planButtons.forEach((button) => {
     button.addEventListener('click', () => setActivePlan(button.dataset.plan));

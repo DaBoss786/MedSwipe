@@ -1111,6 +1111,20 @@ button:not(:disabled):active {
   font-size: 1.3rem;
 }
 
+.user-uid-display {
+  margin: 0 0 15px 0;
+  font-size: 0.85rem;
+  color: #555;
+  word-break: break-all;
+}
+
+.user-menu-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  text-align: center;
+}
+
 #menuHeader, #userMenuHeader { /* Assuming #userMenuHeader is for the right menu */
   display: flex;
   justify-content: space-between;
@@ -5403,6 +5417,8 @@ button:not(:disabled):active {
 .ios-paywall-card-stack {
   position: relative;
   min-height: 520px;
+  height: 520px;
+  transition: height 0.28s ease;
 }
 
 .ios-paywall-card {
