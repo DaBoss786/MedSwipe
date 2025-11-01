@@ -321,10 +321,12 @@ async function displayPerformance() {
   
     const categoryBreakdownContainer = document.getElementById("categoryBreakdownInternal");
     const accessTier = window.authState?.accessTier;
-    const isRegistered = window.authState?.isRegistered; 
+    const hasBoardAccess = typeof window.userHasBoardReviewAccess === 'function'
+      ? window.userHasBoardReviewAccess()
+      : accessTier === 'board_review' || accessTier === 'cme_annual';
   
     if (categoryBreakdownContainer) {
-      if (accessTier === "free_guest") {
+      if (!hasBoardAccess) {
           const message1 = "Detailed subject-specific analytics are a premium feature.";
           const message2 = "Upgrade your account to track your performance across different subspecialties!";
           const buttonText = "Upgrade to Access";
@@ -336,11 +338,12 @@ async function displayPerformance() {
               upgradeButton.parentNode.replaceChild(newUpgradeButton, upgradeButton);
               newUpgradeButton.addEventListener('click', function() {
                   if (performanceView) performanceView.style.display = 'none'; 
-                  const mainPaywallScreen = document.getElementById("newPaywallScreen");
-                  if (mainPaywallScreen) { mainPaywallScreen.style.display = 'flex'; }
+                  if (typeof window.showPaywallScreen === 'function') {
+                      window.showPaywallScreen();
+                  }
               });
           }
-      } else if (isRegistered && (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
+      } else {
           let categoryBreakdownHtml = "";
           // Use the newly calculated specialtyCategoryStats
           if (specialtyCategoryStats && Object.keys(specialtyCategoryStats).length > 0) {

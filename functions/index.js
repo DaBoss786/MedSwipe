@@ -1470,8 +1470,46 @@ exports.finalizeRegistration = onCall(
       throw new HttpsError("unauthenticated", "Please log in to register.");
     }
     const uid = request.auth.uid;
-    // Normalize email to prevent issues with capitalization
-    const email = request.auth.token.email.toLowerCase().trim();
+    const tokenEmail =
+      typeof request.auth.token?.email === "string"
+        ? request.auth.token.email.trim()
+        : "";
+    const bodyEmail =
+      typeof request.data?.email === "string"
+        ? request.data.email.trim()
+        : "";
+
+    let resolvedEmail = tokenEmail || bodyEmail;
+    let emailSource = resolvedEmail ? (tokenEmail ? "auth_token" : "request_body") : null;
+
+    if (!resolvedEmail) {
+      try {
+        const existingUserDoc = await db.collection("users").doc(uid).get();
+        const storedEmail = existingUserDoc.exists
+          ? existingUserDoc.data()?.email
+          : null;
+        if (typeof storedEmail === "string" && storedEmail.trim()) {
+          resolvedEmail = storedEmail.trim();
+          emailSource = "firestore";
+        }
+      } catch (emailLookupError) {
+        logger.warn(
+          `Failed to fetch existing email for UID ${uid} during finalizeRegistration:`,
+          emailLookupError
+        );
+      }
+    }
+
+    if (!resolvedEmail) {
+      throw new HttpsError(
+        "failed-precondition",
+        "An email address is required to finalize registration. Please reauthenticate and try again."
+      );
+    }
+    const email = resolvedEmail.toLowerCase();
+    logger.info(
+      `Finalizing registration for UID: ${uid} with email: ${email} (source: ${emailSource || "unknown"})`
+    );
 
     // 2. Input validation (as before, now including referrerId)
     const { username, marketingOptIn, referrerId } = request.data;
@@ -1481,8 +1519,6 @@ exports.finalizeRegistration = onCall(
     if (typeof marketingOptIn !== 'boolean') {
       throw new HttpsError("invalid-argument", "A valid marketing preference is required.");
     }
-
-    logger.info(`Finalizing registration for UID: ${uid} with email: ${email}`);
 
     // 3. --- NEW: Check for an available promotion ---
     const promotionsRef = db.collection('promotions');
@@ -1739,11 +1775,31 @@ exports.getLeaderboardData = onCall(
     }
 
     const currentUserData = currentUserDoc.data();
-    
-    // --- START: NEWLY ADDED SUBSCRIPTION CHECK ---
-    const allowedTiers = ['board_review', 'cme_annual', 'cme_credits_only'];
-    if (!allowedTiers.includes(currentUserData.accessTier)) {
-      logger.warn(`User ${currentAuthUid} with tier "${currentUserData.accessTier}" attempted to access a restricted feature.`);
+
+    function computePremiumFlags(data = {}) {
+      const accessTier = data.accessTier || null;
+      const hasBoard =
+        data.boardReviewActive === true ||
+        accessTier === "board_review" ||
+        accessTier === "cme_annual";
+      const hasCme =
+        data.cmeSubscriptionActive === true ||
+        accessTier === "cme_annual" ||
+        (data.cmeCreditsAvailable || 0) > 0;
+      return {
+        hasBoard,
+        hasCme,
+        hasPremium: hasBoard || hasCme,
+      };
+    }
+
+    const premiumStatus = computePremiumFlags(currentUserData);
+    const signInProvider =
+      request.auth?.token?.firebase?.sign_in_provider || "unknown";
+    if (!premiumStatus.hasPremium) {
+      logger.warn(
+        `User ${currentAuthUid} (provider: ${signInProvider}) lacks premium access.`
+      );
       // You can either return empty leaderboards or throw an error.
       // Throwing an error is often better for security to make it clear access is denied.
       throw new HttpsError(
@@ -1751,11 +1807,12 @@ exports.getLeaderboardData = onCall(
         "You do not have sufficient permissions to view the leaderboard."
       );
     }
-    // --- END: NEWLY ADDED SUBSCRIPTION CHECK ---
     
     // Check if current user has required fields for leaderboard logic
-    if (!currentUserData.specialty || !currentUserData.email || !currentUserData.isRegistered) {
-      logger.warn(`User ${currentAuthUid} is missing required fields (specialty/email/isRegistered). Returning empty leaderboards.`);
+    if (!currentUserData.specialty) {
+      logger.warn(
+        `User ${currentAuthUid} is missing required fields (specialty). Returning empty leaderboards.`
+      );
       return {
         xpLeaderboard: [],
         weeklyXpLeaderboard: [],
@@ -1807,51 +1864,75 @@ exports.getLeaderboardData = onCall(
       let usersSnapshot;
       
       try {
-        // Attempt optimized query (requires composite index)
-        usersSnapshot = await currentDbInstance.collection("users")
-          .where("isRegistered", "==", true)
+        usersSnapshot = await currentDbInstance
+          .collection("users")
           .where("specialty", "==", currentUserSpecialty)
           .get();
-        logger.info(`Optimized query successful. Found ${usersSnapshot.size} eligible users.`);
+        logger.info(
+          `Specialty-filtered query successful. Found ${usersSnapshot.size} users.`
+        );
       } catch (indexError) {
-        // Fallback to less optimized query if composite index doesn't exist
-        logger.warn("Composite index not available, falling back to single-field query:", indexError.message);
-        usersSnapshot = await currentDbInstance.collection("users")
-          .where("isRegistered", "==", true)
-          .get();
-        logger.info(`Fallback query returned ${usersSnapshot.size} registered users.`);
+        // Fallback to less optimized query if the index is missing
+        logger.warn(
+          "Specialty index not available, falling back to full users collection:",
+          indexError.message
+        );
+        usersSnapshot = await currentDbInstance.collection("users").get();
+        logger.info(
+          `Fallback query returned ${usersSnapshot.size} total users.`
+        );
       }
 
       // 5. Process eligible users
       const allEligibleUsersData = [];
-      
-      usersSnapshot.forEach((doc) => {
-        const userData = doc.data();
-        
-        // Apply ALL filtering criteria
-        if (
-          userData.isRegistered === true &&
-          userData.email && // Must have email
-          userData.specialty === currentUserSpecialty // Must match specialty
-        ) {
-          const weeklyStats = calculateWeeklyStats(userData, weekStartMillis);
-          const longestStreak = Math.max(
-            userData.streaks?.longestStreak || 0,
-            userData.streaks?.currentStreak || 0
-          );
-
-          allEligibleUsersData.push({
-            uid: doc.id,
-            username: userData.username || "Anonymous",
-            xp: userData.stats?.xp || 0,
-            weeklyXp: weeklyStats.weeklyXp,
-            level: userData.stats?.level || 1,
-            currentStreak: userData.streaks?.currentStreak || 0,
-            longestStreak,
-            weeklyAnsweredCount: weeklyStats.weeklyAnsweredCount,
-          });
+      const upsertEligibleUser = (uid, rawData) => {
+        if (!rawData) {
+          return;
         }
+        const userData = rawData || {};
+
+        if (userData.specialty !== currentUserSpecialty) {
+          return;
+        }
+
+        const premium = computePremiumFlags(userData);
+        if (!premium.hasPremium) {
+          return;
+        }
+
+        if (allEligibleUsersData.some((entry) => entry.uid === uid)) {
+          return;
+        }
+
+        const weeklyStats = calculateWeeklyStats(userData, weekStartMillis);
+        const longestStreak = Math.max(
+          userData.streaks?.longestStreak || 0,
+          userData.streaks?.currentStreak || 0
+        );
+        const username =
+          typeof userData.username === "string" && userData.username.trim()
+            ? userData.username.trim()
+            : `Guest_${uid.slice(0, 6)}`;
+
+        allEligibleUsersData.push({
+          uid,
+          username,
+          xp: userData.stats?.xp || 0,
+          weeklyXp: weeklyStats.weeklyXp,
+          level: userData.stats?.level || 1,
+          currentStreak: userData.streaks?.currentStreak || 0,
+          longestStreak,
+          weeklyAnsweredCount: weeklyStats.weeklyAnsweredCount,
+        });
+      };
+
+      usersSnapshot.forEach((doc) => {
+        upsertEligibleUser(doc.id, doc.data());
       });
+
+      if (!allEligibleUsersData.some((entry) => entry.uid === currentAuthUid)) {
+        upsertEligibleUser(currentAuthUid, currentUserData);
+      }
 
       logger.info(`Processed ${allEligibleUsersData.length} eligible users for leaderboards.`);
 

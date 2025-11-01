@@ -5579,9 +5579,9 @@ button:not(:disabled):active {
 
 .ios-inline-links {
   display: none;
-  justify-content: flex-start;
-  gap: 16px;
-  margin-top: -10px;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
 }
 
 .ios-text-link {
