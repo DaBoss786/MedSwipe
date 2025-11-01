@@ -5688,6 +5688,42 @@ button:not(:disabled):active {
   }
 }
 
+.registration-followup-modal {
+  max-width: 420px;
+  width: 100%;
+  padding: 24px;
+}
+
+.registration-followup-modal .modal-body p {
+  margin: 8px 0 0;
+  font-size: 0.98rem;
+  color: #344054;
+  text-align: left;
+}
+
+.registration-followup-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.registration-followup-actions .auth-primary-btn,
+.registration-followup-actions .auth-secondary-btn {
+  width: 100%;
+}
+
+@media (min-width: 480px) {
+  .registration-followup-actions {
+    flex-direction: row;
+  }
+
+  .registration-followup-actions .auth-primary-btn,
+  .registration-followup-actions .auth-secondary-btn {
+    flex: 1;
+  }
+}
+
 /* ===================================== */
 /* == General Pricing Screen Styles == */
 /* ===================================== */

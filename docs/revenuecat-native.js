@@ -344,6 +344,15 @@ async function handlePostPurchase(expectation) {
     if (upgraded) {
       hidePaywallScreens();
       overlay?.markSuccess();
+      globalWindow?.setTimeout(() => {
+        try {
+          globalWindow.dispatchEvent(
+            new CustomEvent('nativePurchaseCompleted', { detail: { expectation } })
+          );
+        } catch (eventError) {
+          console.warn('Failed to dispatch nativePurchaseCompleted event.', eventError);
+        }
+      }, ACTIVATION_SUCCESS_HIDE_DELAY_MS);
       return;
     }
     overlay?.showFallback(() => {

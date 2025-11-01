@@ -663,12 +663,10 @@ async function updateUserMenu() {
             e.preventDefault();
             if (typeof closeUserMenu === 'function') closeUserMenu();
             if (typeof ensureAllScreensHidden === 'function') ensureAllScreensHidden();
-            const mainPaywallScreen = document.getElementById("newPaywallScreen");
-            if (mainPaywallScreen) mainPaywallScreen.style.display = "flex";
-            else {
-                console.error("Main paywall screen not found.");
-                const mainOptions = document.getElementById("mainOptions");
-                if (mainOptions) mainOptions.style.display = "flex";
+            if (typeof showPaywallScreen === 'function') {
+                showPaywallScreen();
+            } else {
+                console.error("showPaywallScreen function not found.");
             }
         });
 
