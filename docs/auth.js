@@ -500,15 +500,14 @@ function initAuth() {
 
       if (isNewUserDocument) {
         console.log(`User doc for ${user.uid} not found, creating with defaults...`);
-        // SLIM WRITE: Only write non-sensitive fields. The backend will add defaults for sensitive fields.
+        // SLIM WRITE: Only write non-sensitive fields. The backend will add sensitive fields.
         userDataForWrite = {
           username: user.isAnonymous
             ? generateGuestUsername()
             : (user.displayName || user.email || `User_${user.uid.substring(0, 5)}`),
           email: user.email || null,
           createdAt: serverTimestamp(),
-          // --- SENSITIVE FIELDS REMOVED ---
-          // isRegistered, accessTier, boardReviewActive, etc., will be set by a Cloud Function.
+          // Core profile defaults; backend can enrich with additional details later.
           specialty: "ENT",
           experienceLevel: null,
       
@@ -540,7 +539,6 @@ function initAuth() {
           },
           cmeAnsweredQuestions: {},
           cmeClaimHistory: [],
-          cmeCreditsAvailable: 0,
         };
 
         if (currentAuthIsRegistered && user.email) {
@@ -556,11 +554,6 @@ function initAuth() {
           `Found user doc for ${user.uid}. AuthIsAnon=${user.isAnonymous}, StoredIsReg=${existingData.isRegistered}, StoredTier=${existingData.accessTier}`
         );
 
-        // Sync isRegistered flag if Firebase Auth state and Firestore are misaligned
-        if (existingData.isRegistered !== currentAuthIsRegistered) {
-          console.log(`Correcting isRegistered for ${user.uid} in Firestore.`);
-          userDataForWrite.isRegistered = currentAuthIsRegistered;
-        }
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
 
         // Update email in Firestore if newly registered via Firebase Auth and not matching
@@ -818,27 +811,43 @@ export async function refreshAuthStateFromFirestore(options = {}) {
     return { refreshed: false, reason: 'no-user' };
   }
 
-  if (currentUser.isAnonymous) {
-    return { refreshed: false, reason: 'anonymous-user' };
-  }
-
+  const userDocRef = doc(db, 'users', currentUser.uid);
   let snapshot;
   try {
-    snapshot = await getDoc(doc(db, 'users', currentUser.uid));
+    snapshot = await getDoc(userDocRef);
   } catch (error) {
     console.error('refreshAuthStateFromFirestore: failed to fetch user doc.', error);
     return { refreshed: false, reason: 'firestore-error', error };
   }
 
   if (!snapshot.exists()) {
-    return { refreshed: false, reason: 'missing-doc' };
+    const defaultDoc = {
+      createdAt: serverTimestamp(),
+      username: currentUser.isAnonymous
+        ? generateGuestUsername()
+        : (currentUser.displayName || currentUser.email || `User_${currentUser.uid.substring(0, 5)}`),
+      email: currentUser.email || null
+    };
+
+    try {
+      await setDoc(userDocRef, defaultDoc, { merge: true });
+      snapshot = await getDoc(userDocRef);
+    } catch (error) {
+      console.error('refreshAuthStateFromFirestore: failed to create default user doc.', error);
+      return { refreshed: false, reason: 'doc-create-error', error };
+    }
+
+    if (!snapshot.exists()) {
+      return { refreshed: false, reason: 'missing-doc' };
+    }
   }
 
   if (!window.authState) {
     window.authState = {};
   }
 
-  const data = snapshot.data() || {};
+  let data = snapshot.data() || {};
+
   const previous = snapshotCurrentAuthState();
 
   const accessTier = typeof data.accessTier === 'string'
@@ -857,6 +866,9 @@ export async function refreshAuthStateFromFirestore(options = {}) {
   window.authState.cmeSubscriptionActive = cmeSubscriptionActive;
   window.authState.cmeSubscriptionEndDate = cmeSubscriptionEndDate;
   window.authState.cmeCreditsAvailable = cmeCreditsAvailable;
+  window.authState.isRegistered = typeof data.isRegistered === 'boolean'
+    ? data.isRegistered
+    : !currentUser.isAnonymous;
   window.authState.isLoading = false;
 
   const changed =

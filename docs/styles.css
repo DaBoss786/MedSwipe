@@ -4986,125 +4986,6 @@ button:not(:disabled):active {
     padding-bottom: 20px;
 }
 
-/* ========================== */
-/* == New Paywall Screen CSS == */
-/* ========================== */
-
-.paywall-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #ffffff; /* Light neutral background */
-  z-index: 9600; /* High z-index, below onboarding loading but above most things */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 30px 20px;
-  box-sizing: border-box;
-  overflow-y: auto; /* Allow scrolling on smaller screens */
-  text-align: center;
-}
-
-.paywall-content {
-  width: 100%;
-  max-width: 700px; /* Max width for the content area */
-  margin-bottom: 30px; /* Center the content block */
-}
-
-.paywall-logo {
-  width: 200px; /* Adjust as needed */
-  max-width: 60%;
-  margin-bottom: 20px;
-}
-
-.paywall-title {
-  font-size: 1.8rem; /* Adjust as needed */
-  font-weight: 600;
-  color: #0C72D3; /* MedSwipe blue */
-  margin-bottom: 10px;
-}
-
-.paywall-subtitle {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 30px;
-}
-
-.paywall-options-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px; /* Space between cards */
-}
-
-.paywall-option-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  text-align: left; /* Align text inside cards to the left */
-  position: relative; /* For badge positioning */
-  border: 1px solid #e0e0e0;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-
-.paywall-option-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.paywall-option-card h2 {
-  font-size: 1.4rem;
-  color: #333;
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-.paywall-option-card .price-highlight {
-  font-size: 2.2rem;  /* Increased from default */
-  font-weight: bold;
-  color: #0056b3;
-  margin: 15px 0;
-}
-
-.paywall-option-card .price-details {
-  font-size: 1rem;  /* Keep details smaller for contrast */
-  color: #666;
-  margin-left: 5px;
-}
-
-.paywall-option-card .price-secondary-line {
-  display: block;
-  margin-left: 0;
-  margin: -5px 0 15px;
-}
-
-.paywall-option-card ul {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 20px 0;
-}
-
-.paywall-option-card li {
-  font-size: 0.95rem;
-  color: #444;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-.paywall-option-card .check-icon {
-  color: #28a745; /* Green check */
-  margin-right: 8px;
-  font-weight: bold;
-}
-.paywall-option-card .cross-icon {
-  color: #dc3545; /* Red cross */
-  margin-right: 8px;
-  font-weight: bold;
 }
 
 .paywall-select-btn.is-processing,
@@ -5191,6 +5072,119 @@ button:not(:disabled):active {
   transform: translateY(0);
 }
 
+/* ========================== */
+/* == New Paywall Screen CSS == */
+/* ========================== */
+
+.paywall-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  z-index: 9600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.paywall-content {
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 30px;
+}
+
+.paywall-logo {
+  width: 200px;
+  max-width: 60%;
+  margin-bottom: 20px;
+}
+
+.paywall-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #0C72D3;
+  margin-bottom: 10px;
+}
+
+.paywall-subtitle {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.paywall-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.paywall-option-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: left;
+  position: relative;
+  border: 1px solid #e0e0e0;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.paywall-option-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.paywall-option-card h2 {
+  font-size: 1.4rem;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.paywall-option-card .price-highlight {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #0056b3;
+  margin: 15px 0;
+}
+
+.paywall-option-card .price-details {
+  font-size: 1rem;
+  color: #666;
+  margin-left: 5px;
+}
+
+.paywall-option-card .price-secondary-line {
+  display: block;
+  margin: -5px 0 15px;
+}
+
+.paywall-option-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.paywall-option-card li {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.paywall-option-card .check-icon {
+  color: #28a745;
+  margin-right: 8px;
+  font-weight: bold;
+}
 
 .paywall-select-btn {
   display: block;
@@ -5243,7 +5237,6 @@ button:not(:disabled):active {
   cursor: not-allowed;
 }
 
-
 .paywall-continue-guest-btn {
   display: block;
   width: 100%;
@@ -5260,68 +5253,59 @@ button:not(:disabled):active {
 }
 
 .paywall-continue-guest-btn:hover {
-  background-color: #e6f0fa; /* Light blue hover */
+  background-color: #e6f0fa;
 }
 
 .card-badge {
   position: absolute;
-  top: -10px; /* Position slightly above the card */
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
-  /* background-color: #ffc107; */ /* Default removed or overridden by specific badges */
-  color: #333; /* Default text color for badges */
+  color: #333;
   padding: 5px 15px;
   font-size: 0.8rem;
   font-weight: bold;
   border-radius: 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  z-index: 1; /* Ensure badge is above card border if card has a thick top border */
+  z-index: 1;
 }
 
 .popular-badge {
-  background-color: #ffc107; /* Yellow for popular */
-  /* color: #333; /* Already set by .card-badge */
+  background-color: #ffc107;
 }
 
-/* START: New CME Eligible Badge Style */
 .cme-eligible-badge {
-  background-color: #28a745; /* Green color */
-  color: #ffffff; /* White text for better contrast on green */
+  background-color: #28a745;
+  color: #ffffff;
 }
-/* END: New CME Eligible Badge Style */
 
-/* *** NEW CSS FOR THE TRIAL BADGE *** */
 .trial-badge {
-  position: absolute; /* Keep absolute positioning */
-  top: -10px;          /* Adjust top position as needed */
-  left: 10px;         /* Position to the left */
-  transform: none;    /* Reset transform from the generic .card-badge */
-  background-color: #007bff; /* A distinct blue for trial, or choose another color */
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  transform: none;
+  background-color: #007bff;
   color: white;
-  padding: 4px 10px;  /* Slightly smaller padding */
-  font-size: 0.75rem; /* Slightly smaller font */
+  padding: 4px 10px;
+  font-size: 0.75rem;
   font-weight: bold;
-  border-radius: 5px; /* Less rounded, more like a tag */
+  border-radius: 5px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  z-index: 2; /* Ensure it's above other badges if they overlap, or adjust as needed */
-    /* Optional: if you want a slight rotation for a "banner" feel */
-  /* transform: rotate(-5deg); 
-     left: -5px; 
-     top: 15px; */
+  z-index: 2;
 }
 
-/* Specific card styling if needed */
 .board-review-card {
-  border-top: 4px solid #0C72D3; /* Blue accent */
-}
-.cme-module-card {
-  border-top: 4px solid #28a745; /* Green accent */
-}
-.free-access-card {
-  border-top: 4px solid #6c757d; /* Grey accent */
+  border-top: 4px solid #0C72D3;
 }
 
-/* Responsive adjustments for smaller screens */
+.cme-module-card {
+  border-top: 4px solid #28a745;
+}
+
+.free-access-card {
+  border-top: 4px solid #6c757d;
+}
+
 @media (max-width: 600px) {
   .paywall-title {
     font-size: 1.5rem;
@@ -5339,9 +5323,368 @@ button:not(:disabled):active {
   .paywall-option-card .price-highlight {
     font-size: 1.1rem;
   }
-  .paywall-select-btn, .paywall-continue-guest-btn {
+  .paywall-select-btn,
+  .paywall-continue-guest-btn {
     font-size: 1rem;
     padding: 10px;
+  }
+}
+
+/* ========================== */
+/* == iOS Paywall Screen CSS == */
+/* ========================== */
+
+.paywall-screen.ios-paywall-active {
+  background: #f2f3f7;
+  padding: 32px 20px calc(48px + env(safe-area-inset-bottom));
+  justify-content: center;
+}
+
+.ios-paywall-root {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.ios-paywall-logo {
+  height: 48px;
+  width: auto;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  box-shadow: 0 12px 20px rgba(12, 114, 211, 0.18);
+}
+
+.ios-paywall-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #101828;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.ios-paywall-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: #6f7787;
+  letter-spacing: -0.01em;
+}
+
+.ios-plan-selector {
+  display: flex;
+  gap: 6px;
+  background: rgba(118, 118, 128, 0.12);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.ios-plan-selector-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #1c1c1f;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.26s ease;
+}
+
+.ios-plan-selector-btn.active {
+  background: #ffffff;
+  color: #0c72d3;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.ios-paywall-card-stack {
+  position: relative;
+  min-height: 520px;
+}
+
+.ios-paywall-card {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 26px 24px 30px;
+  box-shadow: 0 18px 32px rgba(18, 25, 39, 0.14);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(12px) scale(0.97);
+  transition: transform 0.32s ease, opacity 0.28s ease, visibility 0s linear 0.28s;
+  text-align: left;
+}
+
+.ios-paywall-card.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+  transition-delay: 0s;
+}
+
+.ios-paywall-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.ios-price-highlight {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: #09090b;
+  margin: 16px 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.ios-price-highlight .ios-price-details {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6f7787;
+}
+
+.ios-price-details {
+  font-size: 0.95rem;
+  color: #6f7787;
+}
+
+.ios-price-secondary-line {
+  margin: 0 0 10px;
+}
+
+.ios-board-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(118, 118, 128, 0.12);
+  margin: 8px 0 4px;
+}
+
+.ios-board-toggle button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #1c1c1f;
+  cursor: pointer;
+  transition: all 0.24s ease;
+}
+
+.ios-board-toggle button.active {
+  background: #ffffff;
+  color: #0c72d3;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.ios-feature-stack {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ios-feature-stack li {
+  font-size: 0.98rem;
+  color: #0f172a;
+  line-height: 1.5;
+  padding-left: 28px;
+  position: relative;
+  opacity: 0;
+  animation: iosPaywallFeatureFade 0.34s ease forwards;
+}
+
+.ios-feature-stack li:nth-child(1) { animation-delay: 0.05s; }
+.ios-feature-stack li:nth-child(2) { animation-delay: 0.1s; }
+.ios-feature-stack li:nth-child(3) { animation-delay: 0.15s; }
+.ios-feature-stack li:nth-child(4) { animation-delay: 0.2s; }
+.ios-feature-stack li:nth-child(5) { animation-delay: 0.25s; }
+.ios-feature-stack li:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes iosPaywallFeatureFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ios-paywall-root .check-icon {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  color: #34c759;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.ios-paywall-primary-btn,
+.ios-paywall-secondary-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.ios-paywall-primary-btn:active,
+.ios-paywall-secondary-btn:active {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
+
+.ios-paywall-secondary-btn {
+  background: #ffffff;
+  border: 1.6px solid #0c72d3;
+  color: #0c72d3;
+}
+
+.ios-paywall-primary-btn {
+  background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+  color: #ffffff;
+}
+
+.ios-paywall-root .board-review-card .ios-paywall-primary-btn {
+  background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+  color: #ffffff;
+}
+
+.ios-paywall-root .cme-module-card .ios-paywall-primary-btn {
+  background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+  color: #ffffff;
+}
+
+.ios-inline-links {
+  display: none;
+  justify-content: flex-start;
+  gap: 16px;
+  margin-top: -10px;
+}
+
+.ios-text-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0c72d3;
+  cursor: pointer;
+  text-decoration: underline;
+  letter-spacing: -0.01em;
+}
+
+.ios-text-link:hover {
+  color: #075bb6;
+}
+
+.ios-paywall-footer {
+  margin-top: 24px;
+}
+
+.ios-restore-btn {
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: #0c72d3;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.ios-restore-btn:hover {
+  color: #075bb6;
+}
+
+.ios-restore-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ios-card-badge {
+  position: absolute;
+  top: -14px;
+  right: 20px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 12px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.78);
+  text-transform: uppercase;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+.ios-popular-badge {
+  background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
+}
+
+.ios-cme-badge {
+  background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+}
+
+.ios-paywall-primary-btn.is-processing,
+.ios-paywall-secondary-btn.is-processing {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.ios-paywall-primary-btn.is-processing::after,
+.ios-paywall-secondary-btn.is-processing::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  animation: subscription-activation-spin 0.8s linear infinite;
+}
+
+@media (max-width: 480px) {
+  .ios-paywall-title {
+    font-size: 1.7rem;
+  }
+
+  .ios-paywall-card-stack {
+    min-height: 500px;
+  }
+
+  .ios-paywall-card {
+    padding: 24px 18px 26px;
+  }
+
+  .ios-feature-stack li {
+    font-size: 0.95rem;
+  }
+
+  .ios-plan-selector-btn {
+    font-size: 0.85rem;
   }
 }
 

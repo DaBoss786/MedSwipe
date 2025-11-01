@@ -118,6 +118,18 @@ document.addEventListener('pointercancel', (event) => {
 });
 
 const isNativeApp = detectNativeApp();
+const isIosNativeApp = (() => {
+  const capacitor = typeof window !== 'undefined' ? window.Capacitor : undefined;
+  if (!capacitor || typeof capacitor.getPlatform !== 'function') {
+    return false;
+  }
+  try {
+    return capacitor.getPlatform() === 'ios';
+  } catch (error) {
+    console.warn('Unable to determine Capacitor platform:', error);
+    return false;
+  }
+})();
 
 let dashboardSetupTimeout = null;
 
@@ -626,6 +638,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
 
   // --- START OF NEW LOGIC ---
   initializePaywallFreeAccessButton();
+  initializeIosPaywallUI();
 
   // First, check if the URL is a deep link.
   const isDeepLinkHandled = await handleDeepLink();
@@ -796,6 +809,310 @@ window.addEventListener('authStateChanged', function(event) {
       }, 500);
     }
   });
+}
+
+function initializeIosPaywallUI() {
+  const paywallScreen = document.getElementById('newPaywallScreen');
+  const iosRoot = document.getElementById('iosPaywallContent');
+  const webContent = document.getElementById('webPaywallContent');
+
+  if (!isIosNativeApp) {
+    if (iosRoot) {
+      iosRoot.style.display = 'none';
+    }
+    return;
+  }
+
+  if (!paywallScreen || !iosRoot) {
+    return;
+  }
+
+  paywallScreen.classList.add('ios-paywall-active');
+  iosRoot.style.display = 'flex';
+  if (webContent) {
+    webContent.style.display = 'none';
+  }
+
+  const planButtons = Array.from(iosRoot.querySelectorAll('.ios-plan-selector-btn'));
+  const planCards = Array.from(iosRoot.querySelectorAll('.ios-paywall-card'));
+  const freeFeaturesEl = iosRoot.querySelector('#iosFreeFeatures');
+  const boardFeaturesEl = iosRoot.querySelector('#iosBoardFeatures');
+  const cmeFeaturesEl = iosRoot.querySelector('#iosCmeFeatures');
+  const boardToggle = iosRoot.querySelector('.ios-board-toggle');
+  const boardToggleButtons = boardToggle ? Array.from(boardToggle.querySelectorAll('button')) : [];
+  const boardBadge = iosRoot.querySelector('#iosBoardBadge');
+  const boardPriceValue = iosRoot.querySelector('#iosBoardPriceValue');
+  const boardPriceInterval = iosRoot.querySelector('#iosBoardPriceInterval');
+  const boardPriceCopy = iosRoot.querySelector('#iosBoardPriceCopy');
+  const boardCta = iosRoot.querySelector('#iosBoardCta');
+  const cmeCta = iosRoot.querySelector('#iosCmeCta');
+  const freeCta = iosRoot.querySelector('#iosContinueFreeBtn');
+  const restoreBtn = iosRoot.querySelector('#iosRestorePurchasesBtn');
+  const inlineLinks = iosRoot.querySelector('.ios-inline-links');
+  const infoLinkButtons = inlineLinks ? Array.from(inlineLinks.querySelectorAll('.ios-text-link')) : [];
+
+  let currentBoardCycle = 'monthly';
+
+  const planData = {
+    free: {
+      features: [
+        'Access foundational anatomy & general questions',
+        'Enjoy basic quiz functionality to see how MedSwipe works',
+        'Upgrade anytime to unlock leaderboards, spaced repetition, and the full QBank'
+      ]
+    },
+    board: {
+      monthly: {
+        badge: 'Most Popular',
+        price: '$15',
+        interval: '/month',
+        copy: '',
+        cta: 'Start 7-Day Free Trial',
+        checkoutKey: 'monthly',
+        features: [
+          'Full Question Bank Access - 900+ questions',
+          'Access to <i>Case Prep</i> mode for upcoming cases',
+          'Compete on leaderboards with peers nationwide',
+          'Intelligent spaced repetition & focused analytics',
+          'Billed monthly, cancel anytime'
+        ]
+      },
+      quarterly: {
+        badge: 'Save 10%',
+        price: '$40',
+        interval: '/3 months',
+        copy: 'Save over 10% vs. paying monthly.',
+        cta: 'Start 7-Day Free Trial',
+        checkoutKey: '3-month',
+        features: [
+          'Full Question Bank Access - 900+ questions',
+          'Access to <i>Case Prep</i> mode for upcoming cases',
+          'Compete on leaderboards with peers nationwide',
+          'Intelligent spaced repetition & focused analytics',
+          'Billed every 3 months, auto-renews'
+        ]
+      },
+      annual: {
+        badge: 'Best Value',
+        price: '$149',
+        interval: '/year',
+        copy: 'Best value - save over 15% versus monthly.',
+        cta: 'Start 7-Day Free Trial',
+        checkoutKey: 'annual',
+        features: [
+          'Full Question Bank Access - 900+ questions',
+          'Access to <i>Case Prep</i> mode for upcoming cases',
+          'Compete on leaderboards with peers nationwide',
+          'Intelligent spaced repetition & focused analytics',
+          'Billed annually, auto-renews'
+        ]
+      }
+    },
+    cme: {
+      features: [
+        'Over 60% less than comparable CME platforms',
+        'Earn up to 24 <i>AMA PRA Category 1 Credits</i>',
+        'Re-do missed questions and still earn credits',
+        'Download CME certificates anytime',
+        'Includes everything in the Board Review tier'
+      ]
+    }
+  };
+
+  function renderFeatures(listEl, items) {
+    if (!listEl) {
+      return;
+    }
+    listEl.innerHTML = '';
+    items.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="check-icon">✔</span>${item}`;
+      li.style.animationDelay = `${0.05 * (index + 1)}s`;
+      listEl.appendChild(li);
+    });
+  }
+
+  function setActivePlan(planKey) {
+    planButtons.forEach((button) => {
+      const isActive = button.dataset.plan === planKey;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+    });
+
+    planCards.forEach((card) => {
+      const matches = card.dataset.planCard === planKey;
+      card.classList.toggle('active', matches);
+      card.setAttribute('aria-hidden', matches ? 'false' : 'true');
+      if (matches) {
+        requestAnimationFrame(() => {
+          const features = Array.from(card.querySelectorAll('.ios-feature-stack li'));
+          features.forEach((feature, index) => {
+            feature.style.animation = 'none';
+            feature.offsetHeight;
+            feature.style.animation = '';
+            feature.style.animationDelay = `${0.05 * (index + 1)}s`;
+          });
+        });
+      }
+    });
+
+    if (inlineLinks) {
+      inlineLinks.style.display = planKey === 'cme' ? 'flex' : 'none';
+    }
+  }
+
+  function updateBoardPlan(cycleKey) {
+    const cycleData = planData.board[cycleKey];
+    if (!cycleData) {
+      return;
+    }
+    currentBoardCycle = cycleKey;
+
+    boardToggleButtons.forEach((button) => {
+      const isActive = button.dataset.cycle === cycleKey;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+    });
+
+    if (boardBadge) {
+      boardBadge.textContent = cycleData.badge;
+    }
+    if (boardPriceValue) {
+      boardPriceValue.textContent = cycleData.price;
+    }
+    if (boardPriceInterval) {
+      boardPriceInterval.textContent = cycleData.interval || '';
+    }
+    if (boardPriceCopy) {
+      if (cycleData.copy) {
+        boardPriceCopy.textContent = cycleData.copy;
+        boardPriceCopy.style.display = 'block';
+      } else {
+        boardPriceCopy.textContent = '';
+        boardPriceCopy.style.display = 'none';
+      }
+    }
+    renderFeatures(boardFeaturesEl, cycleData.features);
+
+    if (boardCta) {
+      boardCta.textContent = cycleData.cta;
+      boardCta.dataset.cycle = cycleData.checkoutKey;
+    }
+  }
+
+  renderFeatures(freeFeaturesEl, planData.free.features);
+  renderFeatures(cmeFeaturesEl, planData.cme.features);
+  updateBoardPlan(currentBoardCycle);
+  setActivePlan('free');
+
+  planButtons.forEach((button) => {
+    button.addEventListener('click', () => setActivePlan(button.dataset.plan));
+  });
+
+  boardToggleButtons.forEach((button) => {
+    button.addEventListener('click', () => updateBoardPlan(button.dataset.cycle));
+  });
+
+  infoLinkButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const linkType = button.dataset.link;
+      if (linkType === 'accreditation') {
+        const accreditationModal = document.getElementById('cmeAccreditationModal');
+        if (accreditationModal) {
+          accreditationModal.style.display = 'flex';
+        }
+      } else if (linkType === 'learn-more') {
+        showCmeLearnMoreModal('iosPaywall');
+      }
+    });
+  });
+
+  if (boardCta) {
+    boardCta.addEventListener('click', () => {
+      const checkoutKey = boardCta.dataset.cycle || planData.board[currentBoardCycle]?.checkoutKey || 'monthly';
+      startBoardReviewCheckout(checkoutKey, boardCta);
+    });
+  }
+
+  if (cmeCta) {
+    cmeCta.dataset.cycle = 'annual';
+    cmeCta.addEventListener('click', () => {
+      startCmeCheckout(cmeCta.dataset.cycle || 'annual', cmeCta);
+    });
+  }
+
+  if (freeCta) {
+    freeCta.addEventListener('click', () => {
+      hidePaywallScreen();
+      const mainOptions = document.getElementById("mainOptions");
+      if (mainOptions) {
+        mainOptions.style.display = "flex";
+        if (typeof initializeDashboard === 'function') {
+          initializeDashboard();
+        }
+        if (typeof setupDashboardEventListenersExplicitly === 'function') {
+          setupDashboardEventListenersExplicitly();
+        } else if (typeof setupDashboardEvents === 'function') {
+          setupDashboardEvents();
+        }
+      }
+    });
+  }
+
+  if (restoreBtn) {
+    restoreBtn.addEventListener('click', async () => {
+      try {
+        await restorePurchases(restoreBtn);
+        alert('Your purchases have been restored successfully.');
+      } catch (error) {
+        console.error('Restore purchases failed.', error);
+        alert('We could not restore your purchases. Please try again later.');
+      }
+    });
+  }
+}
+
+function getPaywallScreen() {
+  return document.getElementById('newPaywallScreen');
+}
+
+function showPaywallScreen() {
+  const screen = getPaywallScreen();
+  if (!screen) {
+    return;
+  }
+
+  if (isIosNativeApp) {
+    const iosRoot = document.getElementById('iosPaywallContent');
+    const webContent = document.getElementById('webPaywallContent');
+    screen.classList.add('ios-paywall-active');
+    if (webContent) {
+      webContent.style.display = 'none';
+    }
+    if (iosRoot) {
+      iosRoot.style.display = 'flex';
+    }
+  } else {
+    const webContent = document.getElementById('webPaywallContent');
+    if (webContent) {
+      webContent.style.display = 'block';
+    }
+  }
+
+  screen.style.display = 'flex';
+}
+
+function hidePaywallScreen() {
+  const screen = getPaywallScreen();
+  if (!screen) {
+    return;
+  }
+  screen.style.display = 'none';
+}
+
+if (typeof window !== 'undefined') {
+  window.showPaywallScreen = showPaywallScreen;
+  window.hidePaywallScreen = hidePaywallScreen;
 }
 
 // --- Specialty Screen Logic ---
@@ -1077,7 +1394,6 @@ function finishOnboarding() {
   }
 
   const carouselContainer = document.getElementById("onboardingCarousel");
-  const paywallScreen = document.getElementById("newPaywallScreen");
 
   console.log("Finishing onboarding, showing paywall.");
 
@@ -1089,10 +1405,7 @@ function finishOnboarding() {
     }, 500); // Wait for the fade-out transition to complete
   }
 
-  // Show the paywall
-  if (paywallScreen) {
-    paywallScreen.style.display = "flex";
-  }
+  showPaywallScreen();
 }
 
   window.startOnboardingQuiz = startOnboardingQuiz; // Make global if defined locally
@@ -1112,13 +1425,10 @@ function initializePaywallFreeAccessButton() {
   newContinueFreeAccessBtn.addEventListener("click", function() {
     console.log("Paywall 'Continue as Guest' button clicked.");
 
-    const newPaywallScreen = document.getElementById("newPaywallScreen");
     const mainOptions = document.getElementById("mainOptions"); // Your main dashboard view
 
     // Hide the paywall screen
-    if (newPaywallScreen) {
-      newPaywallScreen.style.display = "none";
-    }
+    hidePaywallScreen();
 
     // Show the main dashboard
     if (mainOptions) {
@@ -2131,20 +2441,19 @@ newCloseRegisterBtn.addEventListener('click', function() {
   // Determine what to show when registration is cancelled
   // This logic might need to be smarter based on where the user came from.
   // For now, a simple fallback:
-  const newPaywallScreen = document.getElementById("newPaywallScreen");
   const mainOptions = document.getElementById("mainOptions");
-  if (newPaywallScreen && newPaywallScreen.style.display === 'none' && (!mainOptions || mainOptions.style.display === 'none')) {
-      newPaywallScreen.style.display = 'flex'; // Show paywall if nothing else is shown
-  } else if (mainOptions && mainOptions.style.display === 'none' && (!newPaywallScreen || newPaywallScreen.style.display === 'none')) {
-      mainOptions.style.display = 'flex'; // Or main options
-  } else if (newPaywallScreen && newPaywallScreen.style.display !== 'none') {
-      // Paywall is already visible, do nothing
-  } else if (mainOptions && mainOptions.style.display !== 'none') {
-      // Main options are already visible, do nothing
-  } else {
-      // Default fallback if unsure
-      if (mainOptions) mainOptions.style.display = 'flex';
+  const paywallScreen = getPaywallScreen();
+  const paywallVisible = paywallScreen && paywallScreen.style.display !== 'none';
+  const mainOptionsVisible = mainOptions && mainOptions.style.display !== 'none';
+
+  if (mainOptionsVisible || paywallVisible) {
+    return;
   }
+
+  if (mainOptions) {
+    mainOptions.style.display = 'none';
+  }
+  showPaywallScreen();
 });
 }
 }
@@ -2626,11 +2935,8 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       if (!window.authState || !window.authState.user) {
         console.error("AuthState or user not available. Cannot determine leaderboard access.");
         // Fallback: Could show login or the paywall directly if unsure
-        const newPaywallScreen = document.getElementById("newPaywallScreen");
-        if (newPaywallScreen) {
-            ensureAllScreensHidden(); // Hide other main screens
-            newPaywallScreen.style.display = 'flex';
-        }
+        ensureAllScreensHidden();
+        showPaywallScreen();
         return;
       }
 
@@ -2651,16 +2957,7 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
     }
         console.log("User is anonymous or free_guest. Redirecting to paywall.");
         ensureAllScreensHidden(); // Hide other main screens
-        
-        const newPaywallScreen = document.getElementById("newPaywallScreen");
-        if (newPaywallScreen) {
-          newPaywallScreen.style.display = 'flex';
-        } else {
-          console.error("New Paywall screen element not found!");
-          // Fallback: show main options if paywall is missing
-          const mainOptions = document.getElementById("mainOptions");
-          if (mainOptions) mainOptions.style.display = 'flex';
-        }
+        showPaywallScreen();
       } else {
         // ADD THIS: Track feature usage
     if (analytics && logEvent) {
@@ -3293,13 +3590,7 @@ async function loadLeaderboardPreview() {
         newUpgradeBtn.addEventListener('click', function () {
             console.log("Leaderboard Preview 'Upgrade' button clicked.");
             if (typeof ensureAllScreensHidden === 'function') ensureAllScreensHidden();
-            const mainPaywallScreen = document.getElementById("newPaywallScreen");
-            if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
-            else {
-                console.error("Main paywall screen not found!");
-                const mainOptions = document.getElementById("mainOptions");
-                if (mainOptions) mainOptions.style.display = 'flex';
-            }
+            showPaywallScreen();
         });
     }
     if (cardFooter) cardFooter.textContent = "Upgrade to Access";
@@ -3796,9 +4087,6 @@ async function updateReviewQueue() {
   const reviewCountEl = document.getElementById("reviewCount"); // Renamed for clarity
   const reviewQueueContent = document.getElementById("reviewQueueContent");
   const reviewProgressBar = document.getElementById("reviewProgressBar");
-  const mainPaywallScreen = document.getElementById("newPaywallScreen"); // Get paywall screen
-
-
   if (!reviewCountEl || !reviewQueueContent || !reviewProgressBar) return;
 
   const accessTier = window.authState?.accessTier;
@@ -3828,14 +4116,7 @@ async function updateReviewQueue() {
         // For BOTH anonymous and registered "free_guest", go to main paywall
         console.log("Review Queue 'Upgrade to Access' button clicked. Redirecting to paywall.");
         ensureAllScreensHidden(); // Hide other screens
-        if (mainPaywallScreen) {
-            mainPaywallScreen.style.display = 'flex';
-        } else {
-            console.error("Main paywall screen not found!");
-            // Fallback if paywall is missing
-            const mainOptions = document.getElementById("mainOptions");
-            if (mainOptions) mainOptions.style.display = 'flex';
-        }
+        showPaywallScreen();
       });
     }
 
@@ -4208,10 +4489,9 @@ if (modalCancelQuizButton && quizSetupModalForCancel) {
       leaderboardPreviewCard.parentNode.replaceChild(newLPCard, leaderboardPreviewCard);
       newLPCard.addEventListener('click', function() {
           const accessTier = window.authState?.accessTier;
-          const mainPaywallScreen = document.getElementById("newPaywallScreen");
           if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
               ensureAllScreensHidden();
-              if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+              showPaywallScreen();
           } else {
               if (typeof showLeaderboard === 'function') showLeaderboard();
           }
@@ -4225,11 +4505,9 @@ if (modalCancelQuizButton && quizSetupModalForCancel) {
       reviewQueueCard.parentNode.replaceChild(newRQCard, reviewQueueCard);
       newRQCard.addEventListener('click', async function() {
           const accessTier = window.authState?.accessTier;
-          const mainPaywallScreen = document.getElementById("newPaywallScreen");
-
           if (auth.currentUser.isAnonymous || accessTier === "free_guest") {
               ensureAllScreensHidden();
-              if (mainPaywallScreen) mainPaywallScreen.style.display = 'flex';
+              showPaywallScreen();
               return;
           }
           const { dueCount } = await countDueReviews(); // Ensure countDueReviews is defined and async
@@ -4742,7 +5020,8 @@ function ensureAllScreensHidden(exceptScreenId) {
 }
 
 function hidePaywallScreens() {
-  ['newPaywallScreen', 'boardReviewPricingScreen', 'cmePricingScreen'].forEach((id) => {
+  hidePaywallScreen();
+  ['boardReviewPricingScreen', 'cmePricingScreen'].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.style.display = 'none';
@@ -5383,7 +5662,6 @@ function handleUserRouting(authState) {
   // Get references to all the screens
   const mainOptions = document.getElementById('mainOptions');
   const welcomeScreen = document.getElementById('welcomeScreen');
-  const newPaywallScreen = document.getElementById('newPaywallScreen');
 
   // First, ensure all screens are hidden to prevent flashes of content
   ensureAllScreensHidden();
@@ -5453,9 +5731,7 @@ function handleUserRouting(authState) {
             default:
                 // 4. If there's no note, show the main paywall as the default for new users.
                 console.log('No pending redirect note found. Showing main paywall screen.');
-                if (newPaywallScreen) {
-                    newPaywallScreen.style.display = 'flex';
-                }
+                showPaywallScreen();
                 break;
         }
     }
@@ -6555,22 +6831,22 @@ if (!isNativeApp && payPerCreditTabBtn && annualContent && payPerCreditContent) 
 
 
 // --- Function to Show the CME Learn More Modal ---
-function showCmeLearnMoreModal() {
+function showCmeLearnMoreModal(returnTarget = 'cmeInfoScreen') {
   console.log("Executing showCmeLearnMoreModal...");
 
-  // Hide the Info Screen first (where the link was clicked)
   const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-  if (cmeInfoScreen) {
+  if (returnTarget === 'cmeInfoScreen' && cmeInfoScreen) {
       cmeInfoScreen.style.display = "none";
   }
 
-  // Show the Learn More Modal
   const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
   if (cmeLearnMoreModal) {
-      cmeLearnMoreModal.style.display = "flex"; // Use 'flex' based on base modal CSS
-      // Scroll modal body to top when opened
+      cmeLearnMoreModal.style.display = "flex";
+      cmeLearnMoreModal.dataset.returnTarget = returnTarget;
       const modalBody = cmeLearnMoreModal.querySelector('.modal-body');
-      if(modalBody) modalBody.scrollTop = 0;
+      if (modalBody) {
+          modalBody.scrollTop = 0;
+      }
       console.log("Displayed #cmeLearnMoreModal.");
   } else {
       console.error("CME Learn More Modal (#cmeLearnMoreModal) not found!");
@@ -6587,8 +6863,16 @@ if (closeCmeLearnMoreModal) {
       const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
       const cmeInfoScreen = document.getElementById("cmeInfoScreen");
 
-      if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
-      if (cmeInfoScreen) cmeInfoScreen.style.display = "flex"; // Show info screen again
+      const returnTarget = cmeLearnMoreModal?.dataset?.returnTarget || 'cmeInfoScreen';
+      if (cmeLearnMoreModal) {
+          cmeLearnMoreModal.style.display = "none";
+          delete cmeLearnMoreModal.dataset.returnTarget;
+      }
+      if (returnTarget === 'iosPaywall') {
+          showPaywallScreen();
+      } else if (returnTarget === 'cmeInfoScreen' && cmeInfoScreen) {
+          cmeInfoScreen.style.display = "flex";
+      }
   });
 } else {
   console.error("CME Learn More Close button (#closeCmeLearnMoreModal) not found.");
@@ -6600,9 +6884,14 @@ if (continueToCheckoutBtn) {
   continueToCheckoutBtn.addEventListener("click", function() {
       console.log("Continue to Checkout button clicked from Learn More modal.");
       const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
+      const returnTarget = cmeLearnMoreModal?.dataset?.returnTarget || 'cmeInfoScreen';
+      if (returnTarget === 'iosPaywall') {
+          hidePaywallScreen();
+      }
 
       if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
-      showCmePricingScreen(); // Show the pricing screen
+      if (cmeLearnMoreModal) delete cmeLearnMoreModal.dataset.returnTarget;
+      showCmePricingScreen();
   });
 } else {
   console.error("Continue to Checkout button (#continueToCheckoutBtn) not found.");
@@ -6617,9 +6906,18 @@ if (returnToDashboardBtn) {
       const cmeInfoScreen = document.getElementById("cmeInfoScreen"); // Also hide info screen if needed
       const mainOptions = document.getElementById("mainOptions");
 
-      if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
-      if (cmeInfoScreen) cmeInfoScreen.style.display = "none"; // Ensure info screen is hidden too
-      if (mainOptions) mainOptions.style.display = "flex"; // Show main dashboard
+      const returnTarget = cmeLearnMoreModal?.dataset?.returnTarget || 'cmeInfoScreen';
+      if (cmeLearnMoreModal) {
+          cmeLearnMoreModal.style.display = "none";
+          delete cmeLearnMoreModal.dataset.returnTarget;
+      }
+
+      if (returnTarget === 'iosPaywall') {
+          showPaywallScreen();
+      } else {
+          if (cmeInfoScreen) cmeInfoScreen.style.display = "none";
+          if (mainOptions) mainOptions.style.display = "flex";
+      }
   });
 } else {
   console.error("Return to Dashboard button (#returnToDashboardBtn) not found.");
@@ -6632,9 +6930,16 @@ if (cmeLearnMoreModal) {
        // Check if the click is directly on the modal background
        if (event.target === cmeLearnMoreModal) {
            console.log("Clicked outside Learn More modal content.");
+           const returnTarget = cmeLearnMoreModal.dataset.returnTarget || 'cmeInfoScreen';
            const cmeInfoScreen = document.getElementById("cmeInfoScreen");
            cmeLearnMoreModal.style.display = 'none';
-           if (cmeInfoScreen) cmeInfoScreen.style.display = "flex"; // Show info screen again
+           delete cmeLearnMoreModal.dataset.returnTarget;
+
+           if (returnTarget === 'iosPaywall') {
+               showPaywallScreen();
+           } else if (cmeInfoScreen) {
+               cmeInfoScreen.style.display = "flex";
+           }
        }
    });
 }
@@ -6690,13 +6995,16 @@ if (exploreCmeModuleBtn) {
     exploreCmeModuleBtn.addEventListener("click", function() {
         console.log("Paywall 'Explore CME Module' button clicked.");
 
-        const newPaywallScreen = document.getElementById("newPaywallScreen");
+        if (isIosNativeApp) {
+            const checkoutCycle = exploreCmeModuleBtn.dataset.cycle || 'annual';
+            startCmeCheckout(checkoutCycle, exploreCmeModuleBtn);
+            return;
+        }
+
         const cmeInfoScreen = document.getElementById("cmeInfoScreen"); // Your existing CME Info Screen
 
         // Hide the main paywall first
-        if (newPaywallScreen) {
-            newPaywallScreen.style.display = "none";
-        }
+        hidePaywallScreen();
 
         // Check authentication state
         if (window.authState && window.authState.isRegistered) {
@@ -6736,13 +7044,16 @@ if (unlockBoardReviewBtn) {
     unlockBoardReviewBtn.addEventListener("click", function() {
         console.log("Paywall 'Unlock Board Review Access' button clicked.");
 
-        const newPaywallScreen = document.getElementById("newPaywallScreen");
+        if (isIosNativeApp) {
+            const checkoutCycle = unlockBoardReviewBtn.dataset.cycle || 'monthly';
+            startBoardReviewCheckout(checkoutCycle, unlockBoardReviewBtn);
+            return;
+        }
+
         const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
 
         // Hide the main paywall first
-        if (newPaywallScreen) {
-            newPaywallScreen.style.display = "none";
-        }
+        hidePaywallScreen();
 
         // Check authentication state
         // Assuming window.authState.isRegistered is accurately maintained
@@ -6807,19 +7118,11 @@ if (boardReviewPricingBackBtn) {
     boardReviewPricingBackBtn.addEventListener('click', function() {
         console.log("Board Review Pricing screen 'Back to Plans' button clicked.");
         const boardReviewPricingScreen = document.getElementById('boardReviewPricingScreen');
-        const newPaywallScreen = document.getElementById('newPaywallScreen');
 
         if (boardReviewPricingScreen) {
             boardReviewPricingScreen.style.display = 'none';
         }
-        if (newPaywallScreen) {
-            newPaywallScreen.style.display = 'flex'; // Show the main paywall
-        } else {
-            console.error("New Paywall Screen not found when going back from BR Pricing.");
-            // Fallback to main options if paywall is missing
-            const mainOptions = document.getElementById("mainOptions");
-            if (mainOptions) mainOptions.style.display = 'flex';
-        }
+        showPaywallScreen();
     });
 } else {
     console.error("Board Review Pricing Back Button not found.");

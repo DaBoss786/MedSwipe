@@ -393,10 +393,6 @@ function extractFirebaseUid(authState = globalWindow?.authState) {
     return null;
   }
 
-  if (user.isAnonymous) {
-    return null;
-  }
-
   const trimmed = user.uid.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
@@ -487,7 +483,7 @@ async function ensureAppUserSyncedBeforePurchase(plugin) {
   const targetUid = extractFirebaseUid(authState);
 
   if (!targetUid) {
-    console.warn('RevenueCat purchase attempted without a registered Firebase UID.');
+    console.warn('RevenueCat purchase attempted before Firebase auth was ready.');
     return false;
   }
 

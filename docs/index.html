@@ -335,17 +335,17 @@
 </div>
 
 <!-- ========================== -->
-<!-- == New Paywall Screen == -->
+<!-- == Paywall Screens == -->
 <!-- ========================== -->
 <div id="newPaywallScreen" class="paywall-screen" style="display: none;">
-  <div class="paywall-content">
+  <div id="webPaywallContent" class="paywall-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="paywall-logo">
     <h1 class="paywall-title">Choose Your MedSwipe Experience</h1>
     <p class="paywall-subtitle">From board/in-service prep to CME credits, we have a plan for you.</p>
 
     <div class="paywall-options-container">
 
-      <!-- Option 1: Free Access Card (Corrected) -->
+      <!-- Option 1: Free Access Card -->
       <div class="paywall-option-card free-access-card">
         <h2>Free Access <span class="price-details">A taste of our core learning tools.</span></h2>
         <ul>
@@ -356,9 +356,9 @@
         <button id="continueFreeAccessBtn" class="paywall-continue-guest-btn">Try Free Version</button>
       </div>
 
-      <!-- Option 2: Board Review Access (Corrected) -->
+      <!-- Option 2: Board Review Access -->
       <div class="paywall-option-card board-review-card">
-        <div class="card-badge popular-badge">MOST POPULAR</div> 
+        <div class="card-badge popular-badge">MOST POPULAR</div>
         <h2>Board and In-Service Review</h2>
         <p class="price-highlight">$15/month</p>
         <p class="price-details price-secondary-line">$40/3 months or $149/year options available</p>
@@ -372,7 +372,7 @@
         <button id="unlockBoardReviewBtn" class="paywall-select-btn">Get Started - $0.00 today for 7 days</button>
       </div>
 
-      <!-- Option 3: CME Module (Corrected) -->
+      <!-- Option 3: CME Module -->
       <div class="paywall-option-card cme-module-card">
         <div class="card-badge cme-eligible-badge">CME ELIGIBLE</div>
         <h2>Earn CME Credits Effortlessly</h2>
@@ -391,6 +391,69 @@
     <div class="paywall-restore-container">
       <button id="restorePurchasesBtn" class="paywall-restore-btn" type="button">Restore Purchases</button>
     </div>
+  </div>
+
+  <div id="iosPaywallContent" class="ios-paywall-root" style="display: none;">
+    <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="ios-paywall-logo" loading="lazy">
+    <h1 class="ios-paywall-title">Choose Your Plan</h1>
+    <p class="ios-paywall-subtitle">Unlock your medical learning potential.</p>
+
+    <div class="ios-plan-selector" role="tablist">
+      <button class="ios-plan-selector-btn active" data-plan="free" role="tab" aria-selected="true">Free</button>
+      <button class="ios-plan-selector-btn" data-plan="board" role="tab" aria-selected="false">Board Review</button>
+      <button class="ios-plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
+    </div>
+
+    <div class="ios-paywall-card-stack">
+      <section class="ios-paywall-card free-access-card active" data-plan-card="free" role="tabpanel">
+        <span class="ios-card-badge">Always Included</span>
+        <h2>Free Access</h2>
+        <p class="ios-price-highlight">
+          $0
+          <span class="ios-price-details">forever</span>
+        </p>
+        <p class="ios-price-details ios-price-secondary-line">A taste of our core learning tools.</p>
+        <ul id="iosFreeFeatures" class="ios-feature-stack"></ul>
+        <button id="iosContinueFreeBtn" class="ios-paywall-secondary-btn">Try Free Version</button>
+      </section>
+
+      <section class="ios-paywall-card board-review-card" data-plan-card="board" role="tabpanel" aria-hidden="true">
+        <span class="ios-card-badge ios-popular-badge" id="iosBoardBadge">Most Popular</span>
+        <h2>Board Review Access</h2>
+        <div class="ios-board-toggle" role="tablist">
+          <button class="active" data-cycle="monthly" aria-selected="true">Monthly</button>
+          <button data-cycle="quarterly" aria-selected="false">3-Month</button>
+          <button data-cycle="annual" aria-selected="false">Annual</button>
+        </div>
+        <p class="ios-price-highlight">
+          <span id="iosBoardPriceValue">$15</span>
+          <span class="ios-price-details" id="iosBoardPriceInterval">/month</span>
+        </p>
+        <p class="ios-price-details ios-price-secondary-line" id="iosBoardPriceCopy" style="display: none;"></p>
+        <ul id="iosBoardFeatures" class="ios-feature-stack"></ul>
+        <button id="iosBoardCta" class="ios-paywall-primary-btn">Start 7-Day Free Trial</button>
+      </section>
+
+      <section class="ios-paywall-card cme-module-card" data-plan-card="cme" role="tabpanel" aria-hidden="true">
+        <span class="ios-card-badge ios-cme-badge">CME Eligible</span>
+        <h2>CME Access</h2>
+        <p class="ios-price-highlight">
+          $179
+          <span class="ios-price-details">per year</span>
+        </p>
+        <ul id="iosCmeFeatures" class="ios-feature-stack"></ul>
+        <button id="iosCmeCta" class="ios-paywall-primary-btn">Start 7-Day Free Trial</button>
+      </section>
+
+      <div class="ios-inline-links" data-after-card="cme">
+        <button class="ios-text-link" type="button" data-link="accreditation">Accreditation Statement</button>
+        <button class="ios-text-link" type="button" data-link="learn-more">Learn More</button>
+      </div>
+    </div>
+
+    <footer class="ios-paywall-footer">
+      <button id="iosRestorePurchasesBtn" class="ios-restore-btn" type="button">Restore Purchases</button>
+    </footer>
   </div>
 </div>
 
