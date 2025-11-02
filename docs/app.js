@@ -3514,44 +3514,22 @@ async function showMainToolbarInfo() { // Make it async
   if (mainLevelCircleContainer) mainLevelCircleContainer.style.display = 'block';
   if (cmeToolbarTracker) cmeToolbarTracker.style.display = 'none';
 
-  // Fetch latest user data to update toolbar accurately
-  if (window.authState && window.authState.user && !window.authState.user.isAnonymous) {
-      const uid = window.authState.user.uid;
-      const userDocRef = doc(db, 'users', uid);
-      try {
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-              const data = userDocSnap.data();
-              const totalXP = data.stats?.xp || 0;
-              const currentLevel = data.stats?.level || 1;
-              
-              // Use calculateLevelProgress from user.v2.js
-              // Ensure it's available, e.g., by making it global or importing if app.js is a module
-              let progressPercent = 0;
-              if (typeof window.calculateLevelProgress === 'function') { // If made global from user.v2.js
-                  progressPercent = window.calculateLevelProgress(totalXP);
-              } else if (typeof calculateLevelProgress === 'function') { // If imported into app.js
-                   progressPercent = calculateLevelProgress(totalXP);
-              } else {
-                  console.warn("calculateLevelProgress function not available in showMainToolbarInfo");
-              }
+  const currentUser = auth?.currentUser;
 
-
-              if (xpDisplay) xpDisplay.textContent = `${totalXP} XP`;
-              if (scoreCircle) scoreCircle.textContent = currentLevel;
-              if (levelCircleProgress) {
-                  levelCircleProgress.style.setProperty('--progress', `${progressPercent}%`);
-              }
-              console.log(`Main Toolbar refreshed by showMainToolbarInfo: XP: ${totalXP}, Level: ${currentLevel}, Progress: ${progressPercent}%`);
-          }
-      } catch (error) {
-          console.error("Error fetching user data for main toolbar refresh:", error);
-      }
-  } else {
-      // Default for logged-out or anonymous state
+  if (currentUser) {
+    try {
+      await updateUserXP();
+    } catch (error) {
+      console.error("Error refreshing toolbar XP:", error);
       if (xpDisplay) xpDisplay.textContent = `0 XP`;
       if (scoreCircle) scoreCircle.textContent = '1';
       if (levelCircleProgress) levelCircleProgress.style.setProperty('--progress', `0%`);
+    }
+  } else {
+    // Default for logged-out state
+    if (xpDisplay) xpDisplay.textContent = `0 XP`;
+    if (scoreCircle) scoreCircle.textContent = '1';
+    if (levelCircleProgress) levelCircleProgress.style.setProperty('--progress', `0%`);
   }
   console.log("Toolbar switched to: Main XP/Level Display (and refreshed by showMainToolbarInfo)");
 }
