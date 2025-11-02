@@ -979,6 +979,8 @@ function initializeIosPaywallUI() {
     }
   }
 
+  window.setIosPaywallPlan = setActivePlan;
+
   function updateBoardPlan(cycleKey) {
     const cycleData = planData.board[cycleKey];
     if (!cycleData) {
@@ -4453,8 +4455,40 @@ if (cmeModuleBtn) {
 
         const accessTier = window.authState.accessTier;
         const isRegistered = window.authState.isRegistered; // Check if the user is registered (not anonymous)
+        const hasCmeAccess = typeof userHasCmeAccess === 'function' ? userHasCmeAccess() : false;
+        const isBoardReviewTier = accessTier === "board_review";
 
-        console.log(`CME Module button clicked. User Access Tier: ${accessTier}, Is Registered: ${isRegistered}`);
+        console.log(`CME Module button clicked. User Access Tier: ${accessTier}, Is Registered: ${isRegistered}, Has CME Access: ${hasCmeAccess}`);
+
+        if (isBoardReviewTier) {
+            console.log("Board review tier detected. Showing CME contact modal.");
+            if (typeof showModal === 'function' && document.getElementById("boardReviewCmeModal")) {
+                showModal('boardReviewCmeModal');
+            } else {
+                alert("Please contact us at support@medswipeapp.com if you would like to add CME Access to your subscription.");
+            }
+            return;
+        }
+
+        const isFreeUser = (!isRegistered || accessTier === "free_guest" || !accessTier);
+
+        if (isIosNativeApp && isFreeUser && !hasCmeAccess) {
+            console.log("Free tier user on iOS. Redirecting to paywall with CME selected.");
+            if (typeof ensureAllScreensHidden === 'function') {
+                ensureAllScreensHidden();
+            }
+            const mainOptions = document.getElementById("mainOptions");
+            if (mainOptions) {
+                mainOptions.style.display = "none";
+            }
+            showPaywallScreen();
+            if (typeof window.setIosPaywallPlan === 'function') {
+                window.setIosPaywallPlan('cme');
+            } else {
+                console.warn("setIosPaywallPlan function not available.");
+            }
+            return;
+        }
 
         if (isRegistered && (accessTier === "cme_annual" || accessTier === "cme_credits_only")) {
             // User HAS direct access to CME content
@@ -4483,6 +4517,26 @@ if (cmeModuleBtn) {
     console.error("DEBUG: CME Module button (#cmeModuleBtn) not found during tier-based listener setup.");
 }
 // --- End of Updated CME Module Button Logic ---
+
+  const boardReviewCmeModalCloseBtn = document.getElementById("boardReviewCmeModalCloseBtn");
+  if (boardReviewCmeModalCloseBtn) {
+      boardReviewCmeModalCloseBtn.addEventListener("click", function() {
+          hideModal('boardReviewCmeModal');
+      });
+  } else {
+      console.warn("Board Review CME modal close button (#boardReviewCmeModalCloseBtn) not found.");
+  }
+
+  const boardReviewCmeModal = document.getElementById("boardReviewCmeModal");
+  if (boardReviewCmeModal) {
+      boardReviewCmeModal.addEventListener("click", function(event) {
+          if (event.target === boardReviewCmeModal) {
+              hideModal('boardReviewCmeModal');
+          }
+      });
+  } else {
+      console.warn("Board Review CME modal container (#boardReviewCmeModal) not found.");
+  }
 
   // Start Quiz button on Dashboard
   const startQuizBtn = document.getElementById("startQuizBtn");
@@ -5875,56 +5929,39 @@ function handleUserRouting(authState) {
             if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
             else if (typeof initializeDashboard === 'function') initializeDashboard();
         }, 100);
-    } else {
-        // 3. If the user is a new "free_guest", check for a pending redirect "note".
-        const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
-        console.log(`User is free_guest. Checking for pending redirect note: [${pendingRedirect}]`);
-
-        if (pendingRedirect) {
-            sessionStorage.removeItem('pendingRedirectAfterRegistration');
+      } else {
+        // User is not registered (anonymous)
+        // Check if they're a returning user with progress data
+        const hasProgress = window.authState.hasProgress || false;
+        
+        console.log(
+          `Routing anonymous user. hasProgress=${hasProgress}, ` +
+          `tier=${window.authState.accessTier}, xp visible in logs above`
+        );
+    
+        if (hasProgress) {
+          // Returning anonymous user with progress - show dashboard
+          console.log('Returning anonymous user with progress. Showing dashboard.');
+          hidePaywallScreens();
+          if (typeof window.hideSubscriptionActivationOverlay === 'function') {
+            window.hideSubscriptionActivationOverlay();
+          }
+          if (mainOptions) {
+            mainOptions.style.display = 'flex';
+            setTimeout(() => {
+              if (typeof forceReinitializeDashboard === 'function') forceReinitializeDashboard();
+              else if (typeof initializeDashboard === 'function') initializeDashboard();
+            }, 100);
+          }
+        } else {
+          // Brand new anonymous user - show welcome screen
+          console.log('New anonymous user (no progress). Showing welcome screen.');
+          if (welcomeScreen) {
+            welcomeScreen.style.display = 'flex';
+            welcomeScreen.style.opacity = '1';
+          }
         }
-
-        switch (pendingRedirect) {
-            case 'board_review_pricing':
-                console.log('Redirecting to Board Review Pricing screen.');
-                const boardReviewPricingScreen = document.getElementById("boardReviewPricingScreen");
-                if (boardReviewPricingScreen) {
-                    boardReviewPricingScreen.style.display = 'flex';
-                    if (typeof updateBoardReviewPricingView === 'function') {
-                        updateBoardReviewPricingView('annual');
-                    }
-                }
-                break;
-
-            case 'cme_pricing':
-                console.log('Redirecting to CME Pricing screen.');
-                const cmePricingScreen = document.getElementById("cmePricingScreen");
-                if (cmePricingScreen) {
-                    cmePricingScreen.style.display = 'flex';
-                }
-                break;
-
-            case 'cme_info':
-                console.log('Redirecting to CME Info screen.');
-                const cmeInfoScreen = document.getElementById("cmeInfoScreen");
-                if (cmeInfoScreen) {
-                    cmeInfoScreen.style.display = "flex";
-            }
-            break;
-
-        case 'dashboard':
-            console.log('Redirecting to dashboard after registration.');
-            hidePaywallScreens();
-            showDashboard();
-            break;
-
-        default:
-            // 4. If there's no note, show the main paywall as the default for new users.
-            console.log('No pending redirect note found. Showing main paywall screen.');
-            showPaywallScreen();
-            break;
-        }
-    }
+      }
   } else {
     const hasPremiumAccess = userHasAnyPremiumAccess();
     if (hasPremiumAccess) {

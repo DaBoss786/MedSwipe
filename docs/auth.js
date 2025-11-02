@@ -56,6 +56,7 @@ window.authState = {
   user: null,
   isRegistered: false,
   isLoading: true,
+  hasProgress: false,
   accessTier: "free_guest", // <<< ADD a default accessTier
   boardReviewActive: false, // <<< ADD
   boardReviewSubscriptionEndDate: null, // <<< ADD
@@ -547,6 +548,8 @@ function initAuth() {
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
         window.authState.accessTier = "free_guest"; // Set explicitly for new user
         // Other authState fields remain default (false/null/0)
+        window.authState.hasProgress = false;
+        console.log(`New user document created for ${user.uid}: hasProgress=false`);
       } else {
         // ---- Existing Firestore user doc ----
         const existingData = userDocSnap.data();
@@ -555,6 +558,29 @@ function initAuth() {
         );
 
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
+
+        // ===== NEW: Detect returning anonymous users with progress =====
+        if (user.isAnonymous) {
+          const hasProgress = (
+            (existingData.stats?.xp > 0) ||
+            (existingData.stats?.totalAnswered > 0) ||
+            (existingData.answeredQuestions && Object.keys(existingData.answeredQuestions).length > 0) ||
+            (existingData.bookmarks && existingData.bookmarks.length > 0) ||
+            (existingData.streaks?.currentStreak > 0)
+          );
+          
+          window.authState.hasProgress = hasProgress;
+          
+          console.log(
+            `Anonymous user ${user.uid}: hasProgress=${hasProgress} ` +
+            `(xp=${existingData.stats?.xp}, answered=${existingData.stats?.totalAnswered}, ` +
+            `tier=${existingData.accessTier})`
+          );
+        } else {
+          // Registered users always have "progress" (they completed registration)
+          window.authState.hasProgress = true;
+        }
+        // ===== END NEW SECTION =====
 
         // Update email in Firestore if newly registered via Firebase Auth and not matching
         if (currentAuthIsRegistered && user.email && existingData.email !== user.email) {
@@ -718,6 +744,7 @@ function initAuth() {
         user: window.authState.user,
         isRegistered: window.authState.isRegistered,
         isLoading: window.authState.isLoading,
+        hasProgress: window.authState.hasProgress,
         accessTier: window.authState.accessTier, // <<< INCLUDE NEW TIER
         boardReviewActive: window.authState.boardReviewActive,
         boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
@@ -732,6 +759,7 @@ function initAuth() {
           user: window.authState.user,
           isRegistered: window.authState.isRegistered,
           isLoading: window.authState.isLoading,
+          hasProgress: window.authState.hasProgress,
           accessTier: window.authState.accessTier, // <<< INCLUDE NEW TIER
           // Also include other relevant flags for convenience if needed by listeners
           boardReviewActive: window.authState.boardReviewActive,
