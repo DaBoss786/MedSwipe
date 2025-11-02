@@ -801,7 +801,6 @@ async function updateFirestoreWithUserSubscription(appUserId, eventId, eventType
 
   const finalUpdates = {
     ...updates,
-    isRegistered: true, // ✅ ADDED: Mark user as registered when they make a purchase
     lastRevenueCatEventId: eventId,
     lastRevenueCatEventType: eventType,
     lastRevenueCatEventAt: FieldValue.serverTimestamp(),

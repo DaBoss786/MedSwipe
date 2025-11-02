@@ -1,5 +1,5 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged, setDoc } from './firebase-config.js'; // Adjust path if needed
 import { generateGuestUsername } from './auth.js';
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections, fetchPersistentAnsweredIds } from './user.v2.js';
@@ -354,14 +354,14 @@ async function handleDeepLink() {
                 // --- START: Get User's Specialty (Handles both Registered and Anonymous) ---
         let userSpecialty = null;
 
-        // 1. Prioritize Firestore for registered users
-        if (auth.currentUser && !auth.currentUser.isAnonymous) {
+        // 1. Try Firestore first for any authenticated user
+        if (auth.currentUser) {
           try {
             const userDocRef = doc(db, 'users', auth.currentUser.uid);
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists() && userDocSnap.data().specialty) {
               userSpecialty = userDocSnap.data().specialty;
-              console.log(`Registered user specialty found in Firestore: ${userSpecialty}`);
+              console.log(`User specialty found in Firestore: ${userSpecialty}`);
             }
           } catch (error) {
             console.error("Error fetching user specialty for dropdown:", error);
@@ -427,12 +427,12 @@ async function handleDeepLink() {
        * Sets a flag in Firestore indicating the user has seen the Case Prep intro.
        */
       async function setCasePrepIntroSeen() {
-        if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+        if (!auth.currentUser) return;
         try {
           const userDocRef = doc(db, 'users', auth.currentUser.uid);
-          await updateDoc(userDocRef, {
+          await setDoc(userDocRef, {
             casePrepIntroSeen: true
-          });
+          }, { merge: true });
           console.log("Firestore updated: casePrepIntroSeen set to true.");
         } catch (error) {
           console.error("Error setting casePrepIntroSeen flag:", error);
@@ -450,35 +450,27 @@ async function handleDeepLink() {
             return;
           }
 
-          // NEW LOGIC: Handle anonymous and registered users differently.
-          if (auth.currentUser.isAnonymous) {
-            // --- ANONYMOUS USER FLOW ---
-            // They can't have a saved flag, so always show the intro.
-            console.log("Anonymous user detected. Showing intro modal directly.");
-            if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
-          } else {
-            // --- REGISTERED USER FLOW (Original Logic) ---
-            // Check Firestore to see if they've seen the intro before.
-            console.log("Registered user detected. Checking Firestore for intro flag.");
-            try {
-              const userDocRef = doc(db, 'users', auth.currentUser.uid);
-              const userDocSnap = await getDoc(userDocRef);
+          // Check Firestore to see if they've seen the intro before.
+          console.log("Checking Firestore for Case Prep intro flag.");
+          try {
+            const userDocRef = doc(db, 'users', auth.currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            const hasSeenIntro = userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen;
 
-              if (userDocSnap.exists() && userDocSnap.data().casePrepIntroSeen) {
-                // User has seen the intro, show the setup modal directly.
-                console.log("User has seen intro. Showing setup modal.");
-                populateProcedureDropdown();
-                if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
-              } else {
-                // First-time registered user, show the intro modal.
-                console.log("First-time registered user. Showing intro modal.");
-                if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
-              }
-            } catch (error) {
-              console.error("Error checking for case prep intro flag:", error);
-              // Fallback to showing the intro modal on any error.
+            if (hasSeenIntro) {
+              // User has seen the intro, show the setup modal directly.
+              console.log("Case Prep intro already seen. Showing setup modal.");
+              populateProcedureDropdown();
+              if (casePrepSetupModal) casePrepSetupModal.style.display = "block";
+            } else {
+              // First-time user (anonymous or registered), show the intro modal.
+              console.log("Case Prep intro not seen yet. Showing intro modal.");
               if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
             }
+          } catch (error) {
+            console.error("Error checking for Case Prep intro flag:", error);
+            // Fallback to showing the intro modal on any error.
+            if (casePrepIntroModal) casePrepIntroModal.style.display = "flex";
           }
         });
       }
