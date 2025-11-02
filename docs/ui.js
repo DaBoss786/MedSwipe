@@ -2,13 +2,26 @@ import { auth } from './firebase-config.js';
 
 // Show leaderboard view
 function showLeaderboard() {
-  // Check if user is registered
-  if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
-    // Show registration benefits modal instead for guest users
-    if (typeof window.showRegistrationBenefitsModal === 'function') {
-      window.showRegistrationBenefitsModal();
+  const currentUser = auth?.currentUser || null;
+  const isAnonymous = !!currentUser?.isAnonymous;
+  const hasPremiumAccess = typeof window.userHasAnyPremiumAccess === 'function'
+    ? window.userHasAnyPremiumAccess()
+    : false;
+
+  if (!hasPremiumAccess) {
+    if (isAnonymous) {
+      if (typeof window.showRegistrationBenefitsModal === 'function') {
+        window.showRegistrationBenefitsModal();
+      } else {
+        alert("Create a free account to unlock premium features like the leaderboard.");
+      }
+    } else if (typeof window.showPaywallScreen === 'function') {
+      if (typeof window.ensureAllScreensHidden === 'function') {
+        window.ensureAllScreensHidden();
+      }
+      window.showPaywallScreen();
     } else {
-      alert("Leaderboards are only available for registered users. Please create a free account to access this feature.");
+      alert("Leaderboards are a premium feature. Please upgrade to access them.");
     }
     return;
   }
