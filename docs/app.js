@@ -5458,11 +5458,11 @@ async function showEditProfileModal() {
   const messageEl = document.getElementById('editProfileMessage');
 
   // 1. AUTHENTICATION CHECK
-  // Ensure a registered user is logged in.
-  if (!auth.currentUser || auth.currentUser.isAnonymous) {
+  if (!auth.currentUser) {
     alert("Please log in to update your account settings.");
     return;
   }
+  const isAnonymousUser = !!auth.currentUser.isAnonymous;
   const uid = auth.currentUser.uid;
 
   // 2. RESET MODAL STATE
@@ -5477,55 +5477,67 @@ async function showEditProfileModal() {
   try {
     const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef);
+    const userData = userDocSnap.exists() ? userDocSnap.data() : {};
 
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data();
-      const currentUsername = userData.username || 'Not Set';
-      const currentExperience = userData.experienceLevel || 'Not Set';
-      const hapticsEnabled = userData.hapticsEnabled !== false;
-
-      // 4. POPULATE MODAL FIELDS
-      // Populate both the view and edit fields with the fetched data.
-      document.getElementById('viewUsername').textContent = currentUsername;
-      document.getElementById('viewExperienceLevel').textContent = currentExperience;
-      document.getElementById('editUsername').value = currentUsername;
-      document.getElementById('editExperienceLevel').value = currentExperience;
-      const viewHapticsStatusEl = document.getElementById('viewHapticsStatus');
-      const editHapticsToggleEl = document.getElementById('editHapticsToggle');
-      if (viewHapticsStatusEl) {
-        viewHapticsStatusEl.textContent = hapticsEnabled ? 'On' : 'Off';
-      }
-      if (editHapticsToggleEl) {
-        editHapticsToggleEl.checked = hapticsEnabled;
-      }
-      if (window.authState) {
-        window.authState.hapticsEnabled = hapticsEnabled;
-      }
-
-        // Get custom intervals or use defaults
-  const settings = userData.spacedRepetitionSettings || {};
-  const hardInterval = settings.hardInterval || 1;
-  const mediumInterval = settings.mediumInterval || 3;
-  const easyInterval = settings.easyInterval || 7;
-
-  // Populate View Mode
-  document.getElementById('viewHardInterval').textContent = hardInterval;
-  document.getElementById('viewMediumInterval').textContent = mediumInterval;
-  document.getElementById('viewEasyInterval').textContent = easyInterval;
-
-  // Populate Edit Mode
-  document.getElementById('editHardInterval').value = hardInterval;
-  document.getElementById('editMediumInterval').value = mediumInterval;
-  document.getElementById('editEasyInterval').value = easyInterval;
-
-      // 5. SHOW THE MODAL
-      modal.style.display = 'flex';
-
-    } else {
-      // This case is unlikely for a logged-in user but is good practice to handle.
-      console.error("User document not found for UID:", uid);
-      alert("Could not load your account settings. Please try again.");
+    if (!userDocSnap.exists()) {
+      console.warn("User document not found for UID:", uid, "Using defaults for Account Settings.");
     }
+
+    const currentUsername =
+      userData.username ||
+      auth.currentUser.displayName ||
+      (isAnonymousUser ? 'Guest User' : 'Not Set');
+    const currentExperienceValue = userData.experienceLevel || '';
+    const experienceDisplay = currentExperienceValue || 'Not Set';
+    const hapticsEnabled = userData.hapticsEnabled !== false;
+
+    // 4. POPULATE MODAL FIELDS
+    document.getElementById('viewUsername').textContent = currentUsername;
+    document.getElementById('viewExperienceLevel').textContent = experienceDisplay;
+    document.getElementById('editUsername').value = currentUsername;
+    const editExperienceEl = document.getElementById('editExperienceLevel');
+    if (editExperienceEl) {
+      editExperienceEl.value = currentExperienceValue;
+    }
+    const viewHapticsStatusEl = document.getElementById('viewHapticsStatus');
+    const editHapticsToggleEl = document.getElementById('editHapticsToggle');
+    if (viewHapticsStatusEl) {
+      viewHapticsStatusEl.textContent = hapticsEnabled ? 'On' : 'Off';
+    }
+    if (editHapticsToggleEl) {
+      editHapticsToggleEl.checked = hapticsEnabled;
+    }
+    if (window.authState) {
+      window.authState.hapticsEnabled = hapticsEnabled;
+    }
+
+    // Get custom intervals or use defaults
+    const settings = userData.spacedRepetitionSettings || {};
+    const hardInterval = Number.isFinite(settings.hardInterval) ? settings.hardInterval : 1;
+    const mediumInterval = Number.isFinite(settings.mediumInterval) ? settings.mediumInterval : 3;
+    const easyInterval = Number.isFinite(settings.easyInterval) ? settings.easyInterval : 7;
+
+    // Populate View Mode
+    document.getElementById('viewHardInterval').textContent = hardInterval;
+    document.getElementById('viewMediumInterval').textContent = mediumInterval;
+    document.getElementById('viewEasyInterval').textContent = easyInterval;
+
+    // Populate Edit Mode
+    document.getElementById('editHardInterval').value = hardInterval;
+    document.getElementById('editMediumInterval').value = mediumInterval;
+    document.getElementById('editEasyInterval').value = easyInterval;
+
+    // Provide a gentle reminder for anonymous users.
+    if (isAnonymousUser) {
+      messageEl.className = 'auth-info';
+      messageEl.textContent = 'Guest settings stay linked to this device. Sign up to keep them everywhere.';
+    } else {
+      messageEl.className = 'auth-error';
+      messageEl.textContent = '';
+    }
+
+    // 5. SHOW THE MODAL
+    modal.style.display = 'flex';
   } catch (error) {
     console.error("Error fetching user profile:", error);
     alert("An error occurred while fetching your account settings.");
@@ -5535,8 +5547,8 @@ async function showEditProfileModal() {
 let isDeletingAccount = false;
 
 function openDeleteAccountModal() {
-  if (!auth.currentUser || auth.currentUser.isAnonymous) {
-    alert("Please log in with a registered account to delete it.");
+  if (!auth.currentUser) {
+    alert("Please log in to delete your account.");
     return;
   }
   const modal = document.getElementById('deleteAccountModal');
@@ -5557,8 +5569,8 @@ async function handleAccountDeletion() {
     return;
   }
 
-  if (!auth.currentUser || auth.currentUser.isAnonymous) {
-    alert("Please log in with a registered account to delete it.");
+  if (!auth.currentUser) {
+    alert("Please log in to delete your account.");
     return;
   }
 

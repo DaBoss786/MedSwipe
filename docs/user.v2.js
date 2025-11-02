@@ -1371,30 +1371,38 @@ async function saveProfileChanges() {
   const newExperienceLevel = experienceSelect.value;
 
   // Get and parse interval values
-const hardInterval = parseInt(document.getElementById('editHardInterval').value, 10);
-const mediumInterval = parseInt(document.getElementById('editMediumInterval').value, 10);
-const easyInterval = parseInt(document.getElementById('editEasyInterval').value, 10);
-const hapticsEnabled = hapticsToggle ? hapticsToggle.checked : true;
+  const hardInterval = parseInt(document.getElementById('editHardInterval').value, 10);
+  const mediumInterval = parseInt(document.getElementById('editMediumInterval').value, 10);
+  const easyInterval = parseInt(document.getElementById('editEasyInterval').value, 10);
+  const hapticsEnabled = hapticsToggle ? hapticsToggle.checked : true;
 
   // --- 1. Client-Side Validation ---
   if (newUsername.length < 3) {
+    messageEl.className = 'auth-error';
+    messageEl.classList.remove('success');
     messageEl.textContent = 'Username must be at least 3 characters long.';
     return;
   }
   if (!newExperienceLevel) {
+    messageEl.className = 'auth-error';
+    messageEl.classList.remove('success');
     messageEl.textContent = 'Please select your experience level.';
     return;
   }
 
   // Validate intervals
-if (isNaN(hardInterval) || isNaN(mediumInterval) || isNaN(easyInterval) || hardInterval < 1 || mediumInterval < 1 || easyInterval < 1) {
-  messageEl.textContent = 'Intervals must be a number greater than 0.';
-  return;
-}
-if (!(hardInterval < mediumInterval && mediumInterval < easyInterval)) {
-  messageEl.textContent = 'Intervals must be in increasing order (Hard < Medium < Easy).';
-  return;
-}
+  if (isNaN(hardInterval) || isNaN(mediumInterval) || isNaN(easyInterval) || hardInterval < 1 || mediumInterval < 1 || easyInterval < 1) {
+    messageEl.className = 'auth-error';
+    messageEl.classList.remove('success');
+    messageEl.textContent = 'Intervals must be a number greater than 0.';
+    return;
+  }
+  if (!(hardInterval < mediumInterval && mediumInterval < easyInterval)) {
+    messageEl.className = 'auth-error';
+    messageEl.classList.remove('success');
+    messageEl.textContent = 'Intervals must be in increasing order (Hard < Medium < Easy).';
+    return;
+  }
 
   // --- 2. Set UI to Loading State ---
   saveButton.disabled = true;
@@ -1424,17 +1432,17 @@ if (!(hardInterval < mediumInterval && mediumInterval < easyInterval)) {
     document.getElementById('viewUsername').textContent = newUsername;
     document.getElementById('viewExperienceLevel').textContent = newExperienceLevel;
     // Update the interval displays in View Mode
-document.getElementById('viewHardInterval').textContent = hardInterval;
-document.getElementById('viewMediumInterval').textContent = mediumInterval;
-document.getElementById('viewEasyInterval').textContent = easyInterval;
-  const viewHapticsStatusEl = document.getElementById('viewHapticsStatus');
-  if (viewHapticsStatusEl) {
-    viewHapticsStatusEl.textContent = hapticsEnabled ? 'On' : 'Off';
-  }
-  setHapticsEnabled(hapticsEnabled);
-  if (window.authState) {
-    window.authState.hapticsEnabled = hapticsEnabled;
-  }
+    document.getElementById('viewHardInterval').textContent = hardInterval;
+    document.getElementById('viewMediumInterval').textContent = mediumInterval;
+    document.getElementById('viewEasyInterval').textContent = easyInterval;
+    const viewHapticsStatusEl = document.getElementById('viewHapticsStatus');
+    if (viewHapticsStatusEl) {
+      viewHapticsStatusEl.textContent = hapticsEnabled ? 'On' : 'Off';
+    }
+    setHapticsEnabled(hapticsEnabled);
+    if (window.authState) {
+      window.authState.hapticsEnabled = hapticsEnabled;
+    }
 
     // Manually trigger the username update in the user menu.
     // We need to get the latest auth state to pass to the function.
@@ -1464,6 +1472,7 @@ document.getElementById('viewEasyInterval').textContent = easyInterval;
   } catch (error) {
     // --- 5. Handle Errors ---
     console.error("Error saving profile changes:", error);
+    messageEl.className = 'auth-error';
     messageEl.textContent = error.message || "An unknown error occurred.";
     messageEl.classList.remove('success');
   } finally {
