@@ -721,9 +721,15 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   }
 
   // Update the auth state change listener to properly handle welcome screen
-window.addEventListener('authStateChanged', function(event) {
-  console.log('Auth state changed in app.js:', event.detail);
-  window.authState = event.detail; 
+	window.addEventListener('authStateChanged', function(event) {
+	  console.log('Auth state changed in app.js:', event.detail);
+	  console.log('[APP] received authStateChanged', {
+	    hasProgress: event.detail.hasProgress,
+	    isRegistered: event.detail.isRegistered,
+	    isLoading: event.detail.isLoading,
+	    timestamp: Date.now()
+	  });
+	  window.authState = event.detail; 
 
   if (analytics && event.detail.accessTier) {
     setUserProperties(analytics, {
@@ -5946,14 +5952,29 @@ function handleUserRouting(authState) {
       }
   } else {
     const hasPremiumAccess = userHasAnyPremiumAccess();
-    if (hasPremiumAccess) {
-        console.log('Anonymous user with premium access. Showing dashboard.');
+    const hasProgress = !!authState.hasProgress;
+    console.log('[ROUTER] anonymous branch evaluation', {
+      hasProgress,
+      hasPremiumAccess,
+      welcomeDisplay: welcomeScreen?.style?.display || null,
+      mainOptionsDisplay: mainOptions?.style?.display || null,
+      timestamp: Date.now()
+    });
+
+    if (hasPremiumAccess || hasProgress) {
+        console.log('Anonymous user has premium access or progress. Showing dashboard.');
         hidePaywallScreens();
         showDashboard();
+        if (typeof forceReinitializeDashboard === 'function') {
+          setTimeout(() => forceReinitializeDashboard(), 100);
+        } else if (typeof initializeDashboard === 'function') {
+          setTimeout(() => initializeDashboard(), 100);
+        }
         return;
     }
-    // If user is not registered (anonymous), show the welcome screen.
-    console.log('User is anonymous guest. Showing welcome screen.');
+
+    // If user is brand new anonymous (no progress), show the welcome screen.
+    console.log('User is anonymous guest with no progress. Showing welcome screen.');
     if (welcomeScreen) {
         welcomeScreen.style.display = 'flex';
         welcomeScreen.style.opacity = '1';

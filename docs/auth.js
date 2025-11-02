@@ -458,29 +458,41 @@ function initAuth() {
   console.log('Initializing auth system');
 
   authStateListener = onAuthStateChanged(auth, async (user) => {
-    console.log(
-      'Auth state changed:',
-      user ? `${user.uid} (isAnonymous: ${user?.isAnonymous})` : 'No user'
-    );
+    console.log('[AUTH] onAuthStateChanged fired', {
+      uid: user?.uid || null,
+      isAnonymous: user?.isAnonymous ?? null,
+      timestamp: Date.now()
+    });
 
-    // Reset authState for new evaluation
-    window.authState.isLoading = true;
-    window.authState.user = null;
-    window.authState.isRegistered = false;
-    window.authState.accessTier = "free_guest"; // Default tier
-    window.authState.boardReviewActive = false;
-    window.authState.boardReviewSubscriptionEndDate = null;
-    window.authState.cmeSubscriptionActive = false;
-    window.authState.cmeSubscriptionEndDate = null;
-    window.authState.cmeCreditsAvailable = 0;
+    try {
+      console.log(
+        'Auth state changed:',
+        user ? `${user.uid} (isAnonymous: ${user?.isAnonymous})` : 'No user'
+      );
+
+      // Reset authState for new evaluation
+      window.authState.isLoading = true;
+      window.authState.user = null;
+      window.authState.isRegistered = false;
+      window.authState.accessTier = "free_guest"; // Default tier
+      window.authState.boardReviewActive = false;
+      window.authState.boardReviewSubscriptionEndDate = null;
+      window.authState.cmeSubscriptionActive = false;
+      window.authState.cmeSubscriptionEndDate = null;
+      window.authState.cmeCreditsAvailable = 0;
 
 
-    if (user) {
-      // ---------- Signed-in path ----------
-      window.authState.user = user; // Set Firebase user object
+      // Shared references available after onAuthStateChanged completes
+      let existingData = null;
+      let userDocFromCache = false;
+      let userDataForWrite = {};
 
-      const userDocRef = doc(db, 'users', user.uid);
-      let userDocSnap;
+      if (user) {
+        // ---------- Signed-in path ----------
+        window.authState.user = user; // Set Firebase user object
+
+        const userDocRef = doc(db, 'users', user.uid);
+        let userDocSnap;
       try {
         userDocSnap = await getDoc(userDocRef);
       } catch (docError) {
@@ -492,8 +504,6 @@ function initAuth() {
         );
         return; // Stop further processing for this user
       }
-      
-      let userDataForWrite = {};
       const isNewUserDocument = !userDocSnap.exists();
       const currentAuthIsRegistered = !user.isAnonymous; // Based on Firebase Auth type
 
@@ -552,7 +562,8 @@ function initAuth() {
         console.log(`New user document created for ${user.uid}: hasProgress=false`);
       } else {
         // ---- Existing Firestore user doc ----
-        const existingData = userDocSnap.data();
+        existingData = userDocSnap.data();
+        userDocFromCache = !!userDocSnap.metadata?.fromCache;
         console.log(
           `Found user doc for ${user.uid}. AuthIsAnon=${user.isAnonymous}, StoredIsReg=${existingData.isRegistered}, StoredTier=${existingData.accessTier}`
         );
@@ -709,11 +720,11 @@ function initAuth() {
         } catch (err) {
           console.error('Error invoking recomputeAccessTier Cloud Function:', err);
         }
-      }
+        }
 
 
-    } else {
-      // ---------- No user signed in (or explicitly signed out) ----------
+      } else {
+        // ---------- No user signed in (or explicitly signed out) ----------
       // This block will be followed by an anonymous sign-in attempt
       console.log('No user currently signed in. Preparing for anonymous sign-in or state clear.');
       // window.authState is already reset at the beginning of onAuthStateChanged
@@ -733,24 +744,24 @@ function initAuth() {
       return; // Return here to avoid dispatching event before anon user is processed
     }
 
-    // This check ensures isLoading is false only when processing is truly done for the current user state
-    // (either a logged-in user processed, or an anonymous user successfully signed in and processed)
-    if (window.authState.user || !user) { // If user is now set, or if there was no initial user (and anon sign-in failed)
-        window.authState.isLoading = false;
-    }
+      // This check ensures isLoading is false only when processing is truly done for the current user state
+      // (either a logged-in user processed, or an anonymous user successfully signed in and processed)
+      if (window.authState.user || !user) { // If user is now set, or if there was no initial user (and anon sign-in failed)
+          window.authState.isLoading = false;
+      }
 
 
-    console.log("Dispatching authStateChanged with detail:", {
-        user: window.authState.user,
-        isRegistered: window.authState.isRegistered,
-        isLoading: window.authState.isLoading,
+    console.log('[AUTH] ready to dispatch authStateChanged', {
+        uid: window.authState.user?.uid || null,
+        isAnonymous: window.authState.user?.isAnonymous ?? null,
         hasProgress: window.authState.hasProgress,
-        accessTier: window.authState.accessTier, // <<< INCLUDE NEW TIER
-        boardReviewActive: window.authState.boardReviewActive,
-        boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
-        cmeSubscriptionActive: window.authState.cmeSubscriptionActive,
-        cmeSubscriptionEndDate: window.authState.cmeSubscriptionEndDate,
-        cmeCreditsAvailable: window.authState.cmeCreditsAvailable
+        accessTier: window.authState.accessTier,
+        xp: existingData?.stats?.xp ?? null,
+        totalAnswered: existingData?.stats?.totalAnswered ?? null,
+        fromCache: userDocFromCache,
+        timestamp: Date.now(),
+        isRegistered: window.authState.isRegistered,
+        isLoading: window.authState.isLoading
     });
 
     window.dispatchEvent(
@@ -770,6 +781,28 @@ function initAuth() {
         }
       })
     );
+    console.log('[AUTH] authStateChanged event dispatched');
+    } catch (error) {
+      let errorDetails = error;
+      if (error && typeof error === 'object') {
+        errorDetails = {
+          name: error.name || 'Error',
+          message: error.message || '',
+          stack: error.stack || null
+        };
+      }
+      console.error('[AUTH] handler error', errorDetails);
+      window.authState.isLoading = false;
+      window.dispatchEvent(
+        new CustomEvent('authStateChanged', {
+          detail: {
+            ...window.authState,
+            handlerError: true,
+            handlerErrorDetails: errorDetails
+          }
+        })
+      );
+    }
   }); // End of onAuthStateChanged
 
   return () => {
