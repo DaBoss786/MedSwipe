@@ -59,7 +59,7 @@
   justify-content: center;
   font-weight: bold;
   color: #fff;
-  background-color: #0056b3;
+  background: var(--primary-button-gradient);
   border-radius: 50%;
   font-size: 1rem;
   z-index: 3;
