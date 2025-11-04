@@ -7134,14 +7134,59 @@ const continueToCheckoutBtn = document.getElementById("continueToCheckoutBtn");
 if (continueToCheckoutBtn) {
   continueToCheckoutBtn.addEventListener("click", function() {
       console.log("Continue to Checkout button clicked from Learn More modal.");
+
       const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
       const returnTarget = cmeLearnMoreModal?.dataset?.returnTarget || 'cmeInfoScreen';
+      const authState = window.authState || {};
+      const accessTier = authState.accessTier || '';
+      const isRegistered = Boolean(authState.isRegistered);
+      const hasCmeAccess = typeof userHasCmeAccess === 'function' ? userHasCmeAccess() : false;
+      const isBoardReviewTier = accessTier === 'board_review';
+      const isCmeTier = accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
+      const isNonPremiumUser = (!isRegistered || accessTier === 'free_guest' || !accessTier) && !isBoardReviewTier && !isCmeTier;
+
+      if (isBoardReviewTier) {
+          console.log("Board review tier detected from Learn More modal. Showing contact alert.");
+          alert("Please contact us at support@medswipeapp.com if you would like to add CME Access to your subscription.");
+          return;
+      }
+
+      if (isCmeTier || hasCmeAccess) {
+          console.log("User already has CME access. Showing alert instead of checkout.");
+          alert("You already have CME access.");
+          return;
+      }
+
+      if (isIosNativeApp && isNonPremiumUser) {
+          console.log("iOS non-premium user detected. Redirecting to iOS paywall with CME plan preselected.");
+          if (cmeLearnMoreModal) {
+              cmeLearnMoreModal.style.display = "none";
+              delete cmeLearnMoreModal.dataset.returnTarget;
+          }
+          const cmeInfoScreen = document.getElementById("cmeInfoScreen");
+          if (cmeInfoScreen) {
+              cmeInfoScreen.style.display = "none";
+          }
+          if (typeof ensureAllScreensHidden === 'function') {
+              ensureAllScreensHidden();
+          }
+          showPaywallScreen();
+          if (typeof window.setIosPaywallPlan === 'function') {
+              window.setIosPaywallPlan('cme');
+          } else {
+              console.warn("setIosPaywallPlan function not available.");
+          }
+          return;
+      }
+
       if (returnTarget === 'iosPaywall') {
           hidePaywallScreen();
       }
 
-      if (cmeLearnMoreModal) cmeLearnMoreModal.style.display = "none";
-      if (cmeLearnMoreModal) delete cmeLearnMoreModal.dataset.returnTarget;
+      if (cmeLearnMoreModal) {
+          cmeLearnMoreModal.style.display = "none";
+          delete cmeLearnMoreModal.dataset.returnTarget;
+      }
       showCmePricingScreen();
   });
 } else {
