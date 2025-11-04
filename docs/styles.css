@@ -5371,6 +5371,27 @@ button:not(:disabled):active {
   gap: 20px;
 }
 
+.ios-paywall-header {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: -8px;
+}
+
+.ios-paywall-back-btn {
+  background: none;
+  border: none;
+  color: #0c72d3;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.ios-paywall-back-btn:active {
+  opacity: 0.7;
+}
+
 .ios-paywall-logo {
   height: 48px;
   width: auto;

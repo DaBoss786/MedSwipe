@@ -851,6 +851,7 @@ function initializeIosPaywallUI() {
   const restoreBtn = iosRoot.querySelector('#iosRestorePurchasesBtn');
   const inlineLinks = iosRoot.querySelector('.ios-inline-links');
   const infoLinkButtons = inlineLinks ? Array.from(inlineLinks.querySelectorAll('.ios-text-link')) : [];
+  const backBtn = iosRoot.querySelector('#iosPaywallBackBtn');
 
   let currentBoardCycle = 'monthly';
 
@@ -931,6 +932,16 @@ function initializeIosPaywallUI() {
     }
     const nextHeight = Math.max(activeCard.scrollHeight, baseStackHeight);
     cardStack.style.height = `${Math.ceil(nextHeight)}px`;
+  }
+
+  if (backBtn) {
+    const newBackBtn = backBtn.cloneNode(true);
+    backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+    newBackBtn.addEventListener('click', () => {
+      console.log("iOS Paywall Back button clicked. Returning to dashboard.");
+      hidePaywallScreens();
+      showDashboard();
+    });
   }
 
   function renderFeatures(listEl, items) {
