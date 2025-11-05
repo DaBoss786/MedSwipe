@@ -612,6 +612,8 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 
 // Add splash screen, welcome screen, and authentication-based routing
 document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
+  const welcomeScreen = document.getElementById('welcomeScreen');
+  const mainOptions = document.getElementById('mainOptions');
 
   // --- Payment Initialization ---
   // The app dynamically picks the correct billing provider at runtime.
@@ -659,11 +661,6 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     console.error("Error creating callable function reference:", error);
     // Handle error - maybe disable the claim button?
 }
-
-  const splashScreen = document.getElementById('splashScreen');
-  const welcomeScreen = document.getElementById('welcomeScreen');
-  const mainOptions = document.getElementById('mainOptions');
-
   // Immediately hide the dashboard to prevent it from being visible at any point
   if (mainOptions) {
     mainOptions.style.display = 'none';
@@ -747,11 +744,11 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     
         // This outer timeout handles the splash screen fade-out
         setTimeout(function() {
-          const splashScreen = document.getElementById('splashScreen');
-          if (splashScreen) {
-            splashScreen.classList.add('fade-out');
+          const splashScreenEl = document.getElementById('splashScreen');
+          if (splashScreenEl) {
+            splashScreenEl.classList.add('fade-out');
             setTimeout(() => {
-              if (splashScreen) splashScreen.style.display = 'none';
+              if (splashScreenEl) splashScreenEl.style.display = 'none';
             }, 500);
           }
       
@@ -770,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
       handleUserRouting(event.detail);
       queueDashboardRefresh();
       
-    }, 2000); // 2-second delay for splash screen
+    }, 3600); // Allow progress bar to finish (~3.5s) before fading splash
   }
 });
   
