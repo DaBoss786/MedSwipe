@@ -1,6 +1,7 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
-import { auth, db, doc, getDoc, analytics, logEvent, setUserProperties, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
+import { auth, db, doc, getDoc, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
+import { logAnalyticsEvent } from './analytics.js';
 import {
   fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
   recordAnswer,               // Needed for regular quizzes
@@ -131,22 +132,20 @@ async function loadQuestions(options = {}) {
   window.isOnboardingQuiz = options.isOnboarding || false;
 
   // Track quiz start
-  if (analytics && logEvent) {
-    const accessTier = window.authState?.accessTier || 'free_guest';
-    const isGuest = !auth.currentUser || auth.currentUser.isAnonymous;
-    
-    logEvent(analytics, 'quiz_start', {
-      quiz_type: options.quizType || 'regular',
-      category: options.category || 'all_categories',
-      procedure: options.procedure || null,
-      num_questions: options.num || 10,
-      user_tier: accessTier,
-      is_guest: isGuest,
-      board_review_only: options.boardReviewOnly || false,
-      spaced_repetition: options.spacedRepetition || false,
-      search_used: !!options.prefilteredQuestions
-    });
-  }
+  const accessTier = window.authState?.accessTier || 'free_guest';
+  const isGuest = !auth.currentUser || auth.currentUser.isAnonymous;
+
+  logAnalyticsEvent('quiz_start', {
+    quiz_type: options.quizType || 'regular',
+    category: options.category || 'all_categories',
+    procedure: options.procedure || null,
+    num_questions: options.num || 10,
+    user_tier: accessTier,
+    is_guest: isGuest,
+    board_review_only: options.boardReviewOnly || false,
+    spaced_repetition: options.spacedRepetition || false,
+    search_used: !!options.prefilteredQuestions
+  });
 
   try {
     let filteredQuestions = []; // Initialize as empty
@@ -680,18 +679,16 @@ function addOptionListeners() {
     // Record which specific choice was selected for statistics
     await recordChoiceSelection(qId, selected);
 
-    if (analytics && logEvent) {
-      logEvent(analytics, 'question_answered', {
-        question_category: category,
-        is_correct: isCorrect,
-        time_to_answer_seconds: Math.round(timeSpent / 1000),
-        is_cme_eligible: questionSlide.dataset.cmeEligible === "true",
-        is_bookmarked: questionSlide.dataset.bookmarked === "true",
-        question_source: currentQuizType === 'cme' ? 'cme_module' : 'regular_quiz',
-        quiz_position: currentQuestion + 1,
-        user_tier: window.authState?.accessTier || 'free_guest'
-      });
-  }
+    logAnalyticsEvent('question_answered', {
+      question_category: category,
+      is_correct: isCorrect,
+      time_to_answer_seconds: Math.round(timeSpent / 1000),
+      is_cme_eligible: questionSlide.dataset.cmeEligible === "true",
+      is_bookmarked: questionSlide.dataset.bookmarked === "true",
+      question_source: currentQuizType === 'cme' ? 'cme_module' : 'regular_quiz',
+      quiz_position: currentQuestion + 1,
+      user_tier: window.authState?.accessTier || 'free_guest'
+    });
 
     // Get peer statistics and update the display
     const peerStats = await getPeerStats(qId);
@@ -765,20 +762,18 @@ function addOptionListeners() {
                   updateProgress(); // Update progress bar/text one last time
 
                   // ADD THIS: Track quiz completion
-              if (analytics && logEvent) {
-                const finalAccuracy = Math.round((score / totalQuestions) * 100);
-                const totalTimeSpent = Math.round((Date.now() - (questionStartTime - timeSpent)) / 1000);
-                
-                logEvent(analytics, 'quiz_complete', {
-                  quiz_type: currentQuizType,
-                  category: category,
-                  score: score,
-                  total_questions: totalQuestions,
-                  accuracy_percentage: finalAccuracy,
-                  time_spent_seconds: totalTimeSpent,
-                  user_tier: window.authState?.accessTier || 'free_guest'
-                });
-              }
+                  const finalAccuracy = Math.round((score / totalQuestions) * 100);
+                  const totalTimeSpent = Math.round((Date.now() - (questionStartTime - timeSpent)) / 1000);
+
+                  logAnalyticsEvent('quiz_complete', {
+                    quiz_type: currentQuizType,
+                    category: category,
+                    score: score,
+                    total_questions: totalQuestions,
+                    accuracy_percentage: finalAccuracy,
+                    time_spent_seconds: totalTimeSpent,
+                    user_tier: window.authState?.accessTier || 'free_guest'
+                  });
 
                   // --- Record the final answer ---
                   if (currentQuizType === 'cme') { // CME recording (Dedicated CME Module Flow - No Change Here)

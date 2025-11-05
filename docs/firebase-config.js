@@ -3,7 +3,7 @@ import { initializeAppCheckForPlatform } from './app-check-config.js';
 
 // Firebase App, Analytics, Firestore & Auth (Modular)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAnalytics, logEvent, setUserProperties } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
 import { getFirestore, doc, runTransaction, getDoc, addDoc, collection, serverTimestamp, getDocs, setDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import {
   initializeAuth,
@@ -116,8 +116,6 @@ export {
   auth,
   functionsInstance as functions,
   // Export as "functions" to match expected naming
-  logEvent,
-  setUserProperties,
   doc,
   runTransaction,
   getDoc,

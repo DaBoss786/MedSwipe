@@ -1,5 +1,6 @@
 // app.js - Top of file
-import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, analytics, logEvent, setUserProperties, onAuthStateChanged, setDoc } from './firebase-config.js'; // Adjust path if needed
+import { app, auth, db, doc, getDoc, runTransaction, serverTimestamp, collection, getDocs, getIdToken, sendPasswordResetEmail, functions, httpsCallable, updateDoc, addDoc, query, where, onAuthStateChanged, setDoc } from './firebase-config.js'; // Adjust path if needed
+import { logAnalyticsEvent, setAnalyticsUserProperties } from './analytics.js';
 import { generateGuestUsername } from './auth.js';
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections, fetchPersistentAnsweredIds } from './user.v2.js';
@@ -728,9 +729,9 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
 	  });
 	  window.authState = event.detail; 
 
-  if (analytics && event.detail.accessTier) {
-    setUserProperties(analytics, {
-      access_tier: event.detail.accessTier 
+  if (event.detail.accessTier) {
+    setAnalyticsUserProperties({
+      access_tier: event.detail.accessTier
     });
   }
 
@@ -1455,8 +1456,8 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
       await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel, window.selectedUsername);
       console.log("Successfully saved onboarding selections (including username) to Firestore.");
 
-      if (analytics && window.selectedSpecialty) {
-        setUserProperties(analytics, {
+      if (window.selectedSpecialty) {
+        setAnalyticsUserProperties({
           user_specialty: window.selectedSpecialty
         });
         console.log(`GA User Property 'user_specialty' set to: ${window.selectedSpecialty}`);
@@ -2062,9 +2063,7 @@ async function handleRegistrationSuccessFlow({ finalizeResult, method }) {
     window.authState = freshAuthState;
     handleUserRouting(freshAuthState);
 
-    if (analytics) {
-      logEvent(analytics, 'sign_up', { method });
-    }
+    logAnalyticsEvent('sign_up', { method });
   } finally {
     if (postRegLoadingScreen) {
       postRegLoadingScreen.style.display = 'none';
@@ -2142,12 +2141,10 @@ function showLoginForm(fromWelcomeScreen = false) {
         }
         await window.authFunctions.loginUser(email, password);
 
-        if (analytics) {
-          logEvent(analytics, 'login', {
-              method: 'email_password'
-          });
-          console.log("GA Event: login");
-      }
+        logAnalyticsEvent('login', {
+          method: 'email_password'
+        });
+        console.log("GA Event: login");
 
         // Success - close modal and show dashboard
         loginModal.style.display = 'none';
@@ -2215,9 +2212,7 @@ function showLoginForm(fromWelcomeScreen = false) {
             mainOptions.style.display = 'flex';
           }
           ensureEventListenersAttached();
-          if (analytics) {
-            logEvent(analytics, 'login', { method });
-          }
+          logAnalyticsEvent('login', { method });
         } catch (oauthError) {
           console.error(providerKey + ' OAuth login error:', oauthError);
           if (loginErrorEl) {
@@ -2564,9 +2559,7 @@ if (registerOauthButtons.length) {
       }
       ensureEventListenersAttached();
       sessionStorage.removeItem('pendingRedirectAfterRegistration');
-      if (analytics) {
-        logEvent(analytics, 'login', { method });
-      }
+      logAnalyticsEvent('login', { method });
     } catch (oauthError) {
       console.error(providerKey + ' OAuth registration error:', oauthError);
       if (errorElement) {
@@ -2700,9 +2693,9 @@ window.addEventListener('load', function() {
           sessionStorage.setItem('promoApplied', 'true');
         }
 
-        if (outcome.flow === 'register' && outcome.isNewUser && window.analytics && window.logEvent) {
+        if (outcome.flow === 'register' && outcome.isNewUser) {
           const method = outcome.provider ? `${outcome.provider}_oauth` : 'oauth';
-          window.logEvent(window.analytics, 'sign_up', { method });
+          logAnalyticsEvent('sign_up', { method });
         }
       })
       .catch((err) => {
@@ -3137,25 +3130,21 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
 
       if (!hasBoardAccess) {
         // ADD THIS: Track paywall view
-    if (analytics && logEvent) {
-      logEvent(analytics, 'paywall_view', {
-        paywall_type: 'feature_gate',
-        trigger_action: 'leaderboard_access',
-        user_tier: accessTier
-      });
-    }
+        logAnalyticsEvent('paywall_view', {
+          paywall_type: 'feature_gate',
+          trigger_action: 'leaderboard_access',
+          user_tier: accessTier
+        });
         console.log("User is anonymous or free_guest. Redirecting to paywall.");
         ensureAllScreensHidden(); // Hide other main screens
         showPaywallScreen();
       } else {
         // ADD THIS: Track feature usage
-    if (analytics && logEvent) {
-      logEvent(analytics, 'feature_used', {
-        feature_name: 'leaderboard',
-        first_time_use: false, // You could track this if needed
-        user_tier: accessTier
-      });
-    }
+        logAnalyticsEvent('feature_used', {
+          feature_name: 'leaderboard',
+          first_time_use: false, // You could track this if needed
+          user_tier: accessTier
+        });
         // User has a paying tier, show the leaderboard
         console.log("User has a paying tier. Showing leaderboard.");
         // Ensure other views are hidden before showing leaderboard

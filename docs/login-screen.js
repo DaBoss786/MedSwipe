@@ -1,3 +1,5 @@
+import { logAnalyticsEvent } from './analytics.js';
+
 // Login Screen Functionality
 document.addEventListener('DOMContentLoaded', function() {
   // Elements
@@ -240,9 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof ensureEventListenersAttached === 'function') {
         ensureEventListenersAttached();
       }
-      if (window.analytics && window.logEvent) {
-        window.logEvent(window.analytics, 'login', { method });
-      }
+      logAnalyticsEvent('login', { method });
     } catch (oauthError) {
       console.error(providerKey + ' OAuth login error:', oauthError);
       if (loginError) {
