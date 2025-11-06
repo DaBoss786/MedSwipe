@@ -2074,223 +2074,41 @@ window.handleRegistrationSuccessFlow = handleRegistrationSuccessFlow;
 
 // Function to show the login form modal
 function showLoginForm(fromWelcomeScreen = false) {
-  // Create login modal if it doesn't exist
-  let loginModal = document.getElementById('loginModal');
-  
-  if (!loginModal) {
-    loginModal = document.createElement('div');
-    loginModal.id = 'loginModal';
-    loginModal.className = 'auth-modal';
-    
-    loginModal.innerHTML = `
-      <div class="auth-modal-content">
-        ${fromWelcomeScreen ? '<button id="backToWelcomeBtn" style="position: absolute; top: 15px; left: 15px; background: none; border: none; font-size: 1.2rem; color: #0056b3; cursor: pointer;">&larr;</button>' : ''}
-        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="auth-logo">
-        <h2>Log In to MedSwipe</h2>
-        <div id="loginError" class="auth-error"></div>
-        <div class="oauth-button-group">
-          <button type="button" class="oauth-button oauth-button--google" data-oauth-provider="google" data-oauth-context="login">
-            <img src="google-icon.svg" alt="" class="oauth-button__icon" aria-hidden="true">
-            <span class="oauth-button__label">Continue with Google</span>
-          </button>
-          <button type="button" class="oauth-button oauth-button--apple" data-oauth-provider="apple" data-oauth-context="login">
-            <svg class="oauth-button__icon" aria-hidden="true" viewBox="0 0 16 16" focusable="false">
-              <path fill="currentColor" d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z" />
-            </svg>
-            <span class="oauth-button__label">Continue with Apple</span>
-          </button>
-        </div>
-        <div class="oauth-divider"><span>or</span></div>
-        <form id="loginForm">
-          <div class="form-group">
-            <label for="loginEmail">Email</label>
-            <input type="email" id="loginEmail" required>
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" required>
-          </div>
-          <div class="auth-buttons">
-            <button type="submit" class="auth-primary-btn">Log In</button>
-          </div>
-          <div style="text-align: center; margin-top: 15px;">
-            <a href="#" id="forgotPasswordLink" style="color: #0056b3; text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
-          </div>
-          <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
-            <p style="margin-bottom: 10px; color: #666;">Don't have an account?</p>
-            <button type="button" id="createAccountBtn" class="auth-secondary-btn" onclick="window.showRegisterForm()">Create Account</button>
-          </div>
-        </form>
-        <button id="closeLoginBtn" class="auth-close-btn">×</button>
-      </div>
-    `;
-    
-    document.body.appendChild(loginModal);
-    
-    const loginErrorEl = loginModal.querySelector('#loginError');
+  const loginScreenEl = document.getElementById('loginScreen');
+  if (!loginScreenEl) {
+    console.error('Login screen element not found.');
+    return;
+  }
 
-    // Add event listeners
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
-      try {
-        if (loginErrorEl) {
-          loginErrorEl.textContent = '';
-        }
-        await window.authFunctions.loginUser(email, password);
+  const origin = fromWelcomeScreen ? 'welcome' : 'app';
 
-        logAnalyticsEvent('login', {
-          method: 'email_password'
-        });
-        console.log("GA Event: login");
+  ensureAllScreensHidden('loginScreen');
 
-        // Success - close modal and show dashboard
-        loginModal.style.display = 'none';
-        document.getElementById('mainOptions').style.display = 'flex';
-        ensureEventListenersAttached(); // Make sure event listeners are attached
-      } catch (error) {
-        // Show error message
-        if (loginErrorEl) {
-          loginErrorEl.textContent = getAuthErrorMessage(error);
-        }
-      }
-    });
-    
-    const loginOauthButtons = Array.from(loginModal.querySelectorAll('[data-oauth-context="login"]'));
-    if (loginOauthButtons.length) {
-      const handleLoginOAuth = async (providerKey) => {
-        if (!window.authFunctions?.oauthSignIn) {
-          console.error('OAuth sign-in function unavailable.');
-          if (loginErrorEl) {
-            loginErrorEl.textContent = 'Single sign-on is temporarily unavailable. Please use email and password.';
-          }
-          return;
-        }
+  const mainOptions = document.getElementById('mainOptions');
+  if (mainOptions) {
+    mainOptions.style.display = 'none';
+  }
 
-        if (loginErrorEl) {
-          loginErrorEl.textContent = '';
-        }
-
-        toggleOAuthButtons(loginOauthButtons, true);
-        const method = providerKey === 'google' ? 'google_oauth' : 'apple_oauth';
-
-        try {
-          const result = await window.authFunctions.oauthSignIn(providerKey, { flow: 'login' });
-          if (!result) {
-            throw new Error('OAuth sign-in did not return a result.');
-          }
-
-          if (result.status === 'redirect') {
-            loginModal.style.display = 'none';
-            loginModal.setAttribute('data-oauth-redirect', 'true');
-            return;
-          }
-
-          if (result.status !== 'success') {
-            throw new Error('OAuth sign-in failed.');
-          }
-
-          if (result.isNewUser && result.flow === 'register') {
-            loginModal.style.display = 'none';
-            try {
-              await handleRegistrationSuccessFlow({ finalizeResult: result.finalizeResult, method });
-            } catch (registrationError) {
-              console.error('OAuth registration completion error:', registrationError);
-              if (loginErrorEl) {
-                loginErrorEl.textContent = getAuthErrorMessage(registrationError);
-              }
-              loginModal.style.display = 'flex';
-            }
-            return;
-          }
-
-          loginModal.style.display = 'none';
-          const mainOptions = document.getElementById('mainOptions');
-          if (mainOptions) {
-            mainOptions.style.display = 'flex';
-          }
-          ensureEventListenersAttached();
-          logAnalyticsEvent('login', { method });
-        } catch (oauthError) {
-          console.error(providerKey + ' OAuth login error:', oauthError);
-          if (loginErrorEl) {
-            loginErrorEl.textContent = getAuthErrorMessage(oauthError);
-          }
-        } finally {
-          toggleOAuthButtons(loginOauthButtons, false);
-        }
-      };
-
-      loginOauthButtons.forEach((btn) => {
-        btn.addEventListener('click', () => handleLoginOAuth(btn.getAttribute('data-oauth-provider')));
-      });
-    }
-
-    document.getElementById('createAccountBtn').addEventListener('click', function() {
-  loginModal.style.display = 'none';
-  
-  // Check if the function exists and call it
-  if (typeof showRegisterForm === 'function') {
-    showRegisterForm();
-  } else {
-    // If the function doesn't exist, try to find it on the window object
-    if (typeof window.showRegisterForm === 'function') {
-      window.showRegisterForm();
-    } else {
-      console.error("Registration form function not found");
-      alert("Sorry, there was an error accessing the registration form. Please try again later.");
+  if (origin === 'welcome') {
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    if (welcomeScreen) {
+      welcomeScreen.style.display = 'none';
+      welcomeScreen.style.opacity = '0';
     }
   }
-});
-    
-    document.getElementById('closeLoginBtn').addEventListener('click', function() {
-      loginModal.style.display = 'none';
-      document.getElementById('mainOptions').style.display = 'flex';
-    });
-    
-    // Add back button functionality if coming from welcome screen
-    if (fromWelcomeScreen) {
-      document.getElementById('backToWelcomeBtn').addEventListener('click', function() {
-        loginModal.style.display = 'none';
-        document.getElementById('welcomeScreen').style.display = 'flex';
-        document.getElementById('welcomeScreen').style.opacity = '1';
-      });
-    }
-  } else {
-    // If modal already exists but we need to add/remove back button
-    loginModal.removeAttribute('data-oauth-redirect');
-    const existingBackBtn = loginModal.querySelector('#backToWelcomeBtn');
-    const modalContent = loginModal.querySelector('.auth-modal-content');
-    
-    if (fromWelcomeScreen && !existingBackBtn) {
-      // Add back button if coming from welcome screen
-      const backBtn = document.createElement('button');
-      backBtn.id = 'backToWelcomeBtn';
-      backBtn.innerHTML = '&larr;';
-      backBtn.style = 'position: absolute; top: 15px; left: 15px; background: none; border: none; font-size: 1.2rem; color: #0056b3; cursor: pointer;';
-      
-      backBtn.addEventListener('click', function() {
-        loginModal.style.display = 'none';
-        document.getElementById('welcomeScreen').style.display = 'flex';
-        document.getElementById('welcomeScreen').style.opacity = '1';
-      });
-      
-      if (modalContent) {
-        modalContent.insertBefore(backBtn, modalContent.firstChild);
-      }
-    } else if (!fromWelcomeScreen && existingBackBtn) {
-      // Remove back button if not coming from welcome screen
-      existingBackBtn.remove();
-    }
-  }
-  
-  const loginErrorForDisplay = loginModal.querySelector('#loginError');
-  consumeOAuthRedirectError(loginErrorForDisplay, 'login');
 
-  // Show the modal
-  loginModal.style.display = 'flex';
+  if (typeof window.showLoginScreen === 'function') {
+    window.showLoginScreen({ origin });
+  } else {
+    loginScreenEl.dataset.origin = origin;
+    loginScreenEl.style.opacity = '1';
+    loginScreenEl.removeAttribute('aria-hidden');
+    loginScreenEl.style.display = 'flex';
+    loginScreenEl.scrollTop = 0;
+    requestAnimationFrame(() => loginScreenEl.classList.add('show'));
+  }
+
+  consumeOAuthRedirectError(document.getElementById('loginScreenError'), 'login');
 }
 
 window.showLoginForm = showLoginForm;
@@ -6200,7 +6018,6 @@ function showCmeDashboard() {
       "cmeClaimModal",     // Added CME claim modal
       "contactModal",
       "feedbackModal",
-      "loginModal",
       "registerModal",
       "forgotPasswordModal",
       "registrationBenefitsModal",
@@ -6807,7 +6624,7 @@ function showCmeInfoScreen() {
       "aboutView", "faqView", "welcomeScreen", "splashScreen", "loginScreen",
       "onboardingLoadingScreen", "customQuizForm", "randomQuizForm",
       "quizSetupModal", "cmeQuizSetupModal", "cmeClaimModal", "contactModal",
-      "feedbackModal", "loginModal", "registerModal", "forgotPasswordModal",
+      "feedbackModal", "registerModal", "forgotPasswordModal",
       "registrationBenefitsModal", "termsOfServiceModal", "privacyPolicyModal"
   ];
   const elementsToHideSelectors = [".swiper", "#bottomToolbar", "#iconBar"];

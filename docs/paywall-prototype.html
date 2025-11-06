@@ -1,646 +1,652 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>MedSwipe Plan Picker Prototype</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>iOS Auth Demo - MedSwipe</title>
   <style>
-    :root {
-      color-scheme: light;
-      font-size: 16px;
-      --blue: #0c72d3;
-      --blue-muted: #4a8ee0;
-      --blue-soft: rgba(0, 122, 255, 0.14);
-      --bg: #eceff6;
-      --card: #ffffff;
-      --shadow: 0 18px 32px rgba(18, 25, 39, 0.15);
-    }
-
     * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
 
     body {
-      margin: 0;
-      font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      color: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #ffffff;
+      overflow-x: hidden;
     }
 
-    .iphone-container {
-      position: relative;
-      width: 360px;
-      max-width: calc(100vw - 32px);
-      height: 760px;
-      background: #f2f3f7;
-      border-radius: 42px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(10, 33, 74, 0.24);
-    }
-
-    .notch {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 160px;
-      height: 30px;
-      background: #1a1a1a;
-      border-radius: 0 0 20px 20px;
-      z-index: 1000;
-    }
-
-    .status-bar {
-      position: absolute;
-      top: 0;
+    /* Demo Navigation */
+    .demo-nav {
+      position: fixed;
+      bottom: 0;
       left: 0;
       right: 0;
-      height: 44px;
+      background: #f8f9fa;
+      border-top: 1px solid #dee2e6;
+      padding: 10px;
       display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding: 0 24px 6px;
-      z-index: 999;
-      pointer-events: none;
+      gap: 10px;
+      z-index: 10000;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
     }
 
-    .status-time {
-      font-size: 14px;
+    .demo-nav button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #0C72D3;
+      color: white;
       font-weight: 600;
-      letter-spacing: -0.01em;
+      font-size: 14px;
+      cursor: pointer;
     }
 
-    .status-icons {
+    .demo-nav button:active {
+      opacity: 0.7;
+    }
+
+    /* iOS Login Screen - Full Screen */
+    .login-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      height: -webkit-fill-available;
+      background: #FFFFFF;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      z-index: 9500;
+    }
+
+    .login-screen.show {
       display: flex;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 500;
+      opacity: 1;
     }
 
-    .paywall-screen {
+    .login-content {
       width: 100%;
       height: 100%;
-      background: #f2f3f7;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: max(env(safe-area-inset-top), 20px) 25px max(env(safe-area-inset-bottom), 80px);
       overflow-y: auto;
-      overflow-x: hidden;
-      position: relative;
       -webkit-overflow-scrolling: touch;
     }
 
-    .paywall-content {
-      padding: 64px 18px 100px;
+    .login-header {
+      flex-shrink: 0;
       text-align: center;
+      margin-bottom: 20px;
     }
 
-    .paywall-logo {
+    .login-logo {
+      width: 120px;
+      margin: 0 auto 10px;
       display: block;
-      margin: 0 auto 18px;
-      height: 40px;
-      width: auto;
-      max-width: 140px;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(12, 114, 211, 0.2);
     }
 
-    .paywall-title {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin: 0 0 8px;
-    }
-
-    .paywall-subtitle {
-      font-size: 15px;
-      letter-spacing: -0.01em;
-      color: #8e8e93;
-      margin: 0 0 24px;
-    }
-
-    .plan-selector {
-      display: flex;
-      background: rgba(118, 118, 128, 0.12);
-      border-radius: 10px;
-      padding: 3px;
-      margin-bottom: 26px;
-      gap: 4px;
-    }
-
-    .plan-selector-btn {
-      flex: 1;
-      padding: 9px 12px;
-      border: none;
-      background: transparent;
-      color: #1c1c1f;
-      font-size: 13px;
+    .login-title {
+      font-size: 1.5rem;
       font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
+      color: #0C72D3;
+      margin-bottom: 15px;
     }
 
-    .plan-selector-btn.active {
-      background: #ffffff;
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14), 0 2px 4px rgba(0, 0, 0, 0.08);
-      color: var(--blue);
-    }
-
-    .paywall-options-container {
-      position: relative;
-      min-height: 480px;
-    }
-
-    .paywall-option-card {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      background: #ffffff;
-      border-radius: 18px;
-      padding: 26px 22px 28px;
-      box-shadow: 0 10px 28px rgba(18, 25, 39, 0.12);
-      opacity: 0;
-      transform: translateX(100%) scale(0.95);
-      transition: transform 0.34s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.28s ease;
+    .login-form {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      pointer-events: none;
-      visibility: hidden;
+      justify-content: center;
+      margin-bottom: 15px;
     }
 
-    .paywall-option-card.active {
+    .oauth-button-group {
       display: flex;
-      opacity: 1;
-      transform: translateX(0) scale(1);
-      animation: slideIn 0.36s ease-out;
-      pointer-events: auto;
-      visibility: visible;
-      position: relative;
+      flex-direction: column;
+      gap: 10px;
+      margin: 12px 0;
     }
 
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(22px) scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+    .oauth-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: #ffffff;
+      color: #1a1a1a;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
     }
 
-    .card-badge {
-      position: absolute;
-      top: -14px;
-      right: 20px;
-      padding: 5px 12px;
-      font-size: 11px;
-      font-weight: 700;
-      border-radius: 14px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      background: rgba(0, 0, 0, 0.75);
+    .oauth-button--apple {
+      background: #0a0a0a;
       color: #ffffff;
+      border-color: #0a0a0a;
     }
 
-    .free-access-card .card-badge {
-      background: linear-gradient(135deg, #8e8e93 0%, #b0b3ba 100%);
+    .oauth-button__icon {
+      width: 20px;
+      height: 20px;
     }
 
-    .popular-badge {
-      background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
-    }
-
-    .cme-eligible-badge {
-      background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-    }
-
-    .paywall-option-card h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin: 0 0 4px;
-      letter-spacing: -0.01em;
-      text-align: left;
-    }
-
-    .price-highlight {
-      font-size: 34px;
-      font-weight: 700;
-      color: #000;
-      margin: 14px 0 4px;
-      letter-spacing: -0.024em;
-      text-align: left;
-    }
-
-    .price-details {
-      display: block;
-      font-size: 15px;
-      color: #8e8e93;
-      font-weight: 400;
-      text-align: left;
-      margin-bottom: 10px;
-    }
-
-    .board-review-toggle {
+    .oauth-divider {
       display: flex;
-      gap: 6px;
-      padding: 4px;
-      border-radius: 10px;
-      background: rgba(118, 118, 128, 0.12);
-      margin: 12px 0 8px;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: rgba(0, 0, 0, 0.45);
     }
 
-    .board-review-toggle button {
+    .oauth-divider::before,
+    .oauth-divider::after {
+      content: '';
       flex: 1;
-      border: none;
-      background: transparent;
-      padding: 8px 10px;
-      border-radius: 7px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      cursor: pointer;
-      color: #1c1c1f;
-      transition: all 0.28s ease;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.12);
     }
 
-    .board-review-toggle button.active {
-      background: #ffffff;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
-      color: var(--blue);
+    .form-group {
+      margin-bottom: 15px;
     }
 
-    .feature-stack {
-      list-style: none;
-      margin: 18px 0 26px;
-      padding: 0;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 6px;
     }
 
-    .feature-stack li {
-      font-size: 15px;
-      line-height: 1.5;
-      color: #050505;
-      margin-bottom: 12px;
-      padding-left: 28px;
-      position: relative;
-      text-align: left;
-      opacity: 0;
-      animation: fadeInUp 0.32s ease-out forwards;
-    }
-
-    .feature-stack li:nth-child(1) { animation-delay: 0.05s; }
-    .feature-stack li:nth-child(2) { animation-delay: 0.1s; }
-    .feature-stack li:nth-child(3) { animation-delay: 0.15s; }
-    .feature-stack li:nth-child(4) { animation-delay: 0.2s; }
-    .feature-stack li:nth-child(5) { animation-delay: 0.25s; }
-    .feature-stack li:nth-child(6) { animation-delay: 0.3s; }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(12px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .check-icon {
-      position: absolute;
-      left: 0;
-      top: 2px;
-      color: #34c759;
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .paywall-select-btn,
-    .paywall-continue-guest-btn {
+    .form-group input {
       width: 100%;
-      padding: 16px;
-      font-size: 17px;
-      font-weight: 600;
-      border-radius: 12px;
-      letter-spacing: -0.01em;
-      transition: all 0.2s ease;
-      border: none;
-      cursor: pointer;
+      padding: 14px 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
     }
 
-    .paywall-select-btn:active,
-    .paywall-continue-guest-btn:active {
-      transform: scale(0.97);
-      opacity: 0.92;
+    .form-group input:focus {
+      outline: none;
+      border-color: #0C72D3;
+      box-shadow: 0 0 0 2px rgba(12, 114, 211, 0.2);
     }
 
-    .free-access-card .paywall-continue-guest-btn {
-      background: #ffffff;
-      border: 1.6px solid #007aff;
-      color: #007aff;
+    .password-container {
+      position: relative;
     }
 
-    .board-review-card .paywall-select-btn {
-      background: linear-gradient(135deg, #007aff 0%, #5ac8fa 100%);
-      color: white;
-    }
-
-    .cme-module-card .paywall-select-btn {
-      background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-      color: white;
-    }
-
-    .inline-links {
-      display: none;
-      justify-content: flex-start;
-      gap: 16px;
-      margin: 18px 0 12px;
-    }
-
-    .text-link {
+    .password-toggle {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
-      padding: 0;
-      font-size: 14px;
-      font-weight: 600;
-      color: #007aff;
+      color: #555;
       cursor: pointer;
-      text-decoration: underline;
-      letter-spacing: -0.01em;
+      padding: 8px;
+      font-size: 1.2rem;
     }
 
-    .paywall-footer {
-      margin-top: 28px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    .login-actions {
+      margin-top: 15px;
       text-align: center;
     }
 
-    .paywall-restore-btn {
-      font-size: 15px;
-      color: #007aff;
-      background: none;
+    .login-button {
+      width: 100%;
+      padding: 14px;
       border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+      color: white;
+      font-size: 16px;
       font-weight: 500;
       cursor: pointer;
-      letter-spacing: -0.01em;
     }
 
-    @media (max-width: 420px) {
-      .iphone-container {
-        width: 100%;
-        height: 100vh;
-        border-radius: 0;
-        box-shadow: none;
+    .login-link {
+      display: block;
+      margin-top: 12px;
+      color: #0C72D3;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .login-alternative-options {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .secondary-button {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #0C72D3;
+      border-radius: 8px;
+      background: white;
+      color: #0C72D3;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* Authentication Modal - Full Screen */
+    .auth-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #ffffff;
+      z-index: 9600;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .auth-modal.show {
+      display: flex;
+    }
+
+    .auth-modal-content {
+      width: 100%;
+      height: 100vh;
+      height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      padding: max(env(safe-area-inset-top), 20px) 25px max(env(safe-area-inset-bottom), 80px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .auth-logo {
+      max-width: 100px;
+      margin: 0 auto 12px;
+      display: block;
+    }
+
+    .auth-modal h2 {
+      color: #0C72D3;
+      text-align: center;
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+    }
+
+    .auth-close-btn {
+      position: absolute;
+      top: max(env(safe-area-inset-top), 10px);
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      color: #999;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    .auth-buttons {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .auth-primary-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .auth-secondary-btn {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #0C72D3;
+      background: white;
+      color: #0C72D3;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .terms-container {
+      margin: 12px 0;
+    }
+
+    .terms-checkbox {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .terms-checkbox input[type="checkbox"] {
+      margin-top: 3px;
+      margin-right: 10px;
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+    }
+
+    .terms-checkbox label {
+      font-size: 14px;
+      line-height: 1.4;
+      color: #555;
+      flex: 1;
+      text-align: left;
+    }
+
+    .terms-checkbox a {
+      color: #0C72D3;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .form-group small {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .form-group select {
+      width: 100%;
+      padding: 14px 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      background-color: white;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    .referral-offer-banner {
+      background-color: #e6f7ff;
+      border: 1px solid #b3e0ff;
+      border-radius: 8px;
+      padding: 12px;
+      margin: -8px 0 15px 0;
+      text-align: center;
+    }
+
+    .referral-offer-banner p {
+      margin: 0;
+      color: #0056b3;
+      font-weight: 500;
+      line-height: 1.3;
+      font-size: 14px;
+    }
+
+    /* Landscape mode adjustments */
+    @media (max-height: 500px) {
+      .login-logo,
+      .auth-logo {
+        width: 80px !important;
+        margin-bottom: 8px !important;
       }
-      .notch {
-        display: none;
+
+      .login-title,
+      .auth-modal h2 {
+        font-size: 1.2rem !important;
+        margin-bottom: 10px !important;
+      }
+
+      .form-group {
+        margin-bottom: 10px !important;
+      }
+
+      .form-group input,
+      .form-group select {
+        padding: 10px 12px !important;
+      }
+
+      .oauth-button-group {
+        gap: 8px !important;
+        margin: 10px 0 !important;
+      }
+
+      .oauth-button {
+        padding: 10px !important;
       }
     }
   </style>
 </head>
 <body>
-  <div class="iphone-container">
-    <div class="notch"></div>
-    <div class="status-bar" aria-hidden="true">
-      <div class="status-time">9:41</div>
-      <div class="status-icons">
-        <span>🛜</span>
-        <span>📶</span>
-        <span>🔋</span>
+
+  <!-- Demo Navigation -->
+  <div class="demo-nav">
+    <button onclick="showLogin()">Login Screen</button>
+    <button onclick="showRegister()">Registration</button>
+  </div>
+
+  <!-- Login Screen -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-content">
+      <div class="login-header">
+        <svg class="login-logo" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="200" height="200" rx="40" fill="url(#gradient)"/>
+          <path d="M100 60L140 100L100 140L60 100L100 60Z" fill="white"/>
+          <defs>
+            <linearGradient id="gradient" x1="0" y1="0" x2="200" y2="200">
+              <stop offset="0%" stop-color="#0C72D3"/>
+              <stop offset="100%" stop-color="#66a6ff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1 class="login-title">Welcome Back</h1>
       </div>
-    </div>
 
-    <div class="paywall-screen">
-      <div class="paywall-content">
-        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="paywall-logo" loading="lazy" />
-        <h1 class="paywall-title">Choose Your Plan</h1>
-        <p class="paywall-subtitle">Unlock your medical learning potential.</p>
-
-        <div class="plan-selector" role="tablist">
-          <button class="plan-selector-btn" data-plan="free" role="tab" aria-selected="false">Free</button>
-          <button class="plan-selector-btn active" data-plan="board" role="tab" aria-selected="true">Board Review</button>
-          <button class="plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
+      <form class="login-form">
+        <div class="oauth-button-group">
+          <button type="button" class="oauth-button oauth-button--google">
+            <svg class="oauth-button__icon" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span class="oauth-button__label">Continue with Google</span>
+          </button>
+          <button type="button" class="oauth-button oauth-button--apple">
+            <svg class="oauth-button__icon" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z"/>
+            </svg>
+            <span class="oauth-button__label">Continue with Apple</span>
+          </button>
         </div>
 
-        <div class="paywall-options-container">
-          <section class="paywall-option-card free-access-card" data-plan-card="free" role="tabpanel" aria-hidden="true">
-            <span class="card-badge">Always Included</span>
-            <h2>Free Access</h2>
-            <p class="price-highlight">
-              $0
-              <span class="price-details">forever</span>
-            </p>
-            <p class="price-details">A taste of our core learning tools.</p>
-            <ul id="freeFeatures" class="feature-stack"></ul>
-            <button class="paywall-continue-guest-btn">Try Free Version</button>
-          </section>
+        <div class="oauth-divider"><span>or</span></div>
 
-          <section class="paywall-option-card board-review-card active" data-plan-card="board" role="tabpanel" aria-hidden="false">
-            <span class="card-badge popular-badge" id="boardBadge">Most Popular</span>
-            <h2>Board Review Access</h2>
-            <div class="board-review-toggle" role="tablist">
-              <button class="active" data-cycle="monthly" aria-selected="true">Monthly</button>
-              <button data-cycle="quarterly" aria-selected="false">3-Month</button>
-              <button data-cycle="annual" aria-selected="false">Annual</button>
-            </div>
-            <p class="price-highlight">
-              <span id="boardPriceValue">$15</span>
-              <span class="price-details" id="boardPriceInterval"></span>
-            </p>
-            <span class="price-details" id="boardPriceCopy" style="display: none;"></span>
-            <ul id="boardFeatures" class="feature-stack"></ul>
-            <button class="paywall-select-btn" id="boardCta">Start 7-Day Free Trial</button>
-          </section>
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
 
-          <section class="paywall-option-card cme-module-card" data-plan-card="cme" role="tabpanel" aria-hidden="true">
-            <span class="card-badge cme-eligible-badge">CME Eligible</span>
-            <h2>CME Access</h2>
-            <p class="price-highlight">
-              $179
-              <span class="price-details">per year</span>
-            </p>
-            <ul id="cmeFeatures" class="feature-stack"></ul>
-            <button class="paywall-select-btn" id="cmeCta">Start 7-Day Free Trial</button>
-          </section>
-          <div class="inline-links" data-after-card="cme">
-            <button class="text-link" type="button" data-link="accreditation">Accreditation Statement</button>
-            <button class="text-link" type="button" data-link="learn-more">Learn More</button>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="password-container">
+            <input type="password" id="loginPassword" placeholder="Enter your password">
+            <button type="button" class="password-toggle">👁️</button>
           </div>
         </div>
+
+        <div class="login-actions">
+          <button type="submit" class="login-button">Log In</button>
+          <a href="#" class="login-link">Forgot Password?</a>
+        </div>
+      </form>
+
+      <div class="login-alternative-options">
+        <button type="button" class="secondary-button" onclick="showRegister()">Create Account</button>
+        <button type="button" class="secondary-button" style="background: transparent; border: none; color: #666;">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registration Modal -->
+  <div class="auth-modal" id="registerModal">
+    <div class="auth-modal-content">
+      <button class="auth-close-btn" onclick="hideRegister()">×</button>
+      
+      <svg class="auth-logo" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="200" height="200" rx="40" fill="url(#gradient2)"/>
+        <path d="M100 60L140 100L100 140L60 100L100 60Z" fill="white"/>
+        <defs>
+          <linearGradient id="gradient2" x1="0" y1="0" x2="200" y2="200">
+            <stop offset="0%" stop-color="#0C72D3"/>
+            <stop offset="100%" stop-color="#66a6ff"/>
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <h2>Create Account</h2>
+
+      <div class="referral-offer-banner" style="display: block;">
+        <p>🎁 Sign up with a referral link and get an extra 7 days on your free trial!</p>
       </div>
 
-      <footer class="paywall-footer">
-        <button class="paywall-restore-btn">Restore Purchases</button>
-      </footer>
+      <form>
+        <div class="oauth-button-group">
+          <button type="button" class="oauth-button oauth-button--google">
+            <svg class="oauth-button__icon" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span class="oauth-button__label">Continue with Google</span>
+          </button>
+          <button type="button" class="oauth-button oauth-button--apple">
+            <svg class="oauth-button__icon" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M12.66 7.07c-.01-1.22.55-2.24 1.77-2.96-.67-.99-1.68-1.54-2.87-1.64-1.2-.1-2.35.7-2.97.7-.64 0-1.64-.68-2.7-.66-1.39.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.27 1.04 8.33.69.99 1.52 2.11 2.6 2.07 1.04-.04 1.43-.67 2.68-.67 1.24 0 1.59.67 2.69.65 1.11-.02 1.82-1 2.5-1.99.78-1.14 1.1-2.25 1.12-2.31-.02-.01-2.14-.82-2.15-3.59zM10.26 1.86c.61-.74 1.02-1.78.91-2.82-.88.04-1.94.61-2.56 1.35-.56.66-1.05 1.72-.92 2.73.97.08 1.96-.49 2.57-1.26z"/>
+            </svg>
+            <span class="oauth-button__label">Continue with Apple</span>
+          </button>
+        </div>
+
+        <div class="oauth-divider"><span>or</span></div>
+
+        <div class="form-group">
+          <label for="regUsername">Username</label>
+          <input type="text" id="regUsername" placeholder="Choose a username">
+          <small>At least 3 characters</small>
+        </div>
+
+        <div class="form-group">
+          <label for="regEmail">Email</label>
+          <input type="email" id="regEmail" placeholder="you@example.com">
+        </div>
+
+        <div class="form-group">
+          <label for="regPassword">Password</label>
+          <div class="password-container">
+            <input type="password" id="regPassword" placeholder="Create a password">
+            <button type="button" class="password-toggle">👁️</button>
+          </div>
+          <small>At least 6 characters</small>
+        </div>
+
+        <div class="form-group">
+          <label for="regConfirmPassword">Confirm Password</label>
+          <div class="password-container">
+            <input type="password" id="regConfirmPassword" placeholder="Confirm your password">
+            <button type="button" class="password-toggle">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regExperience">Experience Level</label>
+          <select id="regExperience">
+            <option value="">-- Select Level --</option>
+            <option value="Medical Student">Medical Student</option>
+            <option value="PGY-1">PGY-1</option>
+            <option value="PGY-2">PGY-2</option>
+            <option value="PGY-3">PGY-3</option>
+            <option value="PGY-4">PGY-4</option>
+            <option value="PGY-5">PGY-5</option>
+            <option value="Fellow">Fellow</option>
+            <option value="Attending">Attending</option>
+          </select>
+        </div>
+
+        <div class="terms-container">
+          <div class="terms-checkbox">
+            <input type="checkbox" id="agreeTerms">
+            <label for="agreeTerms">
+              I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+            </label>
+          </div>
+        </div>
+
+        <div class="auth-buttons">
+          <button type="submit" class="auth-primary-btn">Create Account</button>
+          <button type="button" class="auth-secondary-btn" onclick="hideRegister(); showLogin();">Already have an account?</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <script>
-    const planButtons = Array.from(document.querySelectorAll(".plan-selector-btn"));
-    const planCards = Array.from(document.querySelectorAll(".paywall-option-card"));
-    const freeFeaturesEl = document.getElementById("freeFeatures");
-    const boardFeaturesEl = document.getElementById("boardFeatures");
-    const cmeFeaturesEl = document.getElementById("cmeFeatures");
-    const boardToggle = document.querySelector(".board-review-toggle");
-    const boardToggleButtons = Array.from(boardToggle.querySelectorAll("button"));
-    const boardBadge = document.getElementById("boardBadge");
-    const boardPriceValue = document.getElementById("boardPriceValue");
-    const boardPriceInterval = document.getElementById("boardPriceInterval");
-    const boardPriceCopy = document.getElementById("boardPriceCopy");
-    const boardCta = document.getElementById("boardCta");
-    const cmeInfoLinks = document.querySelector('.inline-links[data-after-card="cme"]');
+    function showLogin() {
+      document.getElementById('loginScreen').classList.add('show');
+      document.getElementById('registerModal').classList.remove('show');
+    }
 
-    const planData = {
-      free: {
-        features: [
-          "Access foundational anatomy & general questions",
-          "Enjoy basic quiz functionality to see how MedSwipe works",
-          "Upgrade Anytime: Unlock advanced features like leaderboards, spaced repetition, and the full QBank"
-        ]
-      },
-      board: {
-        monthly: {
-          badge: "Most Popular",
-          price: "$15",
-          interval: "/month",
-          copy: "",
-          cta: "Start 7-Day Free Trial",
-          features: [
-            "Full Question Bank Access - 900+ Questions",
-            "Access to <i>Case Prep</i> mode",
-            "Compete Against Other Residents - Access to Leaderboards",
-            "Spaced Repetition and Advanced Category Analytics",
-            "Billed monthly, cancel anytime"
-          ]
-        },
-        quarterly: {
-          badge: "Save 10%",
-          price: "$40",
-          interval: "/3 months",
-          copy: "Save over 10% vs. monthly!",
-          cta: "Start 7-Day Free Trial",
-          features: [
-            "Full Question Bank Access - 900+ Questions",
-            "Access to <i>Case Prep</i> mode",
-            "Compete Against Other Residents - Access to Leaderboards",
-            "Spaced Repetition and Advanced Category Analytics",
-            "Billed every 3 months, auto-renews"
-          ]
-        },
-        annual: {
-          badge: "Best Value",
-          price: "$149",
-          interval: "/year",
-          copy: "Best Value! Save over 15% vs. monthly!",
-          cta: "Start 7-Day Free Trial",
-          features: [
-            "Full Question Bank Access - 900+ Questions",
-            "Access to <i>Case Prep</i> mode",
-            "Compete with Other Residents - Access to Leaderboards",
-            "Spaced Repetition and Advanced Category Analytics",
-            "Billed annually, auto-renews"
-          ]
+    function showRegister() {
+      document.getElementById('registerModal').classList.add('show');
+      document.getElementById('loginScreen').classList.remove('show');
+    }
+
+    function hideRegister() {
+      document.getElementById('registerModal').classList.remove('show');
+    }
+
+    // Show login by default
+    showLogin();
+
+    // Password toggle functionality
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const input = this.previousElementSibling;
+        if (input.type === 'password') {
+          input.type = 'text';
+          this.textContent = '👁️‍🗨️';
+        } else {
+          input.type = 'password';
+          this.textContent = '👁️';
         }
-      },
-      cme: {
-        features: [
-          "Over 60% less than competitors",
-          "Earn up to 24 <i>AMA PRA Category 1 Credits</i>",
-          "Re-do missed questions and still gain credits",
-          "Download certificates anytime, anywhere",
-          "Includes everything in the Board Review Tier"
-        ]
-      }
-    };
-
-    function renderFeatures(listEl, items) {
-      listEl.innerHTML = "";
-      items.forEach((item, index) => {
-        const li = document.createElement("li");
-        li.style.animationDelay = `${0.05 * (index + 1)}s`;
-        li.innerHTML = `<span class="check-icon">✔</span>${item}`;
-        listEl.appendChild(li);
-      });
-    }
-
-    function setActivePlan(planKey) {
-      planButtons.forEach((button) => {
-        const isActive = button.dataset.plan === planKey;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-selected", isActive);
-      });
-
-      planCards.forEach((card) => {
-        const matches = card.dataset.planCard === planKey;
-        card.classList.toggle("active", matches);
-        card.setAttribute("aria-hidden", matches ? "false" : "true");
-        if (matches) {
-          // force reflow to restart list animation
-          requestAnimationFrame(() => {
-            const features = Array.from(card.querySelectorAll("li"));
-            features.forEach((li, index) => {
-              li.style.animation = "none";
-              // trigger reflow
-              // eslint-disable-next-line no-unused-expressions
-              li.offsetHeight;
-              li.style.animation = "";
-              li.style.animationDelay = `${0.05 * (index + 1)}s`;
-            });
-          });
-        }
-      });
-
-      if (cmeInfoLinks) {
-        cmeInfoLinks.style.display = planKey === "cme" ? "flex" : "none";
-      }
-    }
-
-    function updateBoardPlan(cycleKey) {
-      const cycleData = planData.board[cycleKey];
-      boardToggleButtons.forEach((button) => {
-        const isActive = button.dataset.cycle === cycleKey;
-        button.classList.toggle("active", isActive);
-        button.setAttribute("aria-selected", isActive);
-      });
-
-      boardBadge.textContent = cycleData.badge;
-      boardPriceValue.textContent = cycleData.price;
-      boardPriceInterval.textContent = cycleData.interval;
-      boardPriceCopy.textContent = cycleData.copy;
-      boardPriceCopy.style.display = cycleData.copy ? "block" : "none";
-      boardCta.textContent = cycleData.cta;
-      renderFeatures(boardFeaturesEl, cycleData.features);
-    }
-
-    // Initialize static feature lists
-    renderFeatures(freeFeaturesEl, planData.free.features);
-    renderFeatures(cmeFeaturesEl, planData.cme.features);
-    updateBoardPlan("monthly");
-    setActivePlan("board");
-
-    planButtons.forEach((button) => {
-      button.addEventListener("click", () => setActivePlan(button.dataset.plan));
-    });
-
-    boardToggleButtons.forEach((button) => {
-      button.addEventListener("click", () => updateBoardPlan(button.dataset.cycle));
-    });
-
-    document.querySelectorAll(".text-link").forEach((linkButton) => {
-      linkButton.addEventListener("click", () => {
-        const linkType = linkButton.dataset.link;
-        const message =
-          linkType === "accreditation"
-            ? "This would open the Accreditation Statement modal."
-            : "This would open the CME Learn More modal.";
-        alert(message);
       });
     });
   </script>
+
 </body>
 </html>

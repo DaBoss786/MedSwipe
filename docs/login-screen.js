@@ -14,8 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const passwordToggle = document.getElementById('passwordToggle');
   const loginLoader = document.getElementById('loginLoader');
   const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-  const createAccountBtn = document.getElementById('createAccountBtn');
-  const continueAsGuestBtn = document.getElementById('continueAsGuestBtn');
+  const loginBackButton = document.getElementById('loginBackButton');
   const oauthButtons = Array.from(document.querySelectorAll('[data-oauth-context="login-screen"]'));
 
   if (window.__medswipeOAuthRedirectOutcome && window.__medswipeOAuthRedirectOutcome.status === 'error' && (!window.__medswipeOAuthRedirectOutcome.flow || window.__medswipeOAuthRedirectOutcome.flow === 'login')) {
@@ -83,6 +82,47 @@ document.addEventListener('DOMContentLoaded', function() {
     submitButton.disabled = !(isEmailValid && isPasswordValid);
   }
 
+  function resetLoginState() {
+    if (loginForm) {
+      loginForm.reset();
+    }
+
+    [emailError, passwordError, loginError].forEach((field) => {
+      if (field) {
+        field.textContent = '';
+      }
+    });
+
+    const emailFieldWrapper = emailInput?.parentElement;
+    if (emailFieldWrapper) {
+      emailFieldWrapper.classList.remove('error', 'success');
+    }
+
+    const passwordFieldWrapper = passwordInput?.closest('.form-group');
+    if (passwordFieldWrapper) {
+      passwordFieldWrapper.classList.remove('error', 'success');
+    }
+
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+
+    isEmailValid = false;
+    isPasswordValid = false;
+    loginLoader?.classList.remove('show');
+  }
+
+  function revealMainOptions() {
+    const mainOptions = document.getElementById('mainOptions');
+    if (mainOptions) {
+      mainOptions.style.display = 'flex';
+    }
+
+    if (typeof ensureEventListenersAttached === 'function') {
+      ensureEventListenersAttached();
+    }
+  }
+
   function toggleOauthButtonState(buttons, isLoading) {
     buttons.forEach((btn) => {
       btn.disabled = isLoading;
@@ -109,32 +149,79 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   // Show login screen
-  window.showLoginScreen = function() {
-    // Reset form
-    loginForm.reset();
-    emailError.textContent = '';
-    passwordError.textContent = '';
-    loginError.textContent = '';
-    emailInput.parentElement.classList.remove('error', 'success');
-    passwordInput.closest('.form-group').classList.remove('error', 'success');
-    submitButton.disabled = true;
-    isEmailValid = false;
-    isPasswordValid = false;
-    
-    // Show login screen
-    if (loginScreen) {
-      loginScreen.classList.add('show');
+  window.showLoginScreen = function(options = {}) {
+    const config = typeof options === 'string' ? { origin: options } : (options || {});
+    const origin = config.origin || '';
+
+    if (!loginScreen) {
+      console.error('Login screen element not found when attempting to show it.');
+      return;
     }
+
+    if (origin) {
+      loginScreen.dataset.origin = origin;
+    } else {
+      delete loginScreen.dataset.origin;
+    }
+
+    if (!config.preserveMainOptions) {
+      const mainOptions = document.getElementById('mainOptions');
+      if (mainOptions) {
+        mainOptions.style.display = 'none';
+      }
+    }
+
+    if (origin === 'welcome') {
+      const welcomeScreen = document.getElementById('welcomeScreen');
+      if (welcomeScreen) {
+        welcomeScreen.style.display = 'none';
+        welcomeScreen.style.opacity = '0';
+      }
+    }
+
+    resetLoginState();
+
+    // Present login screen
+    loginScreen.style.display = 'flex';
+    loginScreen.style.opacity = '1';
+    loginScreen.removeAttribute('aria-hidden');
+    loginScreen.scrollTop = 0;
+    requestAnimationFrame(() => loginScreen.classList.add('show'));
   };
   
   // Hide login screen
-  window.hideLoginScreen = function() {
+  window.hideLoginScreen = function(options = {}) {
+    const config = typeof options === 'boolean' ? { restoreOrigin: options } : (options || {});
+    const restoreOrigin = config.restoreOrigin !== false;
+    const origin = loginScreen?.dataset?.origin || '';
+
     if (loginScreen) {
       loginScreen.classList.remove('show');
+      loginLoader?.classList.remove('show');
+      loginScreen.setAttribute('aria-hidden', 'true');
       
       // Hide with delay to allow for transition
       setTimeout(() => {
         loginScreen.style.display = 'none';
+        if (restoreOrigin) {
+          if (origin === 'welcome') {
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            if (welcomeScreen) {
+              welcomeScreen.style.display = 'flex';
+              requestAnimationFrame(() => {
+                welcomeScreen.style.opacity = '1';
+              });
+            }
+          } else {
+            const mainOptions = document.getElementById('mainOptions');
+            if (mainOptions) {
+              mainOptions.style.display = 'flex';
+            }
+          }
+        }
+        if (loginScreen) {
+          delete loginScreen.dataset.origin;
+        }
       }, 500);
     }
   };
@@ -147,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const password = passwordInput.value;
     
     // Show loader
-    loginLoader.classList.add('show');
+    loginLoader?.classList.add('show');
     loginError.textContent = '';
     
     try {
@@ -155,15 +242,15 @@ document.addEventListener('DOMContentLoaded', function() {
       await window.authFunctions.loginUser(email, password);
       
       // Successful login
-      loginLoader.classList.remove('show');
+      loginLoader?.classList.remove('show');
       
       // Hide login screen and show main options/dashboard
-      hideLoginScreen();
-      document.getElementById('mainOptions').style.display = 'flex';
+      hideLoginScreen({ restoreOrigin: false });
+      revealMainOptions();
       
     } catch (error) {
       // Failed login
-      loginLoader.classList.remove('show');
+      loginLoader?.classList.remove('show');
       loginError.textContent = getAuthErrorMessage(error);
       
       // Shake animation for error
@@ -189,7 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     toggleOauthButtonState(oauthButtons, true);
-    loginLoader.classList.add('show');
+    loginLoader?.classList.add('show');
     const method = providerKey === 'google' ? 'google_oauth' : 'apple_oauth';
     let keepLoaderVisible = false;
 
@@ -209,9 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       if (result.isNewUser && result.flow === 'register') {
-        loginLoader.classList.remove('show');
+        loginLoader?.classList.remove('show');
         if (typeof window.handleRegistrationSuccessFlow === 'function') {
-          hideLoginScreen();
+          hideLoginScreen({ restoreOrigin: false });
           try {
             await window.handleRegistrationSuccessFlow({ finalizeResult: result.finalizeResult, method });
           } catch (registrationError) {
@@ -224,24 +311,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
           }
         } else {
-          hideLoginScreen();
-          const mainOptionsFallback = document.getElementById('mainOptions');
-          if (mainOptionsFallback) {
-            mainOptionsFallback.style.display = 'flex';
-          }
+          hideLoginScreen({ restoreOrigin: false });
+          revealMainOptions();
         }
         return;
       }
 
-      hideLoginScreen();
+      hideLoginScreen({ restoreOrigin: false });
       sessionStorage.removeItem('pendingRedirectAfterRegistration');
-      const mainOptions = document.getElementById('mainOptions');
-      if (mainOptions) {
-        mainOptions.style.display = 'flex';
-      }
-      if (typeof ensureEventListenersAttached === 'function') {
-        ensureEventListenersAttached();
-      }
+      revealMainOptions();
       logAnalyticsEvent('login', { method });
     } catch (oauthError) {
       console.error(providerKey + ' OAuth login error:', oauthError);
@@ -250,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } finally {
       if (!keepLoaderVisible) {
-        loginLoader.classList.remove('show');
+        loginLoader?.classList.remove('show');
       }
       toggleOauthButtonState(oauthButtons, false);
     }
@@ -300,28 +378,16 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Handle forgot password
   function handleForgotPassword(e) {
-  e.preventDefault();
-  
-  // Use the existing password reset functionality
-  if (typeof showForgotPasswordModal === 'function') {
-    showForgotPasswordModal();
-  } else {
-    // Fallback if function not available yet
-    console.error("showForgotPasswordModal function not found");
-    alert('Error accessing password reset. Please try again later.');
-  }
-}
-  
-  // Handle create account
-  function handleCreateAccount() {
-    hideLoginScreen();
-    window.showRegisterForm(); // Access the function through the window object
-  }
-  
-  // Handle continue as guest
-  function handleContinueAsGuest() {
-    hideLoginScreen();
-    document.getElementById('mainOptions').style.display = 'flex';
+    e.preventDefault();
+    
+    // Use the existing password reset functionality
+    if (typeof showForgotPasswordModal === 'function') {
+      showForgotPasswordModal();
+    } else {
+      // Fallback if function not available yet
+      console.error("showForgotPasswordModal function not found");
+      alert('Error accessing password reset. Please try again later.');
+    }
   }
   
   // Add event listeners
@@ -347,12 +413,11 @@ document.addEventListener('DOMContentLoaded', function() {
     forgotPasswordLink.addEventListener('click', handleForgotPassword);
   }
   
-  if (createAccountBtn) {
-    createAccountBtn.addEventListener('click', handleCreateAccount);
-  }
-  
-  if (continueAsGuestBtn) {
-    continueAsGuestBtn.addEventListener('click', handleContinueAsGuest);
+  if (loginBackButton) {
+    loginBackButton.addEventListener('click', () => {
+      hideLoginScreen();
+      logAnalyticsEvent('login_back_tap', { source: 'login_screen' });
+    });
   }
   
   // Add shake animation for form errors
