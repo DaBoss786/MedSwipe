@@ -27,7 +27,7 @@ try {
   console.error("Error creating updateUserProfile function reference in user.v2.js:", error);
 }
 
-const IOS_REVIEW_QUESTION_MILESTONE = 10;
+const IOS_REVIEW_QUESTION_MILESTONES = [10, 40, 60];
 
 function getAppReviewPlugin() {
   if (typeof window === 'undefined') return undefined;
@@ -91,7 +91,8 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
           level: 1,  // Initialize level
           achievements: {}, // Initialize achievements tracking
           currentCorrectStreak: 0, // Track consecutive correct answers
-          hasPromptedIosReview: false
+          hasPromptedIosReview: false,
+          promptedIosReviewMilestones: []
         };
       }
       
@@ -117,6 +118,18 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
 
       if (data.stats.hasPromptedIosReview === undefined) {
         data.stats.hasPromptedIosReview = false;
+      }
+
+      if (!Array.isArray(data.stats.promptedIosReviewMilestones)) {
+        if (data.stats.promptedIosReviewMilestones && typeof data.stats.promptedIosReviewMilestones === 'object') {
+          data.stats.promptedIosReviewMilestones = Object.values(data.stats.promptedIosReviewMilestones);
+        } else {
+          data.stats.promptedIosReviewMilestones = [];
+        }
+      }
+
+      if (data.stats.hasPromptedIosReview && data.stats.promptedIosReviewMilestones.length === 0) {
+        data.stats.promptedIosReviewMilestones.push(IOS_REVIEW_QUESTION_MILESTONES[0]);
       }
       
       if (!data.answeredQuestions) {
@@ -152,9 +165,17 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       }
       data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
 
-      const reachedIosReviewMilestone = data.stats.totalAnswered >= IOS_REVIEW_QUESTION_MILESTONE && !data.stats.hasPromptedIosReview;
-      if (reachedIosReviewMilestone && isIosNativeApp()) {
-        data.stats.hasPromptedIosReview = true;
+      const promptedMilestones = data.stats.promptedIosReviewMilestones || [];
+      const milestoneToTrigger = IOS_REVIEW_QUESTION_MILESTONES.find((milestone) => {
+        return !promptedMilestones.includes(milestone) && data.stats.totalAnswered >= milestone;
+      });
+
+      if (milestoneToTrigger !== undefined && isIosNativeApp()) {
+        promptedMilestones.push(milestoneToTrigger);
+        data.stats.promptedIosReviewMilestones = Array.from(new Set(promptedMilestones));
+        if (milestoneToTrigger === IOS_REVIEW_QUESTION_MILESTONES[0]) {
+          data.stats.hasPromptedIosReview = true;
+        }
         shouldPromptForIosReview = true;
       }
       
