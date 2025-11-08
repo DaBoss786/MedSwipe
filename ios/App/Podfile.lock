@@ -1197,6 +1197,8 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (7.0.3):
     - Capacitor
+  - CapawesomeCapacitorAppReview (7.0.1):
+    - Capacitor
   - FirebaseAnalytics (11.7.0):
     - FirebaseAnalytics/AdIdSupport (= 11.7.0)
     - FirebaseCore (~> 11.7.0)
@@ -1456,6 +1458,7 @@ DEPENDENCIES:
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+  - "CapawesomeCapacitorAppReview (from `../../node_modules/@capawesome/capacitor-app-review`)"
   - FirebaseAnalytics
   - FirebaseAppCheck
   - FirebaseAuth
@@ -1522,6 +1525,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/keyboard"
   CapacitorStatusBar:
     :path: "../../node_modules/@capacitor/status-bar"
+  CapawesomeCapacitorAppReview:
+    :path: "../../node_modules/@capawesome/capacitor-app-review"
   RevenuecatPurchasesCapacitor:
     :path: "../../node_modules/@revenuecat/purchases-capacitor"
 
@@ -1540,6 +1545,7 @@ SPEC CHECKSUMS:
   CapacitorHaptics: b3fb2869e72c4466e18ce9ccbeb60a3d8723b3d4
   CapacitorKeyboard: 62f36104f26d53d8b3a2a43f2a69fe714f1777d5
   CapacitorStatusBar: 0659ddc7b1713764a05831463d215b177a15d054
+  CapawesomeCapacitorAppReview: ee9cb9d34e59534efcdb120dbef4d7166421e2ee
   FirebaseAnalytics: bc9e565af9044ba8d6c6e4157e4edca8e5fdf7ec
   FirebaseAppCheck: 2bd832b48faa38f7d86f902c57f78af93eae4cdc
   FirebaseAppCheckInterop: 06fe5a3799278ae4667e6c432edd86b1030fa3df
@@ -1571,6 +1577,6 @@ SPEC CHECKSUMS:
   RevenueCat: 02c8d0082d3373bcbc831faa600943d6ba6cad6e
   RevenuecatPurchasesCapacitor: 886039ffdb6fcbc28d0a3bb9b616bd7f2f5246ec
 
-PODFILE CHECKSUM: 95eb21e3a7ce634da5c60e8ef21288d0cfde5712
+PODFILE CHECKSUM: aac547ae6b4352751019126efc9ded85b6a217d3
 
 COCOAPODS: 1.16.2

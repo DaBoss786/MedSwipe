@@ -28,3 +28,14 @@ export function detectNativeApp() {
   }
   
   export const isNativeApp = detectNativeApp();
+
+  export function isIosNativeApp() {
+    const capacitor = typeof window !== 'undefined' ? window.Capacitor : undefined;
+    if (!capacitor) return false;
+  
+    const platformName = typeof capacitor.getPlatform === 'function'
+      ? capacitor.getPlatform()
+      : capacitor.platform;
+  
+    return detectNativeApp() && platformName === 'ios';
+  }

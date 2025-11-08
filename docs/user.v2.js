@@ -1,6 +1,7 @@
 // user.js - TOP OF FILE
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc, updateProfile } from './firebase-config.js'; // Adjust path if needed
 import { setHapticsEnabled } from './haptics.js';
+import { isIosNativeApp } from './platform.js';
 
 // user.js - After imports
 
@@ -24,6 +25,13 @@ try {
   updateUserProfileFunction = httpsCallable(functions, 'updateUserProfile');
 } catch (error) {
   console.error("Error creating updateUserProfile function reference in user.v2.js:", error);
+}
+
+const IOS_REVIEW_QUESTION_MILESTONE = 10;
+
+function getAppReviewPlugin() {
+  if (typeof window === 'undefined') return undefined;
+  return window?.Capacitor?.Plugins?.AppReview;
 }
 
 // Session tracking
@@ -65,6 +73,7 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
     let levelUp = false;
     let newLevel = 0;
     let totalXP = 0;
+    let shouldPromptForIosReview = false;
     
     await runTransaction(db, async (transaction) => {
       const userDoc = await getDoc(userDocRef);
@@ -81,7 +90,8 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
           xp: 0, // Initialize XP
           level: 1,  // Initialize level
           achievements: {}, // Initialize achievements tracking
-          currentCorrectStreak: 0 // Track consecutive correct answers
+          currentCorrectStreak: 0, // Track consecutive correct answers
+          hasPromptedIosReview: false
         };
       }
       
@@ -103,6 +113,10 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       // Initialize current correct streak
       if (data.stats.currentCorrectStreak === undefined) {
         data.stats.currentCorrectStreak = 0;
+      }
+
+      if (data.stats.hasPromptedIosReview === undefined) {
+        data.stats.hasPromptedIosReview = false;
       }
       
       if (!data.answeredQuestions) {
@@ -137,6 +151,12 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
         data.stats.totalIncorrect++;
       }
       data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
+
+      const reachedIosReviewMilestone = data.stats.totalAnswered >= IOS_REVIEW_QUESTION_MILESTONE && !data.stats.hasPromptedIosReview;
+      if (reachedIosReviewMilestone && isIosNativeApp()) {
+        data.stats.hasPromptedIosReview = true;
+        shouldPromptForIosReview = true;
+      }
       
       // Update category stats
       if (!data.stats.categories[category]) {
@@ -334,6 +354,13 @@ if (isCorrect && data.stats.totalCorrect === 1 && !data.stats.achievements.first
       setTimeout(() => {
         showLevelUpAnimation(newLevel, totalXP);
       }, 1000);
+    }
+
+    if (shouldPromptForIosReview) {
+      const reviewPromptDelay = levelUp ? 2200 : 800;
+      setTimeout(() => {
+        maybeShowIosReviewPrompt();
+      }, reviewPromptDelay);
     }
     
   } catch (error) {
@@ -1480,6 +1507,38 @@ async function saveProfileChanges() {
     saveButton.disabled = false;
     saveButton.textContent = 'Save Changes';
   }
+}
+
+async function maybeShowIosReviewPrompt() {
+  if (!isIosNativeApp()) {
+    return;
+  }
+
+  const appReviewPlugin = getAppReviewPlugin();
+  if (!appReviewPlugin || typeof appReviewPlugin.requestReview !== 'function') {
+    console.warn("App Review plugin is unavailable; cannot request review.");
+    return;
+  }
+
+  try {
+    const wantsReview = await showReviewPrePrompt();
+    if (!wantsReview) {
+      return;
+    }
+
+    await appReviewPlugin.requestReview();
+  } catch (error) {
+    console.error("Unable to present the iOS review prompt:", error);
+  }
+}
+
+function showReviewPrePrompt() {
+  if (typeof window === 'undefined') {
+    return Promise.resolve(false);
+  }
+
+  const message = "Enjoying MedSwipe so far? Tap OK to rate us in the App Store.";
+  return Promise.resolve(window.confirm(message));
 }
 
 export {

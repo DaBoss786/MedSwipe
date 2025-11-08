@@ -17,6 +17,7 @@
     "@capacitor/ios": "^7.4.3",
     "@capacitor/keyboard": "^7.0.3",
     "@capacitor/status-bar": "^7.0.3",
+    "@capawesome/capacitor-app-review": "^7.0.1",
     "@revenuecat/purchases-capacitor": "^11.2.3",
     "firebase": "^11.10.0"
   }
