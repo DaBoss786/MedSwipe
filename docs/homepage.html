@@ -41,6 +41,22 @@
     <link rel="icon" href="icons/favicon.ico">
     
     <style>
+        :root {
+            --brand-primary: #0C72D3;
+            --brand-primary-dark: #0056b3;
+            --announcement-height: 0px;
+        }
+
+        body.has-announcement {
+            --announcement-height: 30px;
+        }
+
+        @media (max-width: 640px) {
+            body.has-announcement {
+                --announcement-height: 64px;
+            }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -62,21 +78,66 @@
         }
         
         /* Navigation */
-        .navbar {
+        .announcement-bar {
             position: fixed;
             top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(120deg, #0C72D3, #338dff);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 3px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1001;
+            text-align: center;
+        }
+
+        .announcement-bar span {
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .announcement-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            padding-bottom: 2px;
+        }
+
+        .announcement-link i {
+            font-size: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .announcement-bar {
+                flex-direction: column;
+                line-height: 1.4;
+            }
+        }
+
+        .navbar {
+            position: fixed;
+            top: var(--announcement-height);
             width: 100%;
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             z-index: 1000;
-            padding: 20px 0;
+            padding: 4px 0;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
         
         .navbar.scrolled {
-            padding: 15px 0;
+            padding: 6px 0;
             background: rgba(255, 255, 255, 0.95);
         }
         
@@ -86,11 +147,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 40px;
+            padding: 0 20px;
         }
         
         .logo img {
-            height: 42px;
+            height: 30px;
             transition: all 0.3s ease;
         }
         
@@ -98,6 +159,22 @@
             display: flex;
             gap: 12px;
             align-items: center;
+        }
+        
+        .nav-app-store-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: none;
+            background: transparent;
+            height: 40px;
+        }
+        
+        .nav-app-store-badge img {
+            width: 150px;
+            height: auto;
+            display: block;
         }
         
         .btn {
@@ -113,6 +190,11 @@
             align-items: center;
             gap: 8px;
             letter-spacing: -0.01em;
+        }
+        
+        .nav-buttons .btn {
+            padding: 8px 18px;
+            font-size: 14px;
         }
         
         .btn-primary {
@@ -141,28 +223,18 @@
         
         /* Hero Section */
         .hero {
-            padding: 180px 40px 120px;
+            padding: 100px 24px 72px;
             text-align: center;
             max-width: 1200px;
-            margin: 0 auto;
-            min-height: 100vh;
+            margin: calc(var(--announcement-height) + 56px) auto 0;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
         
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(12, 114, 211, 0.1);
-            color: #0C72D3;
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 32px;
-            border: 1px solid rgba(12, 114, 211, 0.2);
+        .hero-inner {
+            max-width: 780px;
+            margin: 0 auto;
         }
         
         .hero h1 {
@@ -184,7 +256,7 @@
         .hero p {
             font-size: clamp(1.25rem, 3vw, 1.5rem);
             color: #666;
-            margin-bottom: 48px;
+            margin-bottom: 28px;
             font-weight: 400;
             max-width: 600px;
             margin-left: auto;
@@ -198,6 +270,23 @@
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        
+        .app-store-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+        
+        .app-store-badge img {
+            width: 220px;
+            height: auto;
+            display: block;
         }
         
         .hero .btn-primary {
@@ -216,7 +305,7 @@
         
         /* Demo Section */
         .demo-section {
-            padding: 0 40px 120px;
+            padding: 20px 40px 120px;
             max-width: 1400px;
             margin: 0 auto;
         }
@@ -247,7 +336,7 @@
         
         .demo-header {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 36px;
         }
         
         .demo-header h2 {
@@ -1041,7 +1130,8 @@
                 padding: 7px 12px;
             }
         }
-            
+        
+        @media (max-width: 640px) {
             .hero {
                 padding: 120px 20px 80px;
                 min-height: auto;
@@ -1051,6 +1141,7 @@
                 flex-direction: column;
                 gap: 12px;
             }
+        }
             
             .demo-section,
             .features-section,
@@ -1191,7 +1282,14 @@
     </script>
     
 </head>
-<body>
+<body class="has-announcement">
+    <div class="announcement-bar">
+        <span>MedSwipe for iOS is live.</span>
+        <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="announcement-link">
+            Grab it on the App Store
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -1199,26 +1297,32 @@
                 <img src="MedSwipe Logo gradient.png" alt="MedSwipe">
             </div>
             <div class="nav-buttons">
-                <a href="index.html?from=landing" class="btn btn-primary">Start Learning</a>
-                <a href="index.html?from=landing" class="btn btn-secondary">Launch App</a>
+                <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="nav-app-store-badge" aria-label="Download MedSwipe on the App Store">
+                    <img src="Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">
+                </a>
+                <a href="index.html?from=landing" class="btn btn-secondary">Use Web App</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <h1>
-            Swipe. Learn.<br>
-            <span>Master ENT.</span>
-        </h1>
-        <p>
-            Swipe-based ENT learning, board review and CME that fits into your busy day.
-        </p>
-        <div class="hero-cta">
-            <a href="index.html?from=landing" class="btn btn-primary">
-                Start Learning
-                <i class="fas fa-arrow-right"></i>
-            </a>
+    <section class="hero" id="download">
+        <div class="hero-inner">
+            <h1>
+                Swipe. Learn.<br>
+                <span>Master ENT.</span>
+            </h1>
+            <p>
+                Swipe-based ENT learning, board review and CME that fits into your busy day.
+            </p>
+            <div class="hero-cta" id="appstore-download">
+                <a href="https://apps.apple.com/us/app/medswipe/id6753632306" class="app-store-badge" target="_blank" rel="noopener" aria-label="Download MedSwipe on the App Store">
+                    <img src="Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">
+                </a>
+                <a href="index.html?from=landing" class="btn btn-secondary hero-web-link">
+                    Continue in Web App
+                </a>
+            </div>
         </div>
     </section>
 

@@ -23,18 +23,42 @@
 
     <style>
         /* Shared Styles from homepage.html */
+        :root {
+            --brand-primary: #0C72D3;
+            --brand-primary-dark: #0056b3;
+            --announcement-height: 0px;
+        }
+
+        body.has-announcement {
+            --announcement-height: 30px;
+        }
+
+        @media (max-width: 640px) {
+            body.has-announcement {
+                --announcement-height: 64px;
+            }
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
         body { font-family: 'Roboto', sans-serif; line-height: 1.7; color: #1a1a1a; background: #ffffff; font-weight: 400; }
-        .navbar { position: fixed; top: 0; width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); z-index: 1000; padding: 20px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
-        .navbar.scrolled { padding: 15px 0; background: rgba(255, 255, 255, 0.95); }
-        .nav-container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 40px; }
-        .logo a { display: block; } .logo img { height: 42px; transition: all 0.3s ease; }
+        .announcement-bar { position: fixed; top: 0; left: 0; width: 100%; background: linear-gradient(120deg, #0C72D3, #338dff); color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 3px 16px; font-size: 14px; font-weight: 500; z-index: 1001; text-align: center; }
+        .announcement-bar span { font-weight: 600; letter-spacing: -0.01em; }
+        .announcement-link { color: #ffffff; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.4); padding-bottom: 2px; }
+        .announcement-link i { font-size: 12px; }
+        @media (max-width: 640px) { .announcement-bar { flex-direction: column; line-height: 1.4; } }
+        .navbar { position: fixed; top: var(--announcement-height); width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); z-index: 1000; padding: 4px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+        .navbar.scrolled { padding: 6px 0; background: rgba(255, 255, 255, 0.95); }
+        .nav-container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .logo a { display: block; } .logo img { height: 30px; transition: all 0.3s ease; }
         .nav-buttons { display: flex; gap: 12px; align-items: center; }
-        .btn { padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.3s; cursor: pointer; border: none; }
+        .nav-app-store-badge { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: none; background: transparent; height: 40px; }
+        .nav-app-store-badge img { width: 150px; height: auto; display: block; }
+        .btn { padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.3s; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+        .nav-buttons .btn { padding: 8px 18px; font-size: 14px; }
         .btn-primary { background: #0C72D3; color: white; } .btn-primary:hover { background: #0056b3; }
         .btn-secondary { background: transparent; color: #666; border: 1px solid rgba(0, 0, 0, 0.1); } .btn-secondary:hover { background: rgba(12, 114, 211, 0.05); color: #0C72D3; }
-        .hero { padding: 160px 40px 80px; text-align: center; max-width: 900px; margin: 0 auto; }
+        .hero { padding: 120px 40px 80px; text-align: center; max-width: 900px; margin: calc(var(--announcement-height) + 40px) auto 0; }
         .hero h1 { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; color: #1a1a1a; margin-bottom: 24px; }
         .hero p { font-size: clamp(1.1rem, 2.5vw, 1.25rem); color: #666; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
         .container { max-width: 900px; margin: 0 auto; padding: 60px 40px; }
@@ -56,7 +80,14 @@
         @media (max-width: 768px) { .nav-container { padding: 0 20px; } .logo img { height: 36px; } .btn { padding: 8px 16px; font-size: 13px; } .hero { padding: 120px 20px 60px; } .container { padding: 40px 20px; } .footer-content { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body>
+<body class="has-announcement">
+    <div class="announcement-bar">
+        <span>MedSwipe for iOS is live.</span>
+        <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="announcement-link">
+            Grab it on the App Store
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
@@ -64,8 +95,10 @@
                 <a href="homepage.html"><img src="MedSwipe Logo gradient.png" alt="MedSwipe"></a>
             </div>
             <div class="nav-buttons">
-                <a href="index.html?from=landing" class="btn btn-primary">Start Learning</a>
-                <a href="index.html?from=landing" class="btn btn-secondary">Launch App</a>
+                <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="nav-app-store-badge" aria-label="Download MedSwipe on the App Store">
+                    <img src="Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">
+                </a>
+                <a href="index.html?from=landing" class="btn btn-secondary">Use Web App</a>
             </div>
         </div>
     </nav>
