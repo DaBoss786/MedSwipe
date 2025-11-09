@@ -471,8 +471,8 @@ button:not(:disabled):active {
 #progressBar {
   height: 100%;
   width: 0%;
-  background-color: #0056b3;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  border-radius: 999px;
   transition: width 0.3s ease;
 }
 
