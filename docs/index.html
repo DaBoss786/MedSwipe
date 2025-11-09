@@ -75,7 +75,7 @@
 <!-- ================================= -->
 <!-- == NEW Specialty Pick Screen == -->
 <!-- ================================= -->
-<div id="specialtyPickScreen" class="onboarding-screen" style="display: none;">
+<div id="specialtyPickScreen" class="onboarding-screen" data-onboarding-step="1" style="display: none;">
   <div class="onboarding-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
     <h1 class="onboarding-title">Choose Your Specialty</h1>
@@ -96,6 +96,12 @@
     
     <button id="specialtyContinueBtn" class="onboarding-primary-btn" disabled>Continue</button>
   </div>
+  <div class="onboarding-progress-strip">
+    <div class="onboarding-progress-bar" role="progressbar" aria-label="Onboarding progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1">
+      <div class="onboarding-progress-fill"></div>
+    </div>
+    <p class="onboarding-progress-text">Step 1 of 3</p>
+  </div>
 </div>
 <!-- ================================= -->
 <!-- == END Specialty Pick Screen   == -->
@@ -104,7 +110,7 @@
 <!-- ===================================== -->
 <!-- == NEW Experience Level Pick Screen == -->
 <!-- ===================================== -->
-<div id="experiencePickScreen" class="onboarding-screen" style="display: none;">
+<div id="experiencePickScreen" class="onboarding-screen" data-onboarding-step="2" style="display: none;">
   <div class="onboarding-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
     <h1 class="onboarding-title">Select Your Experience Level</h1>
@@ -121,6 +127,12 @@
     
     <button id="experienceContinueBtn" class="onboarding-primary-btn" disabled>Continue</button>
   </div>
+  <div class="onboarding-progress-strip">
+    <div class="onboarding-progress-bar" role="progressbar" aria-label="Onboarding progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="2">
+      <div class="onboarding-progress-fill"></div>
+    </div>
+    <p class="onboarding-progress-text">Step 2 of 3</p>
+  </div>
 </div>
 <!-- ===================================== -->
 <!-- == END Experience Level Pick Screen == -->
@@ -129,7 +141,7 @@
 <!-- ===================================== -->
 <!-- == NEW Username Pick Screen        == -->
 <!-- ===================================== -->
-<div id="usernamePickScreen" class="onboarding-screen" style="display: none;">
+<div id="usernamePickScreen" class="onboarding-screen" data-onboarding-step="3" style="display: none;">
   <div class="onboarding-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
     <h1 class="onboarding-title">Create Your Username</h1>
@@ -141,6 +153,12 @@
     </div>
     
     <button id="usernameContinueBtn" class="onboarding-primary-btn" disabled>Continue</button>
+  </div>
+  <div class="onboarding-progress-strip">
+    <div class="onboarding-progress-bar" role="progressbar" aria-label="Onboarding progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="3">
+      <div class="onboarding-progress-fill"></div>
+    </div>
+    <p class="onboarding-progress-text">Step 3 of 3</p>
   </div>
 </div>
 <!-- ===================================== -->

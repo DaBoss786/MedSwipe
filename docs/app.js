@@ -718,6 +718,14 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     window.selectedExperienceLevel = null;
   }
 
+  const onboardingScreenSequence = [
+    specialtyPickScreen,
+    experiencePickScreen,
+    usernamePickScreen
+  ].filter(Boolean);
+
+  initializeOnboardingProgressIndicators(onboardingScreenSequence);
+
   // Update the auth state change listener to properly handle welcome screen
 	window.addEventListener('authStateChanged', function(event) {
 	  console.log('Auth state changed in app.js:', event.detail);
@@ -1306,6 +1314,87 @@ function setupRegistrationFollowupModals() {
   }
 }
 
+const ONBOARDING_TRANSITION_DURATION = 500;
+
+function initializeOnboardingProgressIndicators(onboardingScreensList) {
+  if (!Array.isArray(onboardingScreensList) || onboardingScreensList.length === 0) {
+    return;
+  }
+
+  const totalSteps = onboardingScreensList.length;
+
+  onboardingScreensList.forEach((screenElement, index) => {
+    if (!screenElement) {
+      return;
+    }
+
+    const declaredStep = parseInt(screenElement.dataset.onboardingStep, 10);
+    const stepNumber = Number.isFinite(declaredStep) ? declaredStep : index + 1;
+    const normalizedStep = Math.min(Math.max(stepNumber, 1), totalSteps);
+    const progressBar = screenElement.querySelector('.onboarding-progress-bar');
+    const progressFill = screenElement.querySelector('.onboarding-progress-fill');
+    const progressText = screenElement.querySelector('.onboarding-progress-text');
+
+    if (progressBar) {
+      progressBar.setAttribute('role', 'progressbar');
+      progressBar.setAttribute('aria-label', 'Onboarding progress');
+      progressBar.setAttribute('aria-valuemin', '1');
+      progressBar.setAttribute('aria-valuemax', totalSteps.toString());
+      progressBar.setAttribute('aria-valuenow', normalizedStep.toString());
+      progressBar.setAttribute('aria-valuetext', `Step ${normalizedStep} of ${totalSteps}`);
+    }
+
+    if (progressFill) {
+      const progressPercent = (normalizedStep / totalSteps) * 100;
+      progressFill.style.width = `${progressPercent}%`;
+    }
+
+    if (progressText) {
+      progressText.textContent = `Step ${normalizedStep} of ${totalSteps}`;
+    }
+  });
+}
+
+function transitionOnboardingScreen(fromScreen, toScreen, options = {}) {
+  if (!fromScreen || !toScreen) {
+    return;
+  }
+
+  const {
+    duration = ONBOARDING_TRANSITION_DURATION,
+    display = 'flex',
+    onBeforeShow,
+    onAfterHide,
+  } = options;
+
+  toScreen.style.display = display;
+  toScreen.style.opacity = '0';
+  toScreen.style.pointerEvents = 'none';
+
+  if (typeof onBeforeShow === 'function') {
+    onBeforeShow();
+  }
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fromScreen.style.pointerEvents = 'none';
+      fromScreen.style.opacity = '0';
+      toScreen.style.opacity = '1';
+    });
+  });
+
+  setTimeout(() => {
+    fromScreen.style.display = 'none';
+    fromScreen.style.opacity = '1';
+    fromScreen.style.pointerEvents = '';
+    toScreen.style.pointerEvents = '';
+
+    if (typeof onAfterHide === 'function') {
+      onAfterHide();
+    }
+  }, duration);
+}
+
 // --- Specialty Screen Logic ---
 if (specialtyOptionCards.length > 0 && specialtyContinueBtn) {
   specialtyOptionCards.forEach(card => {
@@ -1337,16 +1426,13 @@ if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) {
     }
     
     console.log("Proceeding from Specialty screen. Specialty:", window.selectedSpecialty);
-    specialtyPickScreen.style.opacity = '0';
-    setTimeout(function() {
-      specialtyPickScreen.style.display = 'none';
-      experiencePickScreen.style.display = 'flex';
-      experiencePickScreen.style.opacity = '1';
-      // Reset experience selection when showing this screen
-      window.selectedExperienceLevel = null;
-      experienceOptionButtons.forEach(b => b.classList.remove('selected'));
-      if(experienceContinueBtn) experienceContinueBtn.disabled = true;
-    }, 500);
+    transitionOnboardingScreen(specialtyPickScreen, experiencePickScreen, {
+      onBeforeShow: () => {
+        window.selectedExperienceLevel = null;
+        experienceOptionButtons.forEach(b => b.classList.remove('selected'));
+        if (experienceContinueBtn) experienceContinueBtn.disabled = true;
+      }
+    });
   });
 }
 
@@ -1380,12 +1466,12 @@ if (experienceContinueBtn && experiencePickScreen && usernamePickScreen) {
       return;
     }
     
-    experiencePickScreen.style.opacity = '0';
-    setTimeout(function() {
-      experiencePickScreen.style.display = 'none';
-      usernamePickScreen.style.display = 'flex';
-      usernamePickScreen.style.opacity = '1';
-      if (onboardingUsernameInput) {
+    transitionOnboardingScreen(experiencePickScreen, usernamePickScreen, {
+      onBeforeShow: () => {
+        if (!onboardingUsernameInput) {
+          return;
+        }
+
         const defaultUsername = resolveAutoOnboardingUsername();
         onboardingUsernameInput.value = defaultUsername;
         window.selectedUsername = defaultUsername;
@@ -1415,7 +1501,7 @@ if (experienceContinueBtn && experiencePickScreen && usernamePickScreen) {
 
         onboardingUsernameInput.focus();
       }
-    }, 500);
+    });
   });
 }
 
@@ -1463,17 +1549,23 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
         console.log(`GA User Property 'user_specialty' set to: ${window.selectedSpecialty}`);
       }
 
-      usernamePickScreen.style.opacity = '0';
+      transitionOnboardingScreen(usernamePickScreen, onboardingLoadingScreen, {
+        display: 'flex'
+      });
+
       setTimeout(function() {
-        usernamePickScreen.style.display = 'none';
-        onboardingLoadingScreen.style.display = 'flex';
+        onboardingLoadingScreen.style.pointerEvents = 'none';
+        onboardingLoadingScreen.style.opacity = '0';
+
         setTimeout(function() {
           onboardingLoadingScreen.style.display = 'none';
+          onboardingLoadingScreen.style.pointerEvents = '';
+          onboardingLoadingScreen.style.opacity = '1';
           if (typeof startOnboardingQuiz === 'function') startOnboardingQuiz();
           else if (typeof window.startOnboardingQuiz === 'function') window.startOnboardingQuiz();
           else console.error("startOnboardingQuiz function not found!");
-        }, 2000);
-      }, 500);
+        }, ONBOARDING_TRANSITION_DURATION);
+      }, 2000);
 
     } catch (error) {
       console.error("Failed to save onboarding selections:", error);

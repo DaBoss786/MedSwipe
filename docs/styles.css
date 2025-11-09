@@ -4007,6 +4007,7 @@ button:not(:disabled):active {
   align-items: center;
   justify-content: center;
   z-index: 9700;
+  transition: opacity 0.5s ease-out;
 }
 
 .loading-content {
@@ -4224,6 +4225,41 @@ button:not(:disabled):active {
   color: #adb5bd;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.onboarding-progress-strip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: min(360px, calc(100% - 40px));
+  text-align: center;
+  pointer-events: none;
+}
+
+.onboarding-progress-bar {
+  width: 100%;
+  height: 10px;
+  background-color: #e0e6ed;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.onboarding-progress-fill {
+  width: 0;
+  height: 100%;
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  border-radius: inherit;
+  transition: width 0.4s ease;
+}
+
+.onboarding-progress-text {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0C72D3;
 }
 
 /* Registration Benefits Modal */
