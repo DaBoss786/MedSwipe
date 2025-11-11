@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About MedSwipe</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Learn about the mission behind MedSwipe, a tool created by a board-certified ENT to make medical education more engaging and accessible.">
+    <meta name="robots" content="index, follow">
+
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="icons/favicon.ico">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://medswipeapp.com/about.html">
+
+    <style>
+        /* Shared Styles from homepage.html */
+        :root {
+            --brand-primary: #0C72D3;
+            --brand-primary-dark: #0056b3;
+            --announcement-height: 0px;
+        }
+
+        body.has-announcement {
+            --announcement-height: 30px;
+        }
+
+        @media (max-width: 640px) {
+            body.has-announcement {
+                --announcement-height: 64px;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Roboto', sans-serif; line-height: 1.7; color: #1a1a1a; background: #ffffff; font-weight: 400; }
+        .announcement-bar { position: fixed; top: 0; left: 0; width: 100%; background: linear-gradient(120deg, #0C72D3, #338dff); color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 3px 16px; font-size: 14px; font-weight: 500; z-index: 1001; text-align: center; }
+        .announcement-bar span { font-weight: 600; letter-spacing: -0.01em; }
+        .announcement-link { color: #ffffff; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.4); padding-bottom: 2px; }
+        .announcement-link i { font-size: 12px; }
+        @media (max-width: 640px) { .announcement-bar { flex-direction: column; line-height: 1.4; } }
+        .navbar { position: fixed; top: var(--announcement-height); width: 100%; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px); z-index: 1000; padding: 4px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+        .navbar.scrolled { padding: 6px 0; background: rgba(255, 255, 255, 0.95); }
+        .nav-container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .logo a { display: block; } .logo img { height: 30px; transition: all 0.3s ease; }
+        .nav-buttons { display: flex; gap: 12px; align-items: center; }
+        .nav-app-store-badge { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: none; background: transparent; height: 40px; }
+        .nav-app-store-badge img { width: 150px; height: auto; display: block; }
+        .btn { padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.3s; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+        .nav-buttons .btn { padding: 8px 18px; font-size: 14px; }
+        .btn-primary { background: #0C72D3; color: white; } .btn-primary:hover { background: #0056b3; }
+        .btn-secondary { background: transparent; color: #666; border: 1px solid rgba(0, 0, 0, 0.1); } .btn-secondary:hover { background: rgba(12, 114, 211, 0.05); color: #0C72D3; }
+        .hero { padding: 120px 40px 80px; text-align: center; max-width: 900px; margin: calc(var(--announcement-height) + 40px) auto 0; }
+        .hero h1 { font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; color: #1a1a1a; margin-bottom: 24px; }
+        .hero p { font-size: clamp(1.1rem, 2.5vw, 1.25rem); color: #666; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .hero-logo { margin-top: 32px; }
+        .hero-logo img { width: min(320px, 60vw); height: auto; display: block; margin: 0 auto; }
+        .container { max-width: 900px; margin: 0 auto; padding: 60px 40px; }
+        main p { color: #333; margin-bottom: 1.5em; font-size: 1.1rem; }
+        .footer { background: #1a1a1a; color: #999; padding: 80px 40px 40px; }
+        .footer-content { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 60px; }
+        .footer-brand h3 { color: #ffffff; font-size: 24px; margin-bottom: 16px; } .footer-brand p { font-size: 16px; margin-bottom: 24px; }
+        .footer-section h4 { color: #ffffff; font-size: 18px; margin-bottom: 20px; }
+        .footer-section a { color: #999; text-decoration: none; display: block; margin-bottom: 12px; font-size: 16px; transition: color 0.3s ease; }
+        .footer-section a:hover { color: #66A6FF; }
+        .footer-bottom { text-align: center; padding-top: 40px; border-top: 1px solid #333; color: #666; font-size: 14px; }
+        @media (max-width: 768px) { .nav-container { padding: 0 20px; } .logo img { height: 36px; } .btn { padding: 8px 16px; font-size: 13px; } .hero { padding: 120px 20px 60px; } .container { padding: 40px 20px; } .footer-content { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="has-announcement">
+    <div class="announcement-bar">
+        <span>MedSwipe for iOS is live.</span>
+        <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="announcement-link">
+            Grab it on the App Store
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <a href="homepage.html"><img src="MedSwipe Logo gradient.png" alt="MedSwipe"></a>
+            </div>
+            <div class="nav-buttons">
+                <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="nav-app-store-badge" aria-label="Download MedSwipe on the App Store">
+                    <img src="Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">
+                </a>
+                <a href="index.html?from=landing" class="btn btn-secondary">Use Web App</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Header -->
+    <header class="hero">
+        <h1>About MedSwipe</h1>
+        <p>Making medical education more engaging, one swipe at a time.</p>
+        <div class="hero-logo">
+            <img src="MedSwipe Logo gradient.png" alt="MedSwipe logo">
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <p>MedSwipe is a dynamic, swipe-based quiz app designed specifically for medical professionals and learners. Our goal is to improve medical education by offering a casual, engaging alternative to traditional, regimented board review resources and question banks.</p>
+        <p>Created by a board-certified ENT, MedSwipe brings a fresh, interactive approach to studying medicine. Instead of slogging through lengthy textbooks and overly structured review materials, MedSwipe lets you learn on the go—one swipe at a time. The app is designed to keep you engaged with bite-sized questions, real-time performance tracking, and interactive leaderboards that make board review feel less like a chore and more like a game.</p>
+        <p>Whether you're a seasoned practitioner or just starting out in medicine, MedSwipe is here to support your learning journey in a way that fits seamlessly into your busy lifestyle.</p>
+        
+        <div style="text-align: center; margin-top: 60px;">
+             <a href="homepage.html" class="btn btn-primary">Back to Home</a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>MedSwipe</h3>
+                <p>Revolutionizing medical education through gamified learning and innovative technology. Join hundreds of medical professionals advancing their careers with MedSwipe.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Product</h4>
+                <a href="index.html?from=landing">Web App</a>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <a href="mailto:support@medswipeapp.com">Contact Us</a>
+                <a href="faq.html">FAQ</a>
+                <a href="about.html">About</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="terms.html">Terms of Use</a>
+                <a href="privacy.html">Privacy Policy</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 MedSwipe. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

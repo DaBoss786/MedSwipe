@@ -1,0 +1,1782 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedSwipe - Swipe. Learn. Master ENT.</title>
+    
+<!-- SEO Meta Tags -->
+<meta name="description" content="MedSwipe - Gamified ENT board review and CME credits. 800+ questions, 24 CME credits, 60% cheaper than competitors. Start your 7-day free trial today.">
+<meta name="keywords" content="ENT board review, CME credits, otolaryngology, medical education, board exam prep, continuing medical education, ENT questions, medical app">
+<meta name="author" content="MedSwipe">
+<meta name="robots" content="index, follow">
+<meta name="language" content="English">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://medswipeapp.com/">
+<meta property="og:title" content="MedSwipe - Swipe. Learn. Master ENT.">
+<meta property="og:description" content="Board review & CME credits—gamified for the modern medical professional. 800+ questions, 24 CME credits, 7-day free trial.">
+<meta property="og:image" content="https://medswipeapp.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://medswipeapp.com/">
+<meta property="twitter:title" content="MedSwipe - Swipe. Learn. Master ENT.">
+<meta property="twitter:description" content="Board review & CME credits—gamified for the modern medical professional. 800+ questions, 24 CME credits, 7-day free trial.">
+<meta property="twitter:image" content="https://medswipeapp.com/assets/og-image.png">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="https://medswipeapp.com/homepage.html">
+    <!-- Google Fonts: Roboto with more weights -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="icons/favicon.ico">
+    
+    <style>
+        :root {
+            --brand-primary: #0C72D3;
+            --brand-primary-dark: #0056b3;
+            --announcement-height: 0px;
+        }
+
+        body.has-announcement {
+            --announcement-height: 30px;
+        }
+
+        @media (max-width: 640px) {
+            body.has-announcement {
+                --announcement-height: 64px;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #ffffff;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Navigation */
+        .announcement-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(120deg, #0C72D3, #338dff);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 3px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1001;
+            text-align: center;
+        }
+
+        .announcement-bar span {
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .announcement-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            padding-bottom: 2px;
+        }
+
+        .announcement-link i {
+            font-size: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .announcement-bar {
+                flex-direction: column;
+                line-height: 1.4;
+            }
+        }
+
+        .navbar {
+            position: fixed;
+            top: var(--announcement-height);
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar.scrolled {
+            padding: 6px 0;
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .logo img {
+            height: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .nav-app-store-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: none;
+            background: transparent;
+            height: 40px;
+        }
+        
+        .nav-app-store-badge img {
+            width: 150px;
+            height: auto;
+            display: block;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .nav-buttons .btn {
+            padding: 8px 18px;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #0C72D3;
+            color: white;
+            box-shadow: 0 1px 3px rgba(12, 114, 211, 0.2);
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(12, 114, 211, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #666;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(12, 114, 211, 0.05);
+            border-color: rgba(12, 114, 211, 0.2);
+            color: #0C72D3;
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 100px 24px 72px;
+            text-align: center;
+            max-width: 1200px;
+            margin: calc(var(--announcement-height) + 56px) auto 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .hero-inner {
+            max-width: 780px;
+            margin: 0 auto;
+        }
+        
+        .hero h1 {
+            font-size: clamp(3.5rem, 8vw, 7rem);
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+        }
+        
+        .hero h1 span {
+            background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+            color: #666;
+            margin-bottom: 28px;
+            font-weight: 400;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
+        }
+        
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        
+        .app-store-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+        
+        .app-store-badge img {
+            width: 220px;
+            height: auto;
+            display: block;
+        }
+        
+        .hero .btn-primary {
+            font-size: 18px;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .hero .btn-secondary {
+            font-size: 18px;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        /* Demo Section */
+        .demo-section {
+            padding: 20px 40px 120px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .demo-container {
+            background: linear-gradient(135deg, #F8FAFB 0%, #F3F4F6 100%);
+            border-radius: 24px;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .demo-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(12, 114, 211, 0.03) 0%, rgba(102, 166, 255, 0.03) 100%);
+            pointer-events: none;
+        }
+        
+        .demo-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        
+        .demo-header h2 {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        
+        .demo-header p {
+            font-size: 20px;
+            color: #666;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .demo-video {
+            width: 100%;
+            max-width: 350px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 18px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            /* Remove fixed aspect-ratio for GIF */
+        }
+        
+        .demo-video img {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            object-fit: contain; /* Show full image without cropping */
+            background: transparent;
+        }
+        
+        /* Features Section */
+        .features-section {
+            padding: 120px 40px;
+            background: #ffffff;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+        
+        .section-header h2 {
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        
+        .section-header p {
+            font-size: 20px;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 32px;
+        }
+        
+        .feature-card {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            padding: 40px 32px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #0C72D3, #66A6FF);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border-color: rgba(12, 114, 211, 0.1);
+        }
+        
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(12, 114, 211, 0.1) 0%, rgba(102, 166, 255, 0.1) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        
+        .feature-icon i {
+            font-size: 28px;
+            color: #0C72D3;
+        }
+        
+        .feature-card h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+        
+        .feature-card p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.7;
+            color: #1a1a1a;
+            background: #f8fafb;
+            padding: 40px 20px;
+        }
+        
+        .pricing-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 40px;
+        }
+        
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .pricing-header h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        
+        .pricing-header p {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 32px;
+        }
+        
+        .pricing-toggle {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .toggle-container {
+            position: relative;
+            background: #e5e7eb;
+            border-radius: 50px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .toggle-option {
+            padding: 12px 24px;
+            border-radius: 46px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .toggle-option.active {
+            background: #0C72D3;
+            color: white;
+        }
+        
+        .toggle-option:not(.active) {
+            color: #666;
+        }
+        
+        .savings-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 32px;
+            margin-top: 40px;
+        }
+
+        .cme-credit-note {
+            max-width: 940px;
+            margin: 48px auto 0;
+            background: #f7f9fb;
+            border-left: 4px solid #0C72D3;
+            padding: 24px 28px;
+            border-radius: 16px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .cme-credit-note h4 {
+            font-size: 1.25rem;
+            color: #0C72D3;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .cme-credit-note p {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .cme-credit-note p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .pricing-card {
+            background: #ffffff;
+            border: 2px solid rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(12, 114, 211, 0.02) 0%, rgba(102, 166, 255, 0.02) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.12);
+            border-color: rgba(12, 114, 211, 0.15);
+        }
+        
+        .pricing-card:hover::before {
+            opacity: 1;
+        }
+        
+        .pricing-card.featured {
+            border-color: #0C72D3;
+            transform: scale(1.05);
+            box-shadow: 0 24px 48px rgba(12, 114, 211, 0.15);
+            position: relative;
+        }
+        
+        .pricing-card.featured::after {
+            content: 'Most Popular';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #0C72D3, #66A6FF);
+            color: white;
+            padding: 10px 32px;
+            border-radius: 0 0 16px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(12, 114, 211, 0.3);
+        }
+        
+        .pricing-card.free {
+            border-color: #e5e7eb;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        }
+        
+        .card-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .plan-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 22px;
+        }
+        
+        .featured .plan-icon {
+            background: linear-gradient(135deg, rgba(12, 114, 211, 0.1), rgba(102, 166, 255, 0.1));
+            color: #0C72D3;
+        }
+        
+        .free .plan-icon {
+            background: rgba(107, 114, 128, 0.1);
+            color: #6b7280;
+        }
+        
+        .plan-icon:not(.featured):not(.free) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+            color: #10b981;
+        }
+        
+        .pricing-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .plan-subtitle {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+        
+        .price-container {
+            margin-bottom: 24px;
+        }
+        
+        .price {
+            font-size: 44px;
+            font-weight: 800;
+            color: #0C72D3;
+            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+        }
+        
+        .free .price {
+            color: #6b7280;
+        }
+        
+        .price-period {
+            font-size: 18px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .price-note {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+        
+        .features-list {
+            text-align: left;
+            margin-bottom: 28px;
+            max-width: 280px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 15px;
+            color: #374151;
+        }
+        
+        .feature-icon {
+            color: #10b981;
+            font-size: 12px;
+            margin-top: 2px;
+            flex-shrink: 0;
+            line-height: 1;
+            width: 12px;
+            height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cta-button {
+            width: 100%;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .cta-primary {
+            background: linear-gradient(135deg, #0C72D3, #66A6FF);
+            color: white;
+            box-shadow: 0 4px 14px rgba(12, 114, 211, 0.3);
+        }
+        
+        .cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(12, 114, 211, 0.4);
+        }
+        
+        .cta-secondary {
+            background: white;
+            color: #0C72D3;
+            border: 2px solid #0C72D3;
+        }
+        
+        .cta-secondary:hover {
+            background: #0C72D3;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .cta-free {
+            background: #f3f4f6;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .cta-free:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+        
+        .guarantee {
+            text-align: center;
+            margin-top: 48px;
+            padding: 24px;
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .guarantee-icon {
+            font-size: 32px;
+            color: #10b981;
+            margin-bottom: 12px;
+        }
+        
+        .guarantee h4 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        .guarantee p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .pricing-section {
+                padding: 60px 20px;
+            }
+            
+            .pricing-header h2 {
+                font-size: 2.5rem;
+            }
+            
+            .pricing-cards {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .pricing-card.featured {
+                transform: none;
+            }
+            
+            .pricing-toggle {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .price {
+                font-size: 48px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .pricing-card {
+                padding: 24px 20px;
+            }
+            
+            .pricing-header h2 {
+                font-size: 2rem;
+            }
+            
+            .price {
+                font-size: 36px;
+            }
+            
+            .feature-item {
+                font-size: 14px;
+                margin-bottom: 6px;
+                gap: 6px;
+            }
+            
+            .feature-icon {
+                font-size: 11px;
+                margin-top: 1px;
+                width: 11px;
+                height: 11px;
+            }
+            
+            .plan-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                margin-bottom: 16px;
+            }
+            
+            .pricing-card h3 {
+                font-size: 20px;
+            }
+            
+            .plan-subtitle {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+        }
+        
+        /* Social Proof */
+        .social-proof {
+            padding: 120px 40px;
+            background: #ffffff;
+        }
+        
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 32px;
+            margin-top: 60px;
+        }
+        
+        .testimonial {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            padding: 32px;
+            position: relative;
+        }
+        
+        .testimonial::before {
+            content: '"';
+            position: absolute;
+            top: -10px;
+            left: 32px;
+            font-size: 60px;
+            color: rgba(12, 114, 211, 0.1);
+            font-weight: 700;
+        }
+        
+        .testimonial-content {
+            margin-bottom: 24px;
+        }
+        
+        .stars {
+            color: #ffc107;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        
+        .testimonial p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+            font-style: italic;
+        }
+        
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #0C72D3, #66A6FF);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .author-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .author-info p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #1a1a1a;
+            color: #999;
+            padding: 80px 40px 40px;
+        }
+        
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+        
+        .footer-brand h3 {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .footer-brand p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .footer-section h4 {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .footer-section a {
+            color: #999;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 12px;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-section a:hover {
+            color: #66A6FF;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid #333;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 12px 0;
+            }
+            
+            .nav-container {
+                padding: 0 20px;
+            }
+            
+            .logo img {
+                height: 36px;
+            }
+            
+            .nav-buttons {
+                gap: 8px;
+            }
+            
+            .btn {
+                padding: 8px 16px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
+            
+            .btn i {
+                display: none; /* Hide icons on mobile to save space */
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .navbar {
+                padding: 10px 0;
+            }
+            
+            .nav-container {
+                padding: 0 16px;
+            }
+            
+            .logo img {
+                height: 32px;
+            }
+            
+            .nav-buttons {
+                gap: 6px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+            
+            /* Make buttons even more compact on very small screens */
+            .btn-primary {
+                padding: 8px 14px;
+            }
+            
+            .btn-secondary {
+                padding: 6px 10px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .nav-container {
+                padding: 0 12px;
+            }
+            
+            .logo img {
+                height: 30px;
+            }
+            
+            .btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            
+            .btn-primary {
+                padding: 7px 12px;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .hero {
+                padding: 120px 20px 80px;
+                min-height: auto;
+            }
+            
+            .hero-cta {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+            
+            .demo-section,
+            .features-section,
+            .pricing-section,
+            .social-proof {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+            
+            .demo-container {
+                padding: 40px 24px;
+                border-radius: 16px;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .feature-card {
+                padding: 32px 24px;
+            }
+            
+            .pricing-cards {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .pricing-card.featured {
+                transform: none;
+            }
+            
+            .testimonials-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+        
+        @media (max-width: 480px) {
+            .hero {
+                padding: 100px 16px 60px;
+            }
+            
+            .demo-section,
+            .features-section,
+            .pricing-section,
+            .social-proof,
+            .footer {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+            
+            .demo-container {
+                padding: 32px 16px;
+            }
+        }
+        
+        /* Scroll animations */
+        @media (prefers-reduced-motion: no-preference) {
+            .feature-card,
+            .testimonial,
+            .pricing-card {
+                opacity: 0;
+                transform: translateY(20px);
+                animation: fadeInUp 0.6s ease forwards;
+            }
+            
+            .feature-card:nth-child(2) { animation-delay: 0.1s; }
+            .feature-card:nth-child(3) { animation-delay: 0.2s; }
+            .feature-card:nth-child(4) { animation-delay: 0.3s; }
+            .feature-card:nth-child(5) { animation-delay: 0.4s; }
+            .feature-card:nth-child(6) { animation-delay: 0.5s; }
+            .feature-card:nth-child(7) { animation-delay: 0.6s; }
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-748P8P634B');
+</script>
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "MedSwipe",
+      "description": "Gamified ENT board review and CME credits platform for medical professionals",
+      "url": "https://medswipeapp.com",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Board Review",
+          "price": "149",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2025-12-31",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@type": "Offer",
+          "name": "CME Module",
+          "price": "179",
+          "priceCurrency": "USD",
+          "priceValidUntil": "2025-12-31",
+          "availability": "https://schema.org/InStock"
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "reviewCount": "150",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "MedSwipe",
+        "url": "https://medswipeapp.com"
+      }
+    }
+    </script>
+    
+</head>
+<body class="has-announcement">
+    <div class="announcement-bar">
+        <span>MedSwipe for iOS is live.</span>
+        <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="announcement-link">
+            Grab it on the App Store
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="MedSwipe Logo gradient.png" alt="MedSwipe">
+            </div>
+            <div class="nav-buttons">
+                <a href="https://apps.apple.com/us/app/medswipe/id6753632306" target="_blank" rel="noopener" class="nav-app-store-badge" aria-label="Download MedSwipe on the App Store">
+                    <img src="Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">
+                </a>
+                <a href="index.html?from=landing" class="btn btn-secondary">Use Web App</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="download">
+        <div class="hero-inner">
+            <h1>
+                Swipe. Learn.<br>
+                <span>Master ENT.</span>
+            </h1>
+            <p>
+                Swipe-based ENT learning, board review and CME that fits into your busy day.
+            </p>
+            <div class="hero-cta" id="appstore-download">
+                <a href="https://apps.apple.com/us/app/medswipe/id6753632306" class="app-store-badge" target="_blank" rel="noopener" aria-label="Download MedSwipe on the App Store">
+                    <img src="Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store">
+                </a>
+                <a href="index.html?from=landing" class="btn btn-secondary hero-web-link">
+                    Continue in Web App
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo">
+        <div class="demo-container">
+            <div class="demo-content">
+                <div class="demo-header">
+                    <h2>See MedSwipe in Action</h2>
+                    <p>Experience our intuitive mobile-first swipe interface designed for 1-3 minute study bursts - plus seamless CME credit claiming</p>
+                </div>
+                <div class="demo-video">
+                <img src="demo2.gif" alt="MedSwipe Demo - Swipe Interface">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Everything you need to excel</h2>
+                <p>Comprehensive tools designed for medical professionals who want fast, high-yield learning.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <h3>800+ Board Questions</h3>
+                    <p>High-yield board review and in-service prep questions crafted by ENT experts</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h3>24 CME Credits</h3>
+                    <p>Earn up to 24 <i>AMA PRA Category 1 CME Credits™</i> while you study</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Case Prep Mode</h3>
+                    <p>Review anatomy, surgical steps, and "pimp" questions before your upcoming case</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3>Smart Repetition</h3>
+                    <p>Spaced repetition, XPs, streaks and leaderboards keep you engaged and tough topics top-of-mind</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Compete with Peers</h3>
+                    <p>Leaderboards and friendly competition to keep you motivated</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <h3>60% More Affordable</h3>
+                    <p>Premium features at a fraction of the cost of traditional board prep and CME providers</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing-section">
+        <div class="pricing-header">
+            <h2>Choose Your Path to Success</h2>
+            <p>Flexible plans designed for every stage of your medical career</p>
+            
+            <div class="pricing-toggle">
+                <div class="toggle-container">
+                    <div class="toggle-option active" data-period="monthly">Monthly</div>
+                    <div class="toggle-option" data-period="yearly">Yearly</div>
+                </div>
+                <div class="savings-badge">
+                    <i class="fas fa-tag"></i>
+                    Save 30% annually
+                </div>
+            </div>
+        </div>
+        
+        <div class="pricing-cards">
+            <!-- Free Tier -->
+            <div class="pricing-card free">
+                <div class="card-content">
+                    <div class="plan-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3>Free Access</h3>
+                    <p class="plan-subtitle">Perfect for exploring MedSwipe</p>
+                    
+                    <div class="price-container">
+                        <div class="price">$0</div>
+                        <div class="price-period">Forever free</div>
+                    </div>
+                    
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Access to foundational ENT questions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Basic quiz functionality</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Progress tracking</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Mobile-optimized experience</span>
+                        </div>
+                    </div>
+                    
+                    <a href="index.html?from=landing" class="cta-button cta-free">
+                        Start Free Access
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Board Review - Featured -->
+            <div class="pricing-card featured">
+                <div class="card-content">
+                    <div class="plan-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <h3>Board and In-Service Mastery</h3>
+                    <p class="plan-subtitle">Ace your boards with confidence</p>
+                    
+                    <div class="price-container">
+                        <div class="price" data-monthly="$15" data-yearly="$149">$15</div>
+                        <div class="price-period" data-monthly="/month" data-yearly="/year">/month</div>
+                        <div class="price-note" data-monthly="or $40 for 3 months" data-yearly="$12.42/month billed annually">or $40 for 3 months</div>
+                    </div>
+                    
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span><strong>800+ high-yield</strong> board-style questions and access to our curated Case Prep mode</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Intelligent spaced repetition algorithm</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Competitive leaderboards & peer comparison</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Advanced analytics & performance insights</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Gamified XP system & achievements</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Mobile-first design for on-the-go learning</span>
+                        </div>
+                    </div>
+                    
+                    <a href="index.html?from=landing" class="cta-button cta-primary">
+                        Start for $0.00 for 7 Days
+                        <i class="fas fa-rocket"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- CME Module -->
+            <div class="pricing-card">
+                <div class="card-content">
+                    <div class="plan-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h3>CME Credits</h3>
+                    <p class="plan-subtitle">Earn credits while you learn</p>
+                    
+                    <div class="price-container">
+                        <div class="price" data-monthly="$179" data-yearly="$179">$179</div>
+                        <div class="price-period" data-monthly="/year" data-yearly="/year">/year</div>
+                        <div class="price-note">or $8 per credit</div>
+                    </div>
+                    
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Earn up to <strong>24 <i>AMA PRA Category 1 Credits™</i></strong></span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span><strong>60% less</strong> than traditional CME providers</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Unlimited re-attempts on missed questions</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Instant certificate downloads</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span>Effortless credit tracking & reporting</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-check feature-icon"></i>
+                            <span><strong>Everything in Board Mastery</strong> included</span>
+                        </div>
+                    </div>
+                    
+                    <a href="index.html?from=landing" class="cta-button cta-secondary">
+                        Start for $0.00 for 7 Days
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="cme-credit-note">
+            <h4>Accreditation &amp; Credit Information</h4>
+            <p>This activity has been planned and implemented in accordance with the accreditation requirements and policies of the Accreditation Council for Continuing Medical Education (ACCME) through the joint providership of CME Consultants and MedSwipe. CME Consultants is accredited by the ACCME to provide continuing medical education for physicians.</p>
+            <p>CME Consultants designates this enduring material for a maximum of 24.0 <i>AMA PRA Category 1 Credits™</i>. Physicians should claim only the credit commensurate with the extent of their participation in the activity.</p>
+            <p>There was no commercial support for this activity.</p>
+            <p>The planners, authors, and reviewers of this activity have no relevant financial relationships to disclose.</p>
+            <p><strong>Credit Term:</strong> June 10, 2025 – June 9, 2026.</p>
+        </div>
+
+        <div class="guarantee">
+            <div class="guarantee-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h4>7-Day Money-Back Guarantee</h4>
+            <p>Not satisfied? Get a full refund within 7 days, no questions asked. Cancel anytime.</p>
+        </div>
+    </section>
+
+    <!-- Social Proof -->
+    <section class="social-proof">
+        <div class="container">
+            <div class="section-header">
+                <h2>Trusted by medical professionals</h2>
+                <p>Join hundreds of doctors who've transformed their learning with MedSwipe</p>
+            </div> 
+            <div class="testimonials-grid">
+                <div class="testimonial">
+                    <div class="testimonial-content">
+                        <div class="stars">★★★★★</div>
+                        <p>Finally, CME credits that don't feel like a chore. The mobile interface is perfect for between cases. Highly recommend to all my colleagues.</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MA</div>
+                        <div class="author-info">
+                            <h4>Mark A., MD</h4>
+                            <p>Attending Otolaryngologist, Santa Monica</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial">
+                    <div class="testimonial-content">
+                        <div class="stars">★★★★★</div>
+                        <p>I was swiping through questions between cases, on the couch at home and sometimes during Grand Rounds. MedSwipe kept me engaged, was not overwhelming and helped me pass my boards!</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">EJ</div>
+                        <div class="author-info">
+                            <h4>EJ</h4>
+                            <p>PGY-5, ENT Resident</p>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </section>
+
+ <!-- Footer -->
+ <footer class="footer">
+    <div class="footer-content">
+        <div class="footer-brand">
+            <h3>MedSwipe</h3>
+            <p>Revolutionizing medical education through gamified learning and innovative technology. Join hundreds of medical professionals advancing their careers with MedSwipe.</p>
+            <div style="display: flex; gap: 16px; margin-top: 20px;">
+                <a href="index.html?from=landing" class="btn btn-primary">Start Free Trial</a>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h4>Product</h4>
+            <a href="index.html?from=landing">Web App</a>
+        </div>
+        <div class="footer-section">
+            <h4>Support</h4>
+            <a href="mailto:support@medswipeapp.com">Contact Us</a>
+            <a href="faq.html">FAQ</a>
+            <a href="about.html">About</a>
+        </div>
+        <div class="footer-section">
+            <h4>Legal</h4>
+            <a href="terms.html">Terms of Use</a>
+            <a href="privacy.html">Privacy Policy</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2025 MedSwipe. All rights reserved.</p>
+    </div>
+</footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleOptions = document.querySelectorAll('.toggle-option');
+            const prices = document.querySelectorAll('.price');
+            const periods = document.querySelectorAll('.price-period');
+            const notes = document.querySelectorAll('.price-note');
+            
+            toggleOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active class from all options
+                    toggleOptions.forEach(opt => opt.classList.remove('active'));
+                    // Add active class to clicked option
+                    this.classList.add('active');
+                    
+                    const period = this.dataset.period;
+                    
+                    // Update prices
+                    prices.forEach(price => {
+                        if (price.dataset[period]) {
+                            price.textContent = price.dataset[period];
+                        }
+                    });
+                    
+                    // Update periods
+                    periods.forEach(periodEl => {
+                        if (periodEl.dataset[period]) {
+                            periodEl.textContent = periodEl.dataset[period];
+                        }
+                    });
+                    
+                    // Update notes
+                    notes.forEach(note => {
+                        if (note.dataset[period]) {
+                            note.textContent = note.dataset[period];
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
+    <script>
+        // Simple navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+
+<!-- Enhanced GA4 Event Tracking -->
+<script>
+    // Track button clicks
+    document.addEventListener('DOMContentLoaded', function() {
+        // Track CTA button clicks
+        document.querySelectorAll('.btn-primary').forEach(button => {
+            button.addEventListener('click', function(e) {
+                gtag('event', 'cta_click', {
+                    'button_text': this.textContent.trim(),
+                    'button_location': getButtonLocation(this),
+                    'page_location': window.location.href
+                });
+            });
+        });
+        
+        // Track secondary button clicks
+        document.querySelectorAll('.btn-secondary').forEach(button => {
+            button.addEventListener('click', function(e) {
+                gtag('event', 'secondary_cta_click', {
+                    'button_text': this.textContent.trim(),
+                    'button_location': getButtonLocation(this),
+                    'page_location': window.location.href
+                });
+            });
+        });
+        
+        // Track scroll depth
+        let maxScroll = 0;
+        window.addEventListener('scroll', function() {
+            const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+            if (scrollPercent > maxScroll && scrollPercent % 25 === 0) {
+                maxScroll = scrollPercent;
+                gtag('event', 'scroll', {
+                    'percent_scrolled': scrollPercent
+                });
+            }
+        });
+        
+        // Track section views
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    gtag('event', 'section_view', {
+                        'section_name': entry.target.id || entry.target.className
+                    });
+                }
+            });
+        });
+        
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+    });
+    
+    function getButtonLocation(button) {
+        if (button.closest('.navbar')) return 'navbar';
+        if (button.closest('.hero')) return 'hero';
+        if (button.closest('.pricing-section')) return 'pricing';
+        if (button.closest('.footer')) return 'footer';
+        return 'other';
+    }
+    </script>
+
+    <!-- MailerLite Universal -->
+<script>
+    (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
+    .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
+    n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})
+    (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
+    ml('account', '1434637');
+</script>
+<!-- End MailerLite Universal -->
+</body>
+</html>

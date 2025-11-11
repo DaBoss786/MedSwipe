@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Prioritize landing page for crawling
+Allow: /homepage.html
+
+# Allow app but don't prioritize it
+Allow: /index.html
+
+# Block any sensitive files if you have them
+Disallow: /firebase-config.js
+Disallow: /auth.js
+Disallow: /*.env
+
+# Allow assets
+Allow: /*.css
+Allow: /*.js
+
+Sitemap: https://medswipeapp.com/sitemap.xml

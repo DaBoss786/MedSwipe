@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - MedSwipe</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+        }
+        h1 {
+            color: #28a745; /* Green for success */
+            margin-bottom: 15px;
+        }
+        p {
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        a.button {
+            display: inline-block;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+        a.button:hover {
+             background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+        }
+        .loading {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Payment Successful!</h1>
+        <p>Thank you for subscribing to MedSwipe. Your access has been activated.</p>
+        <p>You will be redirected back to the app shortly, or you can click the button below.</p>
+        <a href="https://medswipeapp.com" class="button" id="returnButton">Go to MedSwipe Dashboard</a>
+        <div class="loading" id="loadingText">Finalizing your subscription...</div>
+    </div>
+
+    <!-- Firebase Analytics Tracking -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+        
+        // Firebase configuration (same as your main app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyA24Xgt6ZF9pR7AMc235H2UeK044QhR3ts",
+            authDomain: "medswipe-648ee.firebaseapp.com",
+            projectId: "medswipe-648ee",
+            storageBucket: "medswipe-648ee.firebasestorage.app",
+            messagingSenderId: "288366122490",
+            appId: "1:288366122490:web:1c150c48c8aed4e27f0043",
+            measurementId: "G-748P8P634B"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+        
+        // Function to determine subscription details from URL or session
+        function getSubscriptionDetails() {
+            // You can expand this logic based on how Stripe passes data
+            const referrer = document.referrer;
+            
+            // Default values
+            let subscriptionType = 'unknown';
+            let value = 0;
+            let itemName = 'Subscription';
+            
+            // Try to determine subscription type from referrer or other URL params
+            if (referrer.includes('cme') || window.location.href.includes('cme')) {
+                subscriptionType = 'cme_annual';
+                value = 149.00;
+                itemName = 'CME Annual Subscription';
+            } else if (referrer.includes('board') || window.location.href.includes('board')) {
+                subscriptionType = 'board_review';
+                value = 14.99; // Default to monthly, you could make this more sophisticated
+                itemName = 'Board Review Subscription';
+            }
+            
+            return { subscriptionType, value, itemName };
+        }
+        
+        // Track successful purchase
+        if (sessionId && analytics) {
+            const { subscriptionType, value, itemName } = getSubscriptionDetails();
+            
+            console.log('Tracking successful purchase:', { sessionId, subscriptionType, value });
+            
+            // Track the purchase event
+            logEvent(analytics, 'purchase', {
+                transaction_id: sessionId,
+                currency: 'USD',
+                value: value,
+                items: [{
+                    item_id: subscriptionType,
+                    item_name: itemName,
+                    item_category: 'subscription',
+                    price: value,
+                    quantity: 1
+                }],
+                subscription_type: subscriptionType,
+                payment_method: 'stripe'
+            });
+            
+            // Also track a conversion event
+            logEvent(analytics, 'conversion', {
+                event_category: 'subscription',
+                event_label: subscriptionType,
+                value: value
+            });
+            
+            console.log('Purchase tracking events sent to Google Analytics');
+        } else if (!sessionId) {
+            console.warn('No session_id found in URL parameters');
+        }
+        
+        // Update loading text after tracking
+        setTimeout(() => {
+            const loadingText = document.getElementById('loadingText');
+            if (loadingText) {
+                loadingText.textContent = 'Redirecting to dashboard...';
+            }
+        }, 1000);
+        
+        // Auto-redirect after 5 seconds
+        setTimeout(() => {
+            window.location.href = 'https://medswipeapp.com';
+        }, 5000);
+        
+        // Track manual button clicks
+        const returnButton = document.getElementById('returnButton');
+        if (returnButton) {
+            returnButton.addEventListener('click', function(e) {
+                // Track the manual return click
+                if (analytics) {
+                    logEvent(analytics, 'select_content', {
+                        content_type: 'button',
+                        content_id: 'manual_return_to_app',
+                        source: 'checkout_success_page'
+                    });
+                }
+            });
+        }
+        
+        // Track page view
+        if (analytics) {
+            logEvent(analytics, 'page_view', {
+                page_title: 'Checkout Success',
+                page_location: window.location.href,
+                page_path: '/checkout-success.html'
+            });
+        }
+    </script>
+</body>
+</html>

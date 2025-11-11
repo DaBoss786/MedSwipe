@@ -1,0 +1,21 @@
+{
+	"appId": "com.medswipeapp.app",
+	"appName": "MedSwipe",
+	"webDir": "docs",
+	"plugins": {
+		"FirebaseAuthentication": {
+			"skipNativeAuth": true,
+			"providers": [
+				"google.com",
+				"apple.com"
+			]
+		},
+		"FirebaseAppCheck": {
+			"isTokenAutoRefreshEnabled": true,
+			"nativeProvider": {
+				"android": "playIntegrityWithDebugProvider",
+				"ios": "appleAppAttestWithDeviceCheckFallback"
+			}
+		}
+	}
+}

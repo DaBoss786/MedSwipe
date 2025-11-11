@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Cancelled - MedSwipe</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo {
+            width: 120px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #0C72D3; /* MedSwipe Blue */
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .button-primary {
+            display: inline-block;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #fff;
+            background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-top: 10px;
+        }
+        .button-primary:hover {
+            background: linear-gradient(135deg, #0056b3 0%, #0C72D3 100%);
+        }
+        .button-secondary {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            color: #0C72D3;
+            background-color: transparent;
+            border: 1px solid #0C72D3;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin-top: 15px;
+            margin-left: 10px; /* If placing next to another button */
+        }
+        .button-secondary:hover {
+            background-color: #e6f0fa;
+        }
+        .actions a {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="logo">
+        <h1>Checkout Cancelled</h1>
+        <p>It looks like you decided not to complete your subscription at this time, or something went wrong.</p>
+        <p>Your progress is saved, and you can always explore our subscription options again whenever you're ready.</p>
+        
+        <div class="actions">
+            <a href="index.html" id="returnToAppBtn" class="button-primary">Return to MedSwipe</a>
+            <a href="#" id="returnToPricingBtn" class="button-secondary" style="display: none;">View Plans Again</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const returnToPricingBtn = document.getElementById('returnToPricingBtn');
+            const returnToAppBtn = document.getElementById('returnToAppBtn'); // Main button to return to app
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const returnToTargetParam = urlParams.get('returnTo'); // e.g., 'boardReviewPricing' or 'cmePricing'
+
+            let specificPricingScreenId = null;
+
+            if (returnToTargetParam === 'boardReviewPricing') {
+                specificPricingScreenId = 'boardReviewPricingScreen';
+                if (returnToPricingBtn) returnToPricingBtn.style.display = 'inline-block';
+            } else if (returnToTargetParam === 'cmePricing') {
+                specificPricingScreenId = 'cmePricingScreen';
+                if (returnToPricingBtn) returnToPricingBtn.style.display = 'inline-block';
+            } else {
+                if (returnToPricingBtn) returnToPricingBtn.style.display = 'none'; // Hide if no specific target
+            }
+
+            // Function to attempt to show a specific screen in the opener window
+            function tryShowScreenInOpener(screenId) {
+                if (window.opener && !window.opener.closed) {
+                    try {
+                        if (typeof window.opener.showSpecificScreenFromRedirect === 'function') {
+                            window.opener.showSpecificScreenFromRedirect(screenId);
+                            window.close(); // Close this cancel tab/window
+                            return true; // Indicate success
+                        } else {
+                            console.warn('showSpecificScreenFromRedirect function not found in opener window.');
+                            window.opener.focus(); // Fallback to just focusing opener
+                            window.close();
+                            return true; // Still count as "handled" by opener
+                        }
+                    } catch (err) {
+                        console.warn("Could not interact with opener window to show screen:", err);
+                    }
+                }
+                return false; // Opener interaction failed or no opener
+            }
+
+            // Event listener for "View Plans Again" button
+            if (returnToPricingBtn && specificPricingScreenId) {
+                returnToPricingBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Return to specific pricing screen button clicked:', specificPricingScreenId);
+                    if (!tryShowScreenInOpener(specificPricingScreenId)) {
+                        // Fallback if opener interaction fails: redirect main page with a hash
+                        // The main app would need logic to detect this hash on load.
+                        // For simplicity now, we'll just go to index.html.
+                        // A more advanced hash could be like 'index.html#show-boardReviewPricingScreen'
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+
+            // Event listener for the main "Return to MedSwipe" button
+            if (returnToAppBtn) {
+                returnToAppBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Return to MedSwipe (main paywall) button clicked.');
+                    // Always try to show the main paywall screen
+                    if (!tryShowScreenInOpener('newPaywallScreen')) {
+                        // Fallback if opener interaction fails: redirect to index.html
+                        // The main app (app.js) should ideally show the paywall if the user isn't subscribed.
+                        window.location.href = 'index.html';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

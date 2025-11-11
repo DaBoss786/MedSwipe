@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <string name="app_name">MedSwipe</string>
+    <string name="custom_url_scheme">com.medswipeapp.app</string>
+    <string name="default_web_client_id" translatable="false">288366122490-07o5n4n80g6sjqr5f8g0l5aorodcrsca.apps.googleusercontent.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">288366122490</string>
+    <string name="google_api_key" translatable="false">AIzaSyA3AZfLPEC5wsrOpxvdJIugh3sj9L_kEsI</string>
+    <string name="google_app_id" translatable="false">1:288366122490:android:30acecbb67f1770e7f0043</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyA3AZfLPEC5wsrOpxvdJIugh3sj9L_kEsI</string>
+    <string name="google_storage_bucket" translatable="false">medswipe-648ee.firebasestorage.app</string>
+    <string name="package_name">com.medswipeapp.app</string>
+    <string name="project_id" translatable="false">medswipe-648ee</string>
+    <string name="title_activity_main">MedSwipe</string>
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+    </style>
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+    </style>
+</resources>
