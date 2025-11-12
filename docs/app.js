@@ -776,7 +776,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
       handleUserRouting(event.detail);
       queueDashboardRefresh();
       
-    }, 3600); // Allow progress bar to finish (~3.5s) before fading splash
+    }, 4000); // Allow progress bar to finish (~3.5s) before fading splash
   }
 });
   

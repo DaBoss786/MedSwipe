@@ -165,7 +165,22 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       }
       data.stats.totalTimeSpent = (data.stats.totalTimeSpent || 0) + timeSpent;
 
-      const promptedMilestones = data.stats.promptedIosReviewMilestones || [];
+      let promptedMilestones = data.stats.promptedIosReviewMilestones || [];
+
+      if (isIosNativeApp() && promptedMilestones.length === 0) {
+        const milestonesAlreadyReached = IOS_REVIEW_QUESTION_MILESTONES.filter((milestone) => {
+          return data.stats.totalAnswered >= milestone;
+        });
+
+        if (milestonesAlreadyReached.length > 1) {
+          const milestonesToBackfill = milestonesAlreadyReached.slice(0, -1);
+          if (milestonesToBackfill.length > 0) {
+            promptedMilestones = Array.from(new Set([...promptedMilestones, ...milestonesToBackfill]));
+            data.stats.promptedIosReviewMilestones = promptedMilestones;
+          }
+        }
+      }
+
       const milestoneToTrigger = IOS_REVIEW_QUESTION_MILESTONES.find((milestone) => {
         return !promptedMilestones.includes(milestone) && data.stats.totalAnswered >= milestone;
       });

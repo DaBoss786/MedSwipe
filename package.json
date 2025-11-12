@@ -19,6 +19,7 @@
     "@capacitor/status-bar": "^7.0.3",
     "@capawesome/capacitor-app-review": "^7.0.1",
     "@revenuecat/purchases-capacitor": "^11.2.3",
-    "firebase": "^11.10.0"
+    "firebase": "^11.10.0",
+    "onesignal-cordova-plugin": "^5.2.16"
   }
 }
