@@ -2853,7 +2853,7 @@ button:not(:disabled):active {
   width: 0;
   background-color: #0C72D3;
   border-radius: 3px;
-  animation: loading 4.0s ease-in-out forwards;
+  animation: loading 2.0s ease-in-out forwards;
 }
 
 @keyframes pulse {
