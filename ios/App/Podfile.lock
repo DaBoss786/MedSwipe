@@ -1516,6 +1516,7 @@ DEPENDENCIES:
   - FirebaseFunctions
   - FirebaseStorage
   - GTMSessionFetcher/Core (~> 3.4)
+  - OneSignalXCFramework (< 6.0, >= 5.0.0)
   - "RevenuecatPurchasesCapacitor (from `../../node_modules/@revenuecat/purchases-capacitor`)"
 
 SPEC REPOS:
@@ -1632,6 +1633,6 @@ SPEC CHECKSUMS:
   RevenueCat: 02c8d0082d3373bcbc831faa600943d6ba6cad6e
   RevenuecatPurchasesCapacitor: 886039ffdb6fcbc28d0a3bb9b616bd7f2f5246ec
 
-PODFILE CHECKSUM: b902779755a498361e40ce13376cc1cfda4b3a4d
+PODFILE CHECKSUM: 1a9c5192eb464fb03ef6af36d2be92f8e1b697fd
 
 COCOAPODS: 1.16.2

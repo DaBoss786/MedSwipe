@@ -132,6 +132,51 @@ const isIosNativeApp = (() => {
   }
 })();
 
+function initializeOneSignalPush() {
+  if (!isIosNativeApp) {
+    return;
+  }
+
+  const setup = () => {
+    const oneSignal = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
+
+    if (!oneSignal) {
+      console.warn('OneSignal Cordova plugin is not available.');
+      return;
+    }
+
+    if (oneSignal.Debug && typeof oneSignal.Debug.setLogLevel === 'function') {
+      oneSignal.Debug.setLogLevel(6);
+    }
+
+    if (typeof oneSignal.initialize === 'function') {
+      oneSignal.initialize('d14ffd2d-42fb-4944-bb53-05a838c31daa');
+    } else {
+      console.warn('OneSignal initialize function is not available.');
+    }
+
+    if (oneSignal.Notifications && typeof oneSignal.Notifications.requestPermission === 'function') {
+      oneSignal.Notifications.requestPermission(false).then((accepted) => {
+        console.log('User accepted notifications:', accepted);
+      });
+    } else {
+      console.warn('OneSignal notification permission API is not available.');
+    }
+  };
+
+  if (window.cordova) {
+    if (window.cordova.plugins && window.cordova.plugins.OneSignal) {
+      setup();
+    } else {
+      document.addEventListener('deviceready', setup, { once: true });
+    }
+    return;
+  }
+
+  // Fallback: attempt setup immediately if running in a non-Cordova environment that still exposes OneSignal
+  setup();
+}
+
 let dashboardSetupTimeout = null;
 
 function queueDashboardRefresh() {
@@ -615,6 +660,8 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
+
+  initializeOneSignalPush();
 
   // --- Payment Initialization ---
   // The app dynamically picks the correct billing provider at runtime.

@@ -1,0 +1,11 @@
+{
+  "aps": {
+    "alert": {
+      "title": "Hello, Simulator!",
+      "body": "This is a test notification."
+    },
+    "sound": "default"
+  },
+  "Simulator Target Bundle": "com.medswipeapp.app"
+}
+
