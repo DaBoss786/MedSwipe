@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "5JSRN468B7.com.medswipeapp.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}

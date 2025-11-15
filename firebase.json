@@ -16,8 +16,10 @@
     "public": "docs",
     "ignore": [
       "firebase.json",
-      "**/.*",
-      "!**/.well-known/**",
+      "**/.firebase/**",
+      "**/.git/**",
+      "**/.github/**",
+      "**/.DS_Store",
       "**/node_modules/**"
     ],
     "headers": [
@@ -32,10 +34,6 @@
       }
     ],
     "rewrites": [
-      {
-        "source": "/.well-known/apple-app-site-association",
-        "destination": "/.well-known/apple-app-site-association"
-      },
       {
         "source": "**",
         "destination": "/index.html"
