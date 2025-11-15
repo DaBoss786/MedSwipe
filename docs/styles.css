@@ -4167,6 +4167,50 @@ button:not(:disabled):active {
   cursor: not-allowed;
 }
 
+.onboarding-secondary-btn {
+  font-size: 1rem;
+  padding: 12px 20px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 280px;
+  border: 2px solid #0C72D3;
+  background: transparent;
+  color: #0C72D3;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.onboarding-secondary-btn:hover:not(:disabled) {
+  background-color: rgba(12, 114, 211, 0.08);
+}
+
+.onboarding-secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.notification-explainer-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #2b2b2b;
+  margin-bottom: 35px;
+}
+
+.notification-explainer-question {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #0C2C5F;
+  margin-bottom: 30px;
+}
+
+.notification-explainer-buttons {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .onboarding-title {
@@ -4181,6 +4225,12 @@ button:not(:disabled):active {
   }
   .onboarding-primary-btn {
     font-size: 1.1rem;
+  }
+  .notification-explainer-body {
+    font-size: 0.95rem;
+  }
+  .notification-explainer-question {
+    font-size: 1.05rem;
   }
 }
 

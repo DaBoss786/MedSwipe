@@ -132,35 +132,66 @@ const isIosNativeApp = (() => {
   }
 })();
 
+let resolveOneSignalReady;
+let oneSignalReadyResolved = false;
+const oneSignalReadyPromise = new Promise((resolve) => {
+  resolveOneSignalReady = resolve;
+});
+
+function markOneSignalReady(instance) {
+  if (oneSignalReadyResolved) {
+    return;
+  }
+  oneSignalReadyResolved = true;
+  if (typeof resolveOneSignalReady === 'function') {
+    resolveOneSignalReady(instance ?? null);
+  }
+}
+
+if (!isIosNativeApp) {
+  markOneSignalReady(null);
+}
+
+const NOTIFICATION_ENABLE_TEXT = 'Yes, turn on notifications';
+const NOTIFICATION_ENABLE_LOADING_TEXT = 'One moment...';
+
+let notificationPromptScreen = null;
+let notificationEnableButton = null;
+let notificationSkipButton = null;
+let notificationPromptVisible = false;
+let notificationPromptHandled = !isIosNativeApp;
+
 function initializeOneSignalPush() {
   if (!isIosNativeApp) {
     return;
   }
 
   const setup = () => {
-    const oneSignal = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
+    try {
+      const oneSignal = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
 
-    if (!oneSignal) {
-      console.warn('OneSignal Cordova plugin is not available.');
-      return;
-    }
+      if (!oneSignal) {
+        console.warn('OneSignal Cordova plugin is not available.');
+        markOneSignalReady(null);
+        return;
+      }
 
-    if (oneSignal.Debug && typeof oneSignal.Debug.setLogLevel === 'function') {
-      oneSignal.Debug.setLogLevel(6);
-    }
+      if (oneSignal.Debug && typeof oneSignal.Debug.setLogLevel === 'function') {
+        oneSignal.Debug.setLogLevel(6);
+      }
 
-    if (typeof oneSignal.initialize === 'function') {
-      oneSignal.initialize('d14ffd2d-42fb-4944-bb53-05a838c31daa');
-    } else {
-      console.warn('OneSignal initialize function is not available.');
-    }
+      if (typeof oneSignal.initialize === 'function') {
+        oneSignal.initialize('d14ffd2d-42fb-4944-bb53-05a838c31daa');
+      } else {
+        console.warn('OneSignal initialize function is not available.');
+        markOneSignalReady(null);
+        return;
+      }
 
-    if (oneSignal.Notifications && typeof oneSignal.Notifications.requestPermission === 'function') {
-      oneSignal.Notifications.requestPermission(false).then((accepted) => {
-        console.log('User accepted notifications:', accepted);
-      });
-    } else {
-      console.warn('OneSignal notification permission API is not available.');
+      markOneSignalReady(oneSignal);
+    } catch (error) {
+      console.error('Error during OneSignal setup:', error);
+      markOneSignalReady(null);
     }
   };
 
@@ -176,6 +207,28 @@ function initializeOneSignalPush() {
   // Fallback: attempt setup immediately if running in a non-Cordova environment that still exposes OneSignal
   setup();
 }
+
+async function requestOneSignalPushPermission() {
+  if (!isIosNativeApp) {
+    return { allowed: false, reason: 'not-ios' };
+  }
+
+  try {
+    const oneSignal = await oneSignalReadyPromise;
+    if (!oneSignal || !oneSignal.Notifications || typeof oneSignal.Notifications.requestPermission !== 'function') {
+      console.warn('OneSignal notification permission API is not available.');
+      return { allowed: false, reason: 'api-unavailable' };
+    }
+    const accepted = await oneSignal.Notifications.requestPermission(false);
+    console.log('User accepted notifications:', accepted);
+    return { allowed: accepted };
+  } catch (error) {
+    console.error('Failed to request OneSignal permission:', error);
+    return { allowed: false, error };
+  }
+}
+
+window.requestOneSignalPushPermission = requestOneSignalPushPermission;
 
 let dashboardSetupTimeout = null;
 
@@ -772,6 +825,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   ].filter(Boolean);
 
   initializeOnboardingProgressIndicators(onboardingScreenSequence);
+  initializeNotificationExplainer();
 
   // Update the auth state change listener to properly handle welcome screen
 	window.addEventListener('authStateChanged', function(event) {
@@ -1482,6 +1536,119 @@ if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) {
     });
   });
 }
+
+function initializeNotificationExplainer() {
+  notificationPromptScreen = document.getElementById('notificationPromptScreen');
+  notificationEnableButton = document.getElementById('notificationEnableNotificationsBtn');
+  notificationSkipButton = document.getElementById('notificationSkipNotificationsBtn');
+
+  if (!notificationPromptScreen) {
+    notificationPromptHandled = true;
+    return;
+  }
+
+  if (notificationEnableButton) {
+    notificationEnableButton.addEventListener('click', handleNotificationPromptAccept);
+  }
+
+  if (notificationSkipButton) {
+    notificationSkipButton.addEventListener('click', handleNotificationPromptDecline);
+  }
+}
+
+function shouldShowNotificationExplainer() {
+  return Boolean(isIosNativeApp && !notificationPromptHandled && notificationPromptScreen);
+}
+
+function showNotificationExplainer() {
+  if (!notificationPromptScreen) {
+    if (typeof window.startOnboardingCarousel === 'function') {
+      window.startOnboardingCarousel();
+    }
+    return;
+  }
+
+  notificationPromptVisible = true;
+  notificationPromptScreen.style.display = 'flex';
+  notificationPromptScreen.style.opacity = '0';
+  notificationPromptScreen.style.pointerEvents = 'none';
+
+  requestAnimationFrame(() => {
+    notificationPromptScreen.style.opacity = '1';
+    notificationPromptScreen.style.pointerEvents = 'auto';
+  });
+}
+
+function hideNotificationExplainer(callback) {
+  if (!notificationPromptScreen || !notificationPromptVisible) {
+    notificationPromptVisible = false;
+    if (typeof callback === 'function') {
+      callback();
+    }
+    return;
+  }
+
+  notificationPromptScreen.style.pointerEvents = 'none';
+  notificationPromptScreen.style.opacity = '0';
+  setTimeout(() => {
+    notificationPromptScreen.style.display = 'none';
+    notificationPromptVisible = false;
+    if (typeof callback === 'function') {
+      callback();
+    }
+  }, ONBOARDING_TRANSITION_DURATION);
+}
+
+function setNotificationExplainerBusy(isBusy) {
+  if (notificationEnableButton) {
+    notificationEnableButton.disabled = Boolean(isBusy);
+    notificationEnableButton.textContent = isBusy ? NOTIFICATION_ENABLE_LOADING_TEXT : NOTIFICATION_ENABLE_TEXT;
+  }
+  if (notificationSkipButton) {
+    notificationSkipButton.disabled = Boolean(isBusy);
+  }
+}
+
+async function handleNotificationPromptAccept() {
+  notificationPromptHandled = true;
+  setNotificationExplainerBusy(true);
+  try {
+    await requestOneSignalPushPermission();
+  } finally {
+    continueToOnboardingCarouselFromPrompt();
+  }
+}
+
+function handleNotificationPromptDecline() {
+  notificationPromptHandled = true;
+  continueToOnboardingCarouselFromPrompt();
+}
+
+function continueToOnboardingCarouselFromPrompt() {
+  hideNotificationExplainer(() => {
+    setNotificationExplainerBusy(false);
+    if (typeof window.startOnboardingCarousel === 'function') {
+      window.startOnboardingCarousel();
+    } else {
+      console.error('startOnboardingCarousel function not found!');
+    }
+  });
+}
+
+window.handleOnboardingSummaryContinue = function() {
+  if (shouldShowNotificationExplainer()) {
+    notificationPromptHandled = true;
+    showNotificationExplainer();
+    return;
+  }
+
+  notificationPromptHandled = true;
+  if (typeof window.startOnboardingCarousel === 'function') {
+    window.startOnboardingCarousel();
+  } else {
+    console.error('startOnboardingCarousel function not found!');
+  }
+};
 
 // --- Experience Screen Logic ---
 if (experienceOptionButtons.length > 0 && experienceContinueBtn) {

@@ -1583,8 +1583,9 @@ function showOnboardingSummary() {
   if (continueBtn) {
     continueBtn.addEventListener("click", function() {
       console.log("Onboarding summary 'Continue' clicked! Launching carousel...");
-      // Check if the function exists on the window object before calling
-      if (typeof window.startOnboardingCarousel === 'function') {
+      if (typeof window.handleOnboardingSummaryContinue === 'function') {
+        window.handleOnboardingSummaryContinue();
+      } else if (typeof window.startOnboardingCarousel === 'function') {
         window.startOnboardingCarousel();
       } else {
         console.error("startOnboardingCarousel function not found!");
