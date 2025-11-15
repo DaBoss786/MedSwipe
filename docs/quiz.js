@@ -961,7 +961,13 @@ setTimeout(() => {
                                            bottomActions.appendChild(returnToAppButton);
                  
                                            returnToAppButton.addEventListener('click', function() {
-                                               unlockBodyScroll();
+                                            unlockBodyScroll();
+                                            if (typeof window.clearPendingDeepLink === 'function') {
+                                                window.clearPendingDeepLink({ reroute: true });
+                                            } else {
+                                                window.pendingDeepLinkQuestionId = null;
+                                                window.isDeepLinkQuizActive = false;
+                                            }
                                                // Hide all quiz elements
                                                const swiperElement = document.querySelector(".swiper");
                                                const bottomToolbar = document.getElementById("bottomToolbar");
@@ -980,10 +986,10 @@ setTimeout(() => {
                                                    initializeDashboard();
                                                }
                                                if (typeof setupDashboardEvents === 'function') {
-                                                   console.log("Re-attaching dashboard event listeners.");
-                                                   setupDashboardEvents();
-                                               }
-                                           });
+                                                console.log("Re-attaching dashboard event listeners.");
+                                                setupDashboardEvents();
+                                            }
+                                        });
                                        // --- END OF NEW CODE ---
                  
                                        } else {

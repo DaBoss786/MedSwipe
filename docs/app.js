@@ -12,6 +12,10 @@ import { initialize as initializeBilling, startBoardReviewCheckout, startCmeChec
 import { detectNativeApp } from './platform.js';
 import { playTap, playLight } from './haptics.js';
 
+const App = typeof window !== 'undefined'
+  ? window.Capacitor?.App ?? window.Capacitor?.Plugins?.App ?? null
+  : null;
+
 const PRESSABLE_SELECTOR = [
   '#welcomeScreen button',
   '#mainOptions button',
@@ -21,6 +25,49 @@ const PRESSABLE_SELECTOR = [
 
 const activePointerPresses = new Map();
 const pointerHandledElements = new WeakSet();
+
+function setPendingDeepLink(questionId) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.pendingDeepLinkQuestionId = questionId || null;
+  window.isDeepLinkQuizActive = Boolean(questionId);
+  if (questionId) {
+    console.log('Deep link quiz pending for question:', questionId);
+  }
+}
+
+function clearPendingDeepLink(options = {}) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const hadPending = Boolean(window.pendingDeepLinkQuestionId);
+  window.pendingDeepLinkQuestionId = null;
+  window.isDeepLinkQuizActive = false;
+
+  if (!hadPending) {
+    return;
+  }
+
+  const { reroute = true } = options;
+  console.log('Cleared pending deep link quiz state.');
+
+  if (reroute && window.authState) {
+    console.log('Resuming standard routing after deep link quiz.');
+    handleUserRouting(window.authState);
+    queueDashboardRefresh();
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.pendingDeepLinkQuestionId = null;
+  window.isDeepLinkQuizActive = false;
+  window.setPendingDeepLink = setPendingDeepLink;
+  window.clearPendingDeepLink = clearPendingDeepLink;
+}
+
 
 function findPressableElement(target) {
   if (!(target instanceof Element)) {
@@ -131,6 +178,33 @@ const isIosNativeApp = (() => {
     return false;
   }
 })();
+
+if (typeof App?.addListener === 'function') {
+  App.addListener('appUrlOpen', (event) => {
+    try {
+      const urlString = event?.url;
+      if (!urlString) {
+        return;
+      }
+
+      console.log('[Capacitor] appUrlOpen', urlString);
+      const url = new URL(urlString, typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://medswipeapp.com');
+
+      const pathname = url.pathname ?? '';
+      const hashPath = url.hash ?? '';
+
+      if (pathname.startsWith('/question/') || hashPath.startsWith('#/question/')) {
+        Promise.resolve(handleQuestionDeepLink(urlString)).catch((error) => {
+          console.error('Error handling deep link from appUrlOpen', error);
+        });
+      } else {
+        console.log('[Capacitor] appUrlOpen ignored (not a question URL)');
+      }
+    } catch (err) {
+      console.error('Error in appUrlOpen handler', err);
+    }
+  });
+}
 
 let resolveOneSignalReady;
 let oneSignalReadyResolved = false;
@@ -337,96 +411,128 @@ if (isNativeApp && window.Capacitor?.isPluginAvailable?.('StatusBar')) {
 }
 
 /**
- * Checks the URL for a question deep link and initializes a single-question quiz if found.
+ * Checks a URL or path for a question deep link and initializes a single-question quiz if found.
+ * @param {string} [urlOrPath] - The full URL or path to inspect. Defaults to the current window location when omitted. 
  * @returns {Promise<boolean>} - Returns true if a deep link was handled, false otherwise.
  */
-async function handleDeepLink() {
-  const hash = window.location.hash;
+export async function handleQuestionDeepLink(urlOrPath) {
+  const fallbackOrigin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://medswipeapp.com';
+  const candidateUrl = typeof urlOrPath === 'string' && urlOrPath.length > 0
+    ? urlOrPath
+    : (typeof window !== 'undefined' && window.location?.href ? window.location.href : '');
 
-  // 1. Check if the URL is a question deep link
-  if (!hash.startsWith('#/question/')) {
+  const extractQuestionId = (input) => {
+    if (!input) {
+      return null;
+    }
+
+    const fromUrlObject = (url) => {
+      if (!url) {
+        return null;
+      }
+
+      const hashPath = url.hash ?? '';
+      if (hashPath.startsWith('#/question/')) {
+        return decodeURIComponent(hashPath.slice('#/question/'.length));
+      }
+
+      const pathName = url.pathname ?? '';
+      if (pathName.startsWith('/question/')) {
+        return decodeURIComponent(pathName.slice('/question/'.length));
+      }
+
+      return null;
+    };
+
+    try {
+      const parsedUrl = new URL(input, fallbackOrigin);
+      const questionFromUrl = fromUrlObject(parsedUrl);
+      if (questionFromUrl) {
+        return questionFromUrl;
+      }
+    } catch (error) {
+      // The string might already be a path or hash fragment; fall through to manual checks.
+    }
+
+    if (input.startsWith('#/question/')) {
+      return decodeURIComponent(input.slice('#/question/'.length));
+    }
+
+    if (input.startsWith('/question/')) {
+      return decodeURIComponent(input.slice('/question/'.length));
+    }
+
+    return null;
+  };
+
+  const questionId = extractQuestionId(candidateUrl);
+
+  if (!questionId) {
     return false; // Not a deep link, let the app start normally.
   }
 
-  // --- START OF NEW, SECURE LOGIC ---
-  console.log("Deep link detected. Waiting for authentication to be ready...");
+  console.log('Deep link detected. Waiting for authentication to be ready...');
 
-  // This function creates a Promise that resolves only when Firebase Auth
-  // has established a user session (even an anonymous one).
+
   const waitForAuthReady = () => {
     return new Promise((resolve) => {
-      // If auth is already ready, resolve immediately.
       if (auth.currentUser) {
         console.log("Auth is already ready for deep link.");
         resolve();
         return;
       }
-      // Otherwise, set up a one-time listener.
+
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         if (user) {
-          console.log("Auth state changed to ready for deep link. User:", user.uid);
-          unsubscribe(); // Important: remove the listener to avoid memory leaks.
+          console.log('Auth state changed to ready for deep link. User:', user.uid);
+          unsubscribe();
           resolve();
         }
       });
     });
   };
 
-  // Wait for the auth session to be ready before proceeding.
   await waitForAuthReady();
-  // --- END OF NEW, SECURE LOGIC ---
-
-
-  // Extract the Question ID from the URL. The ID is the full question text.
-  // decodeURIComponent is important in case the question has special characters like '?'
-  const questionId = decodeURIComponent(hash.substring('#/question/'.length));
-
-  if (!questionId) {
-    return false; // Invalid link format.
-  }
 
   console.log("Auth is ready. Fetching question:", questionId);
 
   try {
-    // 2. Fetch only this specific question from Firestore.
-    // This query will now succeed because request.auth is guaranteed to be non-null.
     const questionsCollectionRef = collection(db, 'questions');
-    const q = query(questionsCollectionRef, where("Question", "==", questionId), where("Free", "==", true));
-    const querySnapshot = await getDocs(q);
+    const questionQuery = query(questionsCollectionRef, where('Question', '==', questionId), where('Free', '==', true));
+    const querySnapshot = await getDocs(questionQuery);
 
     if (querySnapshot.empty) {
-      // This means the question ID didn't exist or wasn't marked as "Free".
-      throw new Error("This question could not be found or is not available via direct link. It may have been updated or removed.");
+      throw new Error('This question could not be found or is not available via direct link. It may have been updated or removed.');
     }
 
-    // 3. Prepare the question data for the quiz.
     const questionData = querySnapshot.docs[0].data();
-    const questionArray = [questionData]; // initializeQuiz needs an array, even if it's just one.
+    const questionArray = [questionData];
 
-    // 4. Hide all other screens and show the quiz UI.
-    // This ensures no welcome screens, modals, or dashboards appear.
+
     ensureAllScreensHidden();
-    initializeQuiz(questionArray, 'deep_link'); // Start the quiz with just our one question.
+    setPendingDeepLink(questionId);
+    initializeQuiz(questionArray, 'deep_link');
+    if (typeof history !== 'undefined' && typeof window !== 'undefined') {
+      history.pushState('', document.title, window.location.pathname + window.location.search);
+    }
 
-    // 5. (Optional but Recommended) Clean up the URL.
-    // This prevents the deep link from being triggered again if the user reloads the page.
-    // It removes the `#/question/...` part from the URL in the browser's address bar without reloading.
-    history.pushState("", document.title, window.location.pathname + window.location.search);
-
-    initializeCasePrepButton(); // FIX: Ensure Case Prep button works after deep link
-    return true; // Let the app know that the deep link was successfully handled.
-
+    initializeCasePrepButton();
+    return true;
   } catch (error) {
-    console.error("Error handling deep link:", error);
-    alert(error.message); // Show the specific error message to the user.
+    console.error('Error handling deep link:', error);
+    if (typeof alert === 'function' && error?.message) {
+      alert(error.message);
+    }
 
-    // If something went wrong, send the user to the main dashboard.
     ensureAllScreensHidden();
-    const mainOptions = document.getElementById("mainOptions");
-    if (mainOptions) mainOptions.style.display = "flex";
+    clearPendingDeepLink({ reroute: true });
+    const mainOptions = typeof document !== 'undefined' ? document.getElementById('mainOptions') : null;
+    if (mainOptions) {
+      mainOptions.style.display = 'flex';
+    }
 
-    initializeCasePrepButton(); // FIX: Ensure Case Prep button works after deep link error
-    return true; // We still "handled" the link, even though it was an error.
+    initializeCasePrepButton();
+    return true;
   }
 }
 
@@ -741,7 +847,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   setupRegistrationFollowupModals();
 
   // First, check if the URL is a deep link.
-  const isDeepLinkHandled = await handleDeepLink();
+  const isDeepLinkHandled = await handleQuestionDeepLink(window.location?.href);
 
   // If a deep link was found and handled, we stop here to prevent
   // the normal app startup (welcome screens, etc.) from running.
@@ -878,6 +984,11 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
       }
       
       // For all other normal page loads and auth changes, use our centralized router
+      if (window.isDeepLinkQuizActive) {
+        console.log('Deep link quiz active; deferring standard routing.');
+        return;
+      }
+
       handleUserRouting(event.detail);
       queueDashboardRefresh();
       
@@ -1322,6 +1433,7 @@ function userHasAnyPremiumAccess() {
 }
 
 function showDashboard() {
+  clearPendingDeepLink({ reroute: false });
   const mainOptions = document.getElementById('mainOptions');
   if (mainOptions) {
     mainOptions.style.display = 'flex';
@@ -6374,6 +6486,7 @@ async function checkUserCmeSubscriptionStatus() {
 
 // Function to show the CME Dashboard and hide others
 function showCmeDashboard() {
+  clearPendingDeepLink({ reroute: false });
   console.log("Executing showCmeDashboard..."); // For debugging START
 
   // Define IDs of all top-level views to hide
@@ -6996,6 +7109,7 @@ async function loadCmeDashboardData() {
 
 // --- Function to Show the CME Info/Paywall Screen ---
 function showCmeInfoScreen() {
+  clearPendingDeepLink({ reroute: false });
   console.log("Executing showCmeInfoScreen...");
 
   // Define IDs of views/modals/elements to hide
@@ -7392,6 +7506,7 @@ const returnToDashboardBtn = document.getElementById("returnToDashboardBtn");
 if (returnToDashboardBtn) {
   returnToDashboardBtn.addEventListener("click", function() {
       console.log("Return to Dashboard button clicked from Learn More modal.");
+      clearPendingDeepLink({ reroute: false });
       const cmeLearnMoreModal = document.getElementById("cmeLearnMoreModal");
       const cmeInfoScreen = document.getElementById("cmeInfoScreen"); // Also hide info screen if needed
       const mainOptions = document.getElementById("mainOptions");
