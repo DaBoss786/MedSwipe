@@ -154,12 +154,16 @@ if (!isIosNativeApp) {
 
 const NOTIFICATION_ENABLE_TEXT = 'Yes, turn on notifications';
 const NOTIFICATION_ENABLE_LOADING_TEXT = 'One moment...';
+const DEFAULT_NOTIFICATION_FREQUENCY = 'daily';
+const NOTIFICATION_FREQUENCY_VALUES = ['daily', 'every_3_days', 'weekly'];
 
 let notificationPromptScreen = null;
 let notificationEnableButton = null;
 let notificationSkipButton = null;
 let notificationPromptVisible = false;
 let notificationPromptHandled = !isIosNativeApp;
+let notificationFrequencyButtons = [];
+let selectedNotificationFrequency = DEFAULT_NOTIFICATION_FREQUENCY;
 
 function initializeOneSignalPush() {
   if (!isIosNativeApp) {
@@ -1537,10 +1541,30 @@ if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) {
   });
 }
 
+function normalizeNotificationFrequency(value) {
+  if (typeof value !== 'string') {
+    return DEFAULT_NOTIFICATION_FREQUENCY;
+  }
+  return NOTIFICATION_FREQUENCY_VALUES.includes(value)
+    ? value
+    : DEFAULT_NOTIFICATION_FREQUENCY;
+}
+
+function setNotificationFrequency(value) {
+  selectedNotificationFrequency = normalizeNotificationFrequency(value);
+  if (notificationFrequencyButtons && notificationFrequencyButtons.length) {
+    notificationFrequencyButtons.forEach((button) => {
+      const buttonValue = normalizeNotificationFrequency(button.dataset.frequency);
+      button.classList.toggle('selected', buttonValue === selectedNotificationFrequency);
+    });
+  }
+}
+
 function initializeNotificationExplainer() {
   notificationPromptScreen = document.getElementById('notificationPromptScreen');
   notificationEnableButton = document.getElementById('notificationEnableNotificationsBtn');
   notificationSkipButton = document.getElementById('notificationSkipNotificationsBtn');
+  notificationFrequencyButtons = Array.from(document.querySelectorAll('.notification-frequency-option'));
 
   if (!notificationPromptScreen) {
     notificationPromptHandled = true;
@@ -1554,6 +1578,16 @@ function initializeNotificationExplainer() {
   if (notificationSkipButton) {
     notificationSkipButton.addEventListener('click', handleNotificationPromptDecline);
   }
+
+  if (notificationFrequencyButtons.length > 0) {
+    notificationFrequencyButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setNotificationFrequency(button.dataset.frequency);
+      });
+    });
+  }
+
+  setNotificationFrequency(selectedNotificationFrequency);
 }
 
 function shouldShowNotificationExplainer() {
@@ -1568,6 +1602,7 @@ function showNotificationExplainer() {
     return;
   }
 
+  setNotificationFrequency(selectedNotificationFrequency);
   notificationPromptVisible = true;
   notificationPromptScreen.style.display = 'flex';
   notificationPromptScreen.style.opacity = '0';
@@ -1607,21 +1642,60 @@ function setNotificationExplainerBusy(isBusy) {
   if (notificationSkipButton) {
     notificationSkipButton.disabled = Boolean(isBusy);
   }
+  if (notificationFrequencyButtons && notificationFrequencyButtons.length > 0) {
+    notificationFrequencyButtons.forEach((button) => {
+      button.disabled = Boolean(isBusy);
+    });
+  }
+}
+
+async function persistNotificationPreference(optedIn) {
+  if (!auth || !auth.currentUser) {
+    console.warn('Cannot save notification preference: no authenticated user.');
+    return;
+  }
+
+  const userId = auth.currentUser.uid;
+  const userDocRef = doc(db, 'users', userId);
+
+  try {
+    await setDoc(
+      userDocRef,
+      {
+        notificationFrequency: selectedNotificationFrequency || DEFAULT_NOTIFICATION_FREQUENCY,
+        notificationOptIn: Boolean(optedIn),
+        notificationOptInAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error('Failed to save notification preference:', error);
+  }
 }
 
 async function handleNotificationPromptAccept() {
   notificationPromptHandled = true;
   setNotificationExplainerBusy(true);
+  let permissionGranted = false;
   try {
-    await requestOneSignalPushPermission();
+    const result = await requestOneSignalPushPermission();
+    permissionGranted = Boolean(result && result.allowed);
+  } catch (error) {
+    console.error('Notification permission request failed:', error);
   } finally {
+    await persistNotificationPreference(permissionGranted);
     continueToOnboardingCarouselFromPrompt();
   }
 }
 
-function handleNotificationPromptDecline() {
+async function handleNotificationPromptDecline() {
   notificationPromptHandled = true;
-  continueToOnboardingCarouselFromPrompt();
+  setNotificationExplainerBusy(true);
+  try {
+    await persistNotificationPreference(false);
+  } finally {
+    continueToOnboardingCarouselFromPrompt();
+  }
 }
 
 function continueToOnboardingCarouselFromPrompt() {

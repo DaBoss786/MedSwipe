@@ -178,21 +178,27 @@
 <!-- == Notification Explainer (iOS only)   == -->
 <!-- ========================================= -->
 <div id="notificationPromptScreen" class="onboarding-screen" style="display: none;">
-  <div class="onboarding-content">
+  <div class="onboarding-content notification-explainer-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
-    <h1 class="onboarding-title">Daily Practice = Better Scores</h1>
+    <h1 class="notification-explainer-title">Get ENT Questions on Your Schedule</h1>
     <p class="notification-explainer-body">
-      Regular engagement with review questions, spaced repetition, and active recall are consistently associated with improved in-service and board exam performance.
+      Boost recall and stay exam-ready with quick, consistent practice tailored to you.
     </p>
+    <p class="notification-frequency-heading">How often would you like new questions?</p>
+    <div class="notification-frequency-selector">
+      <button type="button" class="notification-frequency-option selected" data-frequency="daily">Daily</button>
+      <button type="button" class="notification-frequency-option" data-frequency="every_3_days">Every 3 Days</button>
+      <button type="button" class="notification-frequency-option" data-frequency="weekly">Weekly</button>
+    </div>
     <p class="notification-explainer-question">
-      Would you like a daily review question sent directly to your phone?
+      Would you like MedSwipe to send questions straight to your phone with this schedule?
     </p>
     <div class="notification-explainer-buttons">
       <button id="notificationEnableNotificationsBtn" class="onboarding-primary-btn">
         Yes, turn on notifications
       </button>
       <button id="notificationSkipNotificationsBtn" class="onboarding-secondary-btn">
-        No thanks
+        Not now
       </button>
     </div>
   </div>

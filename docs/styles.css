@@ -4167,6 +4167,17 @@ button:not(:disabled):active {
   cursor: not-allowed;
 }
 
+.notification-explainer-content {
+  max-width: 520px;
+}
+
+.notification-explainer-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: #0C2C5F;
+  margin: 10px 0 12px;
+}
+
 .onboarding-secondary-btn {
   font-size: 1rem;
   padding: 12px 20px;
@@ -4193,7 +4204,49 @@ button:not(:disabled):active {
   font-size: 1rem;
   line-height: 1.6;
   color: #2b2b2b;
-  margin-bottom: 35px;
+  margin-bottom: 25px;
+}
+
+.notification-frequency-heading {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0C2C5F;
+  margin-bottom: 12px;
+}
+
+.notification-frequency-selector {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  margin-bottom: 28px;
+}
+
+.notification-frequency-option {
+  flex: 1;
+  border-radius: 999px;
+  border: 2px solid #0C72D3;
+  background: transparent;
+  color: #0C72D3;
+  font-weight: 600;
+  padding: 12px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-frequency-option.selected {
+  background: linear-gradient(135deg, #0C72D3 0%, #66a6ff 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(12, 114, 211, 0.3);
+}
+
+.notification-frequency-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .notification-explainer-question {
@@ -4209,10 +4262,14 @@ button:not(:disabled):active {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  margin-top: 10px;
 }
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
+  .notification-explainer-title {
+    font-size: 1.6rem;
+  }
   .onboarding-title {
     font-size: 1.4rem;
   }
@@ -4228,6 +4285,13 @@ button:not(:disabled):active {
   }
   .notification-explainer-body {
     font-size: 0.95rem;
+  }
+  .notification-frequency-heading {
+    font-size: 1rem;
+  }
+  .notification-frequency-option {
+    font-size: 0.95rem;
+    padding: 10px 8px;
   }
   .notification-explainer-question {
     font-size: 1.05rem;
