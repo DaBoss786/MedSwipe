@@ -14,8 +14,10 @@ const { PDFDocument, StandardFonts, rgb, degrees } = require("pdf-lib");
 const crypto = require("crypto");
 const axios = require("axios"); // For MailerLite
 const { revenuecatWebhook } = require("./revenuecatWebhook");
+const { sendDailyQuestionPushes } = require("./sendDailyQuestionPush");
 
 exports.revenuecatWebhook = revenuecatWebhook;
+exports.sendDailyQuestionPushes = sendDailyQuestionPushes;
 
 
 // Initialize Firebase Admin SDK only once
