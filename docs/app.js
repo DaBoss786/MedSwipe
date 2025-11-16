@@ -1237,15 +1237,9 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   initializeIosPaywallUI();
   setupRegistrationFollowupModals();
 
-  // First, check if the URL is a deep link.
-  const isDeepLinkHandled = await handleQuestionDeepLink(window.location?.href);
-
-  // If a deep link was found and handled, we stop here to prevent
-  // the normal app startup (welcome screens, etc.) from running.
-  if (isDeepLinkHandled) {
-    console.log("Deep link was handled. Halting normal startup sequence.");
-    return;
-  }
+  // First, check if the URL is a deep link. We still continue with normal startup
+  // so that the dashboard/state refresh logic is available once the quiz ends.
+  await handleQuestionDeepLink(window.location?.href);
   // --- END OF NEW LOGIC ---
   try {
     // Ensure imported 'functions' instance exists
