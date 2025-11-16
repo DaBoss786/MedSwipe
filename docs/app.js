@@ -230,6 +230,11 @@ const NOTIFICATION_ENABLE_TEXT = 'Yes, turn on notifications';
 const NOTIFICATION_ENABLE_LOADING_TEXT = 'One moment...';
 const DEFAULT_NOTIFICATION_FREQUENCY = 'daily';
 const NOTIFICATION_FREQUENCY_VALUES = ['daily', 'every_3_days', 'weekly'];
+const NOTIFICATION_FREQUENCY_MAP = {
+  daily: 1,
+  every_3_days: 3,
+  weekly: 7
+};
 
 let notificationPromptScreen = null;
 let notificationEnableButton = null;
@@ -492,13 +497,65 @@ export async function handleQuestionDeepLink(urlOrPath) {
     });
   };
 
+  const waitForResolvedAuthState = () => {
+    if (typeof window === 'undefined') {
+      return Promise.resolve(null);
+    }
+
+    if (window.authState && window.authState.isLoading === false) {
+      return Promise.resolve(window.authState);
+    }
+
+    return new Promise((resolve) => {
+      const handleAuthStateReady = (event) => {
+        if (event?.detail?.isLoading === false) {
+          window.removeEventListener('authStateChanged', handleAuthStateReady);
+          resolve(event.detail);
+        }
+      };
+      window.addEventListener('authStateChanged', handleAuthStateReady);
+    });
+  };
+
+  const enforceQuestionAccessForUser = async (questionData) => {
+    if (!questionData || questionData.Free === true) {
+      return;
+    }
+
+    const authState = await waitForResolvedAuthState();
+    const accessTier = authState?.accessTier || 'free_guest';
+    const questionIsBoardReview =
+      questionData['Board Review'] === true || questionData.BoardReview === true;
+
+    const hasBoardAccess =
+      userHasBoardReviewAccess() ||
+      accessTier === 'cme_credits_only';
+
+    const hasAnyPremiumAccess =
+      hasBoardAccess ||
+      Boolean(authState?.cmeSubscriptionActive) ||
+      accessTier === 'cme_annual' ||
+      accessTier === 'cme_credits_only';
+
+    if (questionIsBoardReview) {
+      if (!hasBoardAccess) {
+        throw new Error('This question requires active Board Review access.');
+      }
+      return;
+    }
+
+    if (!hasAnyPremiumAccess) {
+      throw new Error('This question requires a premium subscription.');
+    }
+  };
+
   await waitForAuthReady();
 
   console.log("Auth is ready. Fetching question:", questionId);
 
   try {
     const questionsCollectionRef = collection(db, 'questions');
-    const questionQuery = query(questionsCollectionRef, where('Question', '==', questionId), where('Free', '==', true));
+    const questionQuery = query(questionsCollectionRef, where('Question', '==', questionId));
     const querySnapshot = await getDocs(questionQuery);
 
     if (querySnapshot.empty) {
@@ -506,6 +563,7 @@ export async function handleQuestionDeepLink(urlOrPath) {
     }
 
     const questionData = querySnapshot.docs[0].data();
+    await enforceQuestionAccessForUser(questionData);
     const questionArray = [questionData];
 
 
@@ -533,6 +591,66 @@ export async function handleQuestionDeepLink(urlOrPath) {
 
     initializeCasePrepButton();
     return true;
+  }
+}
+
+/**
+ * Syncs the Firebase user with OneSignal by setting the external ID
+ * and storing the OneSignal subscription ID in Firestore.
+ * @param {object} user - The Firebase user object from authState.
+ */
+async function syncFirebaseWithOneSignal(user) {
+  // This function only runs on the native iOS app where OneSignal is set up.
+  // It also ensures a user object (anonymous or registered) exists.
+  if (!isIosNativeApp || !user) {
+    console.log("OneSignal sync skipped: Not an iOS app or no user session.");
+    return;
+  }
+
+  try {
+    console.log("Attempting to sync user with OneSignal...");
+    // The app already has a promise that resolves when OneSignal is ready. We'll wait for it.
+    const oneSignal = await oneSignalReadyPromise;
+
+    // If OneSignal isn't available for any reason, we stop here.
+    if (!oneSignal) {
+      console.warn("OneSignal SDK not ready, cannot sync user.");
+      return;
+    }
+
+    // --- Part 1: Tell OneSignal about the Firebase User ID ---
+    // This securely links the device to your user's Firebase account in OneSignal.
+    console.log(`Logging into OneSignal with Firebase UID: ${user.uid}`);
+    if (typeof oneSignal.login === 'function') {
+        oneSignal.login(user.uid);
+    } else {
+        console.warn("oneSignal.login function not found. Could not set external ID.");
+    }
+
+    // --- Part 2: Get the OneSignal ID and save it to Firestore (CORRECTED) ---
+    // This gets the unique ID for this user's app installation from OneSignal.
+    const subscription = oneSignal.User?.pushSubscription;
+    const oneSignalId = subscription ? await subscription.getId() : null;
+
+    if (oneSignalId) {
+      console.log(`Found OneSignal Subscription ID: ${oneSignalId}`);
+      // Get a reference to the user's document in Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+
+      // Securely save the OneSignal ID to their document.
+      // { merge: true } ensures we only add or update this one field
+      // without overwriting other important user data.
+      await setDoc(userDocRef, {
+        oneSignalId: oneSignalId
+      }, { merge: true });
+
+      console.log("Successfully saved OneSignal ID to Firestore.");
+    } else {
+      console.warn("Could not get OneSignal Subscription ID at this time.");
+    }
+
+  } catch (error) {
+    console.error("An error occurred during OneSignal sync:", error);
   }
 }
 
@@ -962,6 +1080,13 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   const isRegistrationInProgress = document.getElementById('postRegistrationLoadingScreen')?.style.display === 'flex';
   if (!event.detail.isLoading && !isRegistrationInProgress) {
     
+    // --- THIS IS THE NEW, CORRECT LOCATION FOR THE FUNCTION CALL ---
+    // If a user (anonymous or registered) is detected, sync them with OneSignal.
+    if (event.detail.user) {
+        syncFirebaseWithOneSignal(event.detail.user);
+    }
+    // --- END OF NEW BLOCK ---
+
         // This outer timeout handles the splash screen fade-out
         setTimeout(function() {
           const splashScreenEl = document.getElementById('splashScreen');
@@ -1771,10 +1896,15 @@ async function persistNotificationPreference(optedIn) {
   const userDocRef = doc(db, 'users', userId);
 
   try {
+    const frequencyKey = selectedNotificationFrequency || DEFAULT_NOTIFICATION_FREQUENCY;
+    const frequencyDays =
+      NOTIFICATION_FREQUENCY_MAP[frequencyKey] ??
+      NOTIFICATION_FREQUENCY_MAP[DEFAULT_NOTIFICATION_FREQUENCY];
+
     await setDoc(
       userDocRef,
       {
-        notificationFrequency: selectedNotificationFrequency || DEFAULT_NOTIFICATION_FREQUENCY,
+        notificationFrequencyDays: frequencyDays,
         notificationOptIn: Boolean(optedIn),
         notificationOptInAt: serverTimestamp()
       },
