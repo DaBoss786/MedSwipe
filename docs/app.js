@@ -304,6 +304,9 @@ async function requestOneSignalPushPermission() {
     }
     const accepted = await oneSignal.Notifications.requestPermission(false);
     console.log('User accepted notifications:', accepted);
+    if (accepted) {
+      scheduleOneSignalIdentitySync({ immediate: true, resetAttempts: true });
+    }
     return { allowed: accepted };
   } catch (error) {
     console.error('Failed to request OneSignal permission:', error);
@@ -312,6 +315,335 @@ async function requestOneSignalPushPermission() {
 }
 
 window.requestOneSignalPushPermission = requestOneSignalPushPermission;
+
+const ONE_SIGNAL_SYNC_MAX_ATTEMPTS = 10;
+const ONE_SIGNAL_SYNC_BASE_DELAY_MS = 2500;
+const ONE_SIGNAL_SYNC_MAX_DELAY_MS = 30000;
+
+let oneSignalIdentitySyncTimeoutId = null;
+let oneSignalIdentitySyncAttemptCount = 0;
+let lastSyncedOneSignalUid = null;
+let lastSyncedOneSignalUserId = null;
+let lastSyncedOneSignalSubscriptionId = null;
+let lastOneSignalLoginUid = null;
+let oneSignalObserversInitialized = false;
+let oneSignalUserObserverCleanup = null;
+let oneSignalPushObserverCleanup = null;
+
+function resetOneSignalIdentitySyncSchedule() {
+  if (oneSignalIdentitySyncTimeoutId) {
+    clearTimeout(oneSignalIdentitySyncTimeoutId);
+    oneSignalIdentitySyncTimeoutId = null;
+  }
+  oneSignalIdentitySyncAttemptCount = 0;
+}
+
+async function fetchOneSignalIdentitySnapshot(oneSignal) {
+  const snapshot = {
+    oneSignalUserId: null,
+    oneSignalExternalId: null,
+    oneSignalSubscriptionId: null
+  };
+
+  if (!oneSignal || !oneSignal.User) {
+    return snapshot;
+  }
+
+  const user = oneSignal.User;
+
+  try {
+    if (typeof user.getOnesignalId === 'function') {
+      snapshot.oneSignalUserId = await user.getOnesignalId();
+    } else if (typeof user.onesignalId === 'string') {
+      snapshot.oneSignalUserId = user.onesignalId;
+    }
+  } catch (error) {
+    console.warn('Unable to read OneSignal user id:', error);
+  }
+
+  try {
+    if (typeof user.getExternalId === 'function') {
+      snapshot.oneSignalExternalId = await user.getExternalId();
+    } else if (typeof user.externalId === 'string') {
+      snapshot.oneSignalExternalId = user.externalId;
+    }
+  } catch (error) {
+    console.warn('Unable to read OneSignal external id:', error);
+  }
+
+  try {
+    const subscription = user.pushSubscription;
+    if (subscription) {
+      if (typeof subscription.getId === 'function') {
+        snapshot.oneSignalSubscriptionId = await subscription.getId();
+      } else if (typeof subscription.id === 'string') {
+        snapshot.oneSignalSubscriptionId = subscription.id;
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to read OneSignal subscription id:', error);
+  }
+
+  return snapshot;
+}
+
+async function persistOneSignalIdentitySnapshot(snapshot) {
+  if (!auth?.currentUser || auth.currentUser.isAnonymous) {
+    return true;
+  }
+
+  if (!snapshot.oneSignalUserId && !snapshot.oneSignalSubscriptionId) {
+    return false;
+  }
+
+  const uid = auth.currentUser.uid;
+  if (
+    uid === lastSyncedOneSignalUid &&
+    snapshot.oneSignalUserId === lastSyncedOneSignalUserId &&
+    snapshot.oneSignalSubscriptionId === lastSyncedOneSignalSubscriptionId
+  ) {
+    return true;
+  }
+
+  try {
+    await setDoc(
+      doc(db, 'users', uid),
+      {
+        oneSignalId: snapshot.oneSignalSubscriptionId || snapshot.oneSignalUserId || null,
+        oneSignalUserId: snapshot.oneSignalUserId || null,
+        oneSignalSubscriptionId: snapshot.oneSignalSubscriptionId || null,
+        oneSignalExternalId: snapshot.oneSignalExternalId || null,
+        oneSignalLinkedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    lastSyncedOneSignalUid = uid;
+    lastSyncedOneSignalUserId = snapshot.oneSignalUserId || null;
+    lastSyncedOneSignalSubscriptionId = snapshot.oneSignalSubscriptionId || null;
+    return true;
+  } catch (error) {
+    console.error('Failed to persist OneSignal identity:', error);
+    return false;
+  }
+}
+
+function scheduleOneSignalIdentitySync({ immediate = false, resetAttempts = false } = {}) {
+  if (!isIosNativeApp) {
+    return;
+  }
+
+  if (resetAttempts) {
+    resetOneSignalIdentitySyncSchedule();
+  }
+
+  const execute = async () => {
+    oneSignalIdentitySyncTimeoutId = null;
+    const oneSignal = await oneSignalReadyPromise;
+    if (!oneSignal) {
+      return;
+    }
+
+    const snapshot = await fetchOneSignalIdentitySnapshot(oneSignal);
+    const success = await persistOneSignalIdentitySnapshot(snapshot);
+    if (success) {
+      resetOneSignalIdentitySyncSchedule();
+      return;
+    }
+
+    oneSignalIdentitySyncAttemptCount += 1;
+    if (oneSignalIdentitySyncAttemptCount >= ONE_SIGNAL_SYNC_MAX_ATTEMPTS) {
+      console.warn('OneSignal identity sync attempts exhausted.');
+      return;
+    }
+
+    const delay = Math.min(
+      ONE_SIGNAL_SYNC_BASE_DELAY_MS * Math.pow(1.5, Math.max(oneSignalIdentitySyncAttemptCount - 1, 0)),
+      ONE_SIGNAL_SYNC_MAX_DELAY_MS
+    );
+    oneSignalIdentitySyncTimeoutId = setTimeout(execute, delay);
+  };
+
+  const delay = immediate
+    ? 0
+    : Math.min(
+        ONE_SIGNAL_SYNC_BASE_DELAY_MS * Math.pow(1.5, Math.max(oneSignalIdentitySyncAttemptCount - 1, 0)),
+        ONE_SIGNAL_SYNC_MAX_DELAY_MS
+      );
+
+  if (oneSignalIdentitySyncTimeoutId) {
+    clearTimeout(oneSignalIdentitySyncTimeoutId);
+    oneSignalIdentitySyncTimeoutId = null;
+  }
+
+  oneSignalIdentitySyncTimeoutId = setTimeout(execute, delay);
+}
+
+function initializeOneSignalIdentityObservers() {
+  if (!isIosNativeApp || oneSignalObserversInitialized) {
+    return;
+  }
+  oneSignalObserversInitialized = true;
+
+  oneSignalReadyPromise
+    .then((oneSignal) => {
+      if (!oneSignal || !oneSignal.User) {
+        console.warn('OneSignal identity observers unavailable: User object missing.');
+        return;
+      }
+
+      const triggerSync = () => {
+        scheduleOneSignalIdentitySync({ immediate: true });
+      };
+
+      const user = oneSignal.User;
+
+      if (typeof user.addObserver === 'function') {
+        try {
+          const observer = user.addObserver(triggerSync);
+          oneSignalUserObserverCleanup = () => {
+            if (observer && typeof observer.remove === 'function') {
+              observer.remove();
+            } else if (typeof user.removeObserver === 'function') {
+              user.removeObserver(triggerSync);
+            }
+            oneSignalUserObserverCleanup = null;
+          };
+        } catch (error) {
+          console.warn('Failed to attach OneSignal user observer:', error);
+        }
+      } else if (typeof user.addEventListener === 'function') {
+        try {
+          user.addEventListener('change', triggerSync);
+          oneSignalUserObserverCleanup = () => {
+            user.removeEventListener?.('change', triggerSync);
+            oneSignalUserObserverCleanup = null;
+          };
+        } catch (error) {
+          console.warn('Failed to attach OneSignal user change listener:', error);
+        }
+      } else {
+        console.warn('OneSignal user observer API unavailable; relying on retries.');
+      }
+
+      const subscription = user.pushSubscription;
+      if (!subscription) {
+        return;
+      }
+
+      const handleSubscriptionChange = () => {
+        scheduleOneSignalIdentitySync({ immediate: true });
+      };
+
+      if (typeof subscription.addObserver === 'function') {
+        try {
+          const observer = subscription.addObserver(handleSubscriptionChange);
+          oneSignalPushObserverCleanup = () => {
+            if (observer && typeof observer.remove === 'function') {
+              observer.remove();
+            } else if (typeof subscription.removeObserver === 'function') {
+              subscription.removeObserver(handleSubscriptionChange);
+            }
+            oneSignalPushObserverCleanup = null;
+          };
+        } catch (error) {
+          console.warn('Failed to attach OneSignal push subscription observer:', error);
+        }
+      } else if (typeof subscription.addEventListener === 'function') {
+        try {
+          subscription.addEventListener('change', handleSubscriptionChange);
+          oneSignalPushObserverCleanup = () => {
+            subscription.removeEventListener?.('change', handleSubscriptionChange);
+            oneSignalPushObserverCleanup = null;
+          };
+        } catch (error) {
+          console.warn('Failed to attach push subscription change listener:', error);
+        }
+      } else {
+        console.warn('OneSignal push subscription observer API unavailable; relying on retries.');
+      }
+    })
+    .catch((error) => {
+      console.warn('Unable to initialize OneSignal identity observers:', error);
+    });
+}
+
+function loginToOneSignal(uid) {
+  if (!isIosNativeApp || !uid) {
+    return;
+  }
+
+  oneSignalReadyPromise
+    .then((oneSignal) => {
+      if (!oneSignal || typeof oneSignal.login !== 'function') {
+        console.warn('OneSignal login API is not available.');
+        return;
+      }
+      try {
+        oneSignal.login(uid);
+        lastOneSignalLoginUid = uid;
+      } catch (error) {
+        console.error('OneSignal login call failed:', error);
+      }
+    })
+    .catch((error) => {
+      console.error('Failed to login to OneSignal:', error);
+    });
+}
+
+function logoutFromOneSignal() {
+  if (!isIosNativeApp) {
+    return;
+  }
+
+  oneSignalReadyPromise
+    .then((oneSignal) => {
+      if (!oneSignal || typeof oneSignal.logout !== 'function') {
+        return;
+      }
+      try {
+        oneSignal.logout();
+      } catch (error) {
+        console.warn('OneSignal logout call failed:', error);
+      }
+    })
+    .catch((error) => {
+      console.warn('Failed to logout from OneSignal:', error);
+    });
+}
+
+function handleOneSignalAuthStateChange(authState) {
+  if (!isIosNativeApp) {
+    return;
+  }
+
+  const currentUser = authState?.user;
+
+  if (!currentUser) {
+    resetOneSignalIdentitySyncSchedule();
+    if (lastOneSignalLoginUid) {
+      logoutFromOneSignal();
+      lastOneSignalLoginUid = null;
+    }
+    lastSyncedOneSignalUid = null;
+    lastSyncedOneSignalUserId = null;
+    lastSyncedOneSignalSubscriptionId = null;
+    return;
+  }
+
+  if (currentUser.isAnonymous) {
+    resetOneSignalIdentitySyncSchedule();
+    if (lastOneSignalLoginUid) {
+      logoutFromOneSignal();
+      lastOneSignalLoginUid = null;
+    }
+    return;
+  }
+
+  initializeOneSignalIdentityObservers();
+  loginToOneSignal(currentUser.uid);
+  scheduleOneSignalIdentitySync({ immediate: true, resetAttempts: true });
+}
 
 let dashboardSetupTimeout = null;
 
@@ -591,66 +923,6 @@ export async function handleQuestionDeepLink(urlOrPath) {
 
     initializeCasePrepButton();
     return true;
-  }
-}
-
-/**
- * Syncs the Firebase user with OneSignal by setting the external ID
- * and storing the OneSignal subscription ID in Firestore.
- * @param {object} user - The Firebase user object from authState.
- */
-async function syncFirebaseWithOneSignal(user) {
-  // This function only runs on the native iOS app where OneSignal is set up.
-  // It also ensures a user object (anonymous or registered) exists.
-  if (!isIosNativeApp || !user) {
-    console.log("OneSignal sync skipped: Not an iOS app or no user session.");
-    return;
-  }
-
-  try {
-    console.log("Attempting to sync user with OneSignal...");
-    // The app already has a promise that resolves when OneSignal is ready. We'll wait for it.
-    const oneSignal = await oneSignalReadyPromise;
-
-    // If OneSignal isn't available for any reason, we stop here.
-    if (!oneSignal) {
-      console.warn("OneSignal SDK not ready, cannot sync user.");
-      return;
-    }
-
-    // --- Part 1: Tell OneSignal about the Firebase User ID ---
-    // This securely links the device to your user's Firebase account in OneSignal.
-    console.log(`Logging into OneSignal with Firebase UID: ${user.uid}`);
-    if (typeof oneSignal.login === 'function') {
-        oneSignal.login(user.uid);
-    } else {
-        console.warn("oneSignal.login function not found. Could not set external ID.");
-    }
-
-    // --- Part 2: Get the OneSignal ID and save it to Firestore (CORRECTED) ---
-    // This gets the unique ID for this user's app installation from OneSignal.
-    const subscription = oneSignal.User?.pushSubscription;
-    const oneSignalId = subscription ? await subscription.getId() : null;
-
-    if (oneSignalId) {
-      console.log(`Found OneSignal Subscription ID: ${oneSignalId}`);
-      // Get a reference to the user's document in Firestore
-      const userDocRef = doc(db, 'users', user.uid);
-
-      // Securely save the OneSignal ID to their document.
-      // { merge: true } ensures we only add or update this one field
-      // without overwriting other important user data.
-      await setDoc(userDocRef, {
-        oneSignalId: oneSignalId
-      }, { merge: true });
-
-      console.log("Successfully saved OneSignal ID to Firestore.");
-    } else {
-      console.warn("Could not get OneSignal Subscription ID at this time.");
-    }
-
-  } catch (error) {
-    console.error("An error occurred during OneSignal sync:", error);
   }
 }
 
@@ -943,6 +1215,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   const mainOptions = document.getElementById('mainOptions');
 
   initializeOneSignalPush();
+  initializeOneSignalIdentityObservers();
 
   // --- Payment Initialization ---
   // The app dynamically picks the correct billing provider at runtime.
@@ -1064,7 +1337,8 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
 	    isLoading: event.detail.isLoading,
 	    timestamp: Date.now()
 	  });
-	  window.authState = event.detail; 
+  window.authState = event.detail; 
+  handleOneSignalAuthStateChange(event.detail);
 
   if (event.detail.accessTier) {
     setAnalyticsUserProperties({
@@ -1079,13 +1353,6 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   // Only proceed once auth is fully loaded
   const isRegistrationInProgress = document.getElementById('postRegistrationLoadingScreen')?.style.display === 'flex';
   if (!event.detail.isLoading && !isRegistrationInProgress) {
-    
-    // --- THIS IS THE NEW, CORRECT LOCATION FOR THE FUNCTION CALL ---
-    // If a user (anonymous or registered) is detected, sync them with OneSignal.
-    if (event.detail.user) {
-        syncFirebaseWithOneSignal(event.detail.user);
-    }
-    // --- END OF NEW BLOCK ---
 
         // This outer timeout handles the splash screen fade-out
         setTimeout(function() {
