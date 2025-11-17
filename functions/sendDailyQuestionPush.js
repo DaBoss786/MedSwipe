@@ -2,9 +2,11 @@ const { logger } = require("firebase-functions/v2");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const fetch = global.fetch || require("node-fetch");
+const { onRequest } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 
-const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
-const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
+const oneSignalAppIdSecret = defineSecret("ONESIGNAL_APP_ID");
+const oneSignalApiKeySecret = defineSecret("ONESIGNAL_API_KEY");
 
 if (admin.apps.length === 0) {
   admin.initializeApp();
@@ -97,8 +99,15 @@ async function pickQuestionForUser(userData = {}) {
   };
 }
 
+function loadOneSignalCredentials() {
+  const appId = process.env.ONESIGNAL_APP_ID;
+  const apiKey = process.env.ONESIGNAL_API_KEY;
+  return { appId, apiKey };
+}
+
 async function sendOneSignalNotification(playerId, questionId, specialty) {
-  if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+  const { appId, apiKey } = loadOneSignalCredentials();
+  if (!appId || !apiKey) {
     throw new Error("OneSignal credentials are not configured.");
   }
 
@@ -111,28 +120,34 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
     ? `Daily ${trimmedSpecialty} Question`
     : "Daily Question";
 
-  const url = `https://medswipeapp.com/question/${questionId}`;
+  const deepLink = `https://medswipeapp.com/question/${encodeURIComponent(questionId)}`;
+
   const payload = {
-    app_id: ONESIGNAL_APP_ID,
+    app_id: appId,
     include_player_ids: [playerId],
     headings: { en: heading },
     contents: { en: "Quick high-yield question for you." },
-    url,
+    // Use additional data instead of url
+    data: {
+      questionId: questionId,
+      deep_link: deepLink
+    },
+    // Remove url field or ensure fallback only
+    // url: deepLink,  <-- REMOVE or comment out for iOS deep-link suppression
     delayed_option: "timezone",
-    delivery_time_of_day: "21:00",
+    delivery_time_of_day: "21:00"
   };
 
   const response = await fetch("https://api.onesignal.com/notifications", {
     method: "POST",
     headers: {
-      Authorization: `Key ${ONESIGNAL_API_KEY}`,
+      Authorization: `Key ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
   });
 
   const responseText = await response.text();
-
   if (!response.ok) {
     throw new Error(
       `OneSignal API error (${response.status}): ${responseText || "Unknown error"}`
@@ -157,6 +172,7 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
 
   return responseBody;
 }
+
 
 async function processUserDocument(userDoc, nowDate) {
   const userData = userDoc.data() || {};
@@ -218,9 +234,11 @@ exports.sendDailyQuestionPushes = onSchedule(
   {
     schedule: "every 24 hours",
     timeZone: "America/Los_Angeles",
+    secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret],
   },
   async () => {
-    if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+    const { appId, apiKey } = loadOneSignalCredentials();
+    if (!appId || !apiKey) {
       logger.error(
         "ONESIGNAL_APP_ID or ONESIGNAL_API_KEY is not configured."
       );
@@ -254,3 +272,24 @@ exports.sendDailyQuestionPushes = onSchedule(
     return null;
   }
 );
+
+// ───────────────────────────────
+// Temporary HTTP endpoint for testing
+// ───────────────────────────────
+exports.testSendPush = onRequest({ secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret] }, async (req, res) => {
+  try {
+    const testPlayerId   = "27ad9523-ae06-4d0e-b9f7-8ff1334b81e5"; // your provided ID
+    const testQuestionId = "Which condition is characterized by recurrent facial nerve palsies, facial edema, and a fissured tongue?";
+    const testSpecialty  = "ENT";
+
+    const result = await sendOneSignalNotification(
+      testPlayerId,
+      testQuestionId,
+      testSpecialty
+    );
+    res.status(200).send({ success: true, result });
+  } catch (error) {
+    logger.error("Error sending test push:", { error: error.message });
+    res.status(500).send({ success: false, error: error.message });
+  }
+});

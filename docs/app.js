@@ -211,6 +211,7 @@ let oneSignalReadyResolved = false;
 const oneSignalReadyPromise = new Promise((resolve) => {
   resolveOneSignalReady = resolve;
 });
+let oneSignalNotificationHandlerRegistered = false;
 
 function markOneSignalReady(instance) {
   if (oneSignalReadyResolved) {
@@ -249,6 +250,84 @@ function initializeOneSignalPush() {
     return;
   }
 
+  const registerNotificationHandlers = (oneSignal) => {
+    if (!oneSignal || oneSignalNotificationHandlerRegistered) {
+      return;
+    }
+
+    const handleNotificationClick = (event) => {
+      try {
+        const notification = event?.notification || event || {};
+        const dataSources = [
+          notification.additionalData,
+          notification.data,
+          notification.rawPayload?.additionalData,
+          event?.additionalData,
+          event?.data
+        ].filter(Boolean);
+        const mergedData = Object.assign({}, ...dataSources);
+
+        const questionId =
+          mergedData.questionId ||
+          mergedData.question_id ||
+          mergedData.Question ||
+          mergedData.question;
+
+        const candidateUrl =
+          mergedData.deep_link ||
+          mergedData.deepLink ||
+          mergedData.url ||
+          mergedData.launchURL ||
+          notification.launchURL ||
+          notification.url;
+
+        let target = null;
+
+        if (typeof questionId === 'string' && questionId.trim().length > 0) {
+          target = `/question/${encodeURIComponent(questionId.trim())}`;
+        } else if (typeof candidateUrl === 'string' && candidateUrl.trim().length > 0) {
+          target = candidateUrl.trim();
+        }
+
+        if (target) {
+          event?.preventDefault?.();
+          Promise.resolve(handleQuestionDeepLink(target)).catch((error) => {
+            console.error('Failed to handle deep link from OneSignal notification click:', error);
+          });
+        } else {
+          console.log('Notification click received without recognizable deep link payload.', {
+            hasQuestionId: Boolean(questionId),
+            hasUrl: Boolean(candidateUrl)
+          });
+        }
+      } catch (error) {
+        console.error('Error processing OneSignal notification click event:', error);
+      }
+    };
+
+    if (oneSignal.Notifications?.addEventListener) {
+      try {
+        oneSignal.Notifications.addEventListener('click', handleNotificationClick);
+        oneSignalNotificationHandlerRegistered = true;
+        return;
+      } catch (error) {
+        console.error('Failed to attach OneSignal Notifications click listener:', error);
+      }
+    }
+
+    if (typeof oneSignal.setNotificationOpenedHandler === 'function') {
+      try {
+        oneSignal.setNotificationOpenedHandler(handleNotificationClick);
+        oneSignalNotificationHandlerRegistered = true;
+        return;
+      } catch (error) {
+        console.error('Failed to attach OneSignal notification opened handler:', error);
+      }
+    }
+
+    console.warn('OneSignal notification click handler API unavailable; push deep links will not function.');
+  };
+
   const setup = () => {
     try {
       const oneSignal = (window.plugins && window.plugins.OneSignal) || window.OneSignal;
@@ -271,6 +350,7 @@ function initializeOneSignalPush() {
         return;
       }
 
+      registerNotificationHandlers(oneSignal);
       markOneSignalReady(oneSignal);
     } catch (error) {
       console.error('Error during OneSignal setup:', error);
@@ -388,7 +468,7 @@ async function fetchOneSignalIdentitySnapshot(oneSignal) {
 }
 
 async function persistOneSignalIdentitySnapshot(snapshot) {
-  if (!auth?.currentUser || auth.currentUser.isAnonymous) {
+  if (!auth?.currentUser) {
     return true;
   }
 
@@ -628,15 +708,6 @@ function handleOneSignalAuthStateChange(authState) {
     lastSyncedOneSignalUid = null;
     lastSyncedOneSignalUserId = null;
     lastSyncedOneSignalSubscriptionId = null;
-    return;
-  }
-
-  if (currentUser.isAnonymous) {
-    resetOneSignalIdentitySyncSchedule();
-    if (lastOneSignalLoginUid) {
-      logoutFromOneSignal();
-      lastOneSignalLoginUid = null;
-    }
     return;
   }
 
