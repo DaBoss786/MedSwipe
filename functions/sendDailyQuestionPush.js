@@ -278,7 +278,7 @@ exports.sendDailyQuestionPushes = onSchedule(
 // ───────────────────────────────
 exports.testSendPush = onRequest({ secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret] }, async (req, res) => {
   try {
-    const testPlayerId   = "27ad9523-ae06-4d0e-b9f7-8ff1334b81e5"; // your provided ID
+    const testPlayerId   = "e789936f-a26a-40be-8e3f-3d0744daca71"; // your provided ID
     const testQuestionId = "Which condition is characterized by recurrent facial nerve palsies, facial edema, and a fissured tongue?";
     const testSpecialty  = "ENT";
 
