@@ -213,6 +213,89 @@ const oneSignalReadyPromise = new Promise((resolve) => {
 });
 let oneSignalNotificationHandlerRegistered = false;
 
+const pendingOneSignalDeepLinks = [];
+let processingOneSignalDeepLinks = false;
+
+function extractOneSignalNotificationTarget(event) {
+  const notification = event?.notification || event || {};
+  const dataSources = [
+    notification.additionalData,
+    notification.data,
+    notification.rawPayload?.additionalData,
+    event?.additionalData,
+    event?.data
+  ].filter(Boolean);
+
+  const mergedData = Object.assign({}, ...dataSources);
+
+  const questionId =
+    mergedData.questionId ||
+    mergedData.question_id ||
+    mergedData.Question ||
+    mergedData.question;
+
+  const candidateUrl =
+    mergedData.deep_link ||
+    mergedData.deepLink ||
+    mergedData.url ||
+    mergedData.launchURL ||
+    notification.launchURL ||
+    notification.url;
+
+  const hasQuestionId = typeof questionId === 'string' && questionId.trim().length > 0;
+  const hasCandidateUrl = typeof candidateUrl === 'string' && candidateUrl.trim().length > 0;
+
+  if (hasQuestionId) {
+    return {
+      target: `/question/${encodeURIComponent(questionId.trim())}`,
+      hasQuestionId,
+      hasCandidateUrl
+    };
+  }
+
+  if (hasCandidateUrl) {
+    return {
+      target: candidateUrl.trim(),
+      hasQuestionId,
+      hasCandidateUrl
+    };
+  }
+
+  return {
+    target: null,
+    hasQuestionId,
+    hasCandidateUrl
+  };
+}
+
+async function processPendingOneSignalDeepLinks() {
+  if (processingOneSignalDeepLinks) {
+    return;
+  }
+
+  processingOneSignalDeepLinks = true;
+  while (pendingOneSignalDeepLinks.length > 0) {
+    const nextTarget = pendingOneSignalDeepLinks.shift();
+    try {
+      await handleQuestionDeepLink(nextTarget);
+    } catch (error) {
+      console.error('Failed to handle deep link from OneSignal notification click:', error);
+    }
+  }
+  processingOneSignalDeepLinks = false;
+}
+
+function queueOneSignalDeepLink(target) {
+  if (typeof target !== 'string' || target.trim().length === 0) {
+    return;
+  }
+
+  pendingOneSignalDeepLinks.push(target);
+  if (!processingOneSignalDeepLinks) {
+    void processPendingOneSignalDeepLinks();
+  }
+}
+
 function markOneSignalReady(instance) {
   if (oneSignalReadyResolved) {
     return;
@@ -250,54 +333,22 @@ function initializeOneSignalPush() {
     return;
   }
 
-  const registerNotificationHandlers = (oneSignal) => {
+  const registerNotificationHandlers = (oneSignal, { warnIfUnavailable = true } = {}) => {
     if (!oneSignal || oneSignalNotificationHandlerRegistered) {
-      return;
+      return oneSignalNotificationHandlerRegistered;
     }
 
     const handleNotificationClick = (event) => {
       try {
-        const notification = event?.notification || event || {};
-        const dataSources = [
-          notification.additionalData,
-          notification.data,
-          notification.rawPayload?.additionalData,
-          event?.additionalData,
-          event?.data
-        ].filter(Boolean);
-        const mergedData = Object.assign({}, ...dataSources);
-
-        const questionId =
-          mergedData.questionId ||
-          mergedData.question_id ||
-          mergedData.Question ||
-          mergedData.question;
-
-        const candidateUrl =
-          mergedData.deep_link ||
-          mergedData.deepLink ||
-          mergedData.url ||
-          mergedData.launchURL ||
-          notification.launchURL ||
-          notification.url;
-
-        let target = null;
-
-        if (typeof questionId === 'string' && questionId.trim().length > 0) {
-          target = `/question/${encodeURIComponent(questionId.trim())}`;
-        } else if (typeof candidateUrl === 'string' && candidateUrl.trim().length > 0) {
-          target = candidateUrl.trim();
-        }
+        const { target, hasQuestionId, hasCandidateUrl } = extractOneSignalNotificationTarget(event);
 
         if (target) {
           event?.preventDefault?.();
-          Promise.resolve(handleQuestionDeepLink(target)).catch((error) => {
-            console.error('Failed to handle deep link from OneSignal notification click:', error);
-          });
+          queueOneSignalDeepLink(target);
         } else {
           console.log('Notification click received without recognizable deep link payload.', {
-            hasQuestionId: Boolean(questionId),
-            hasUrl: Boolean(candidateUrl)
+            hasQuestionId,
+            hasUrl: hasCandidateUrl
           });
         }
       } catch (error) {
@@ -305,27 +356,30 @@ function initializeOneSignalPush() {
       }
     };
 
-    if (oneSignal.Notifications?.addEventListener) {
-      try {
+    try {
+      if (oneSignal.Notifications?.addEventListener) {
         oneSignal.Notifications.addEventListener('click', handleNotificationClick);
         oneSignalNotificationHandlerRegistered = true;
-        return;
-      } catch (error) {
-        console.error('Failed to attach OneSignal Notifications click listener:', error);
+        return true;
       }
-    }
 
-    if (typeof oneSignal.setNotificationOpenedHandler === 'function') {
-      try {
+      if (typeof oneSignal.setNotificationOpenedHandler === 'function') {
         oneSignal.setNotificationOpenedHandler(handleNotificationClick);
         oneSignalNotificationHandlerRegistered = true;
-        return;
-      } catch (error) {
-        console.error('Failed to attach OneSignal notification opened handler:', error);
+        return true;
       }
+    } catch (error) {
+      console.error('Failed to attach OneSignal notification click handler:', error);
+      return false;
     }
 
-    console.warn('OneSignal notification click handler API unavailable; push deep links will not function.');
+    if (warnIfUnavailable) {
+      console.warn('OneSignal notification click handler API unavailable; push deep links will not function.');
+    } else {
+      console.log('OneSignal notification click handler API not ready yet; will retry after initialization.');
+    }
+
+    return false;
   };
 
   const setup = () => {
@@ -342,16 +396,29 @@ function initializeOneSignalPush() {
         oneSignal.Debug.setLogLevel(6);
       }
 
-      if (typeof oneSignal.initialize === 'function') {
-        oneSignal.initialize('d14ffd2d-42fb-4944-bb53-05a838c31daa');
-      } else {
+      if (typeof oneSignal.initialize !== 'function') {
         console.warn('OneSignal initialize function is not available.');
         markOneSignalReady(null);
         return;
       }
 
-      registerNotificationHandlers(oneSignal);
-      markOneSignalReady(oneSignal);
+      registerNotificationHandlers(oneSignal, { warnIfUnavailable: false });
+
+      try {
+        const initResult = oneSignal.initialize('d14ffd2d-42fb-4944-bb53-05a838c31daa');
+        Promise.resolve(initResult)
+          .then(() => {
+            registerNotificationHandlers(oneSignal);
+            markOneSignalReady(oneSignal);
+          })
+          .catch((error) => {
+            console.error('OneSignal initialize promise rejected.', error);
+            markOneSignalReady(null);
+          });
+      } catch (error) {
+        console.error('OneSignal initialize threw an error.', error);
+        markOneSignalReady(null);
+      }
     } catch (error) {
       console.error('Error during OneSignal setup:', error);
       markOneSignalReady(null);

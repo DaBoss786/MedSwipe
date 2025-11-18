@@ -133,9 +133,10 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
       deep_link: deepLink
     },
     // Remove url field or ensure fallback only
-    // url: deepLink,  <-- REMOVE or comment out for iOS deep-link suppression
-    delayed_option: "timezone",
-    delivery_time_of_day: "21:00"
+    // url: deepLink,  <-- KEEP DISABLED for iOS deep-link suppression
+    // Temporarily remove scheduled delivery to allow immediate testing.
+    // delayed_option: "timezone",
+    // delivery_time_of_day: "21:00"
   };
 
   const response = await fetch("https://api.onesignal.com/notifications", {
