@@ -1,19 +1,19 @@
 const { logger } = require("firebase-functions/v2");
-const { onSchedule } = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
-const fetch = global.fetch || require("node-fetch");
-const { onRequest } = require("firebase-functions/v2/https");
-const { defineSecret } = require("firebase-functions/params");
+  const { onSchedule } = require("firebase-functions/v2/scheduler");
+  const admin = require("firebase-admin");
+  const { FieldValue } = require("firebase-admin/firestore");
+  const fetch = global.fetch || require("node-fetch");
+  const { onRequest } = require("firebase-functions/v2/https");
+  const { defineSecret } = require("firebase-functions/params");
 
-const oneSignalAppIdSecret = defineSecret("ONESIGNAL_APP_ID");
-const oneSignalApiKeySecret = defineSecret("ONESIGNAL_API_KEY");
+  const oneSignalAppIdSecret = defineSecret("ONESIGNAL_APP_ID");
+  const oneSignalApiKeySecret = defineSecret("ONESIGNAL_API_KEY");
 
-if (admin.apps.length === 0) {
-  admin.initializeApp();
-}
+  if (admin.apps.length === 0) {
+    admin.initializeApp();
+  }
 
-const db = admin.firestore();
-const { FieldValue } = admin.firestore;
+  const db = admin.firestore();
 
 const USERS_COLLECTION = "users";
 const QUESTIONS_COLLECTION = "questions";
@@ -77,7 +77,7 @@ async function pickQuestionForUser(userData = {}) {
 
   let questionQuery = db
     .collection(QUESTIONS_COLLECTION)
-    .where("specialty", "==", specialty);
+    .where("Specialty", "==", specialty);
 
   if (userData.accessTier === "free_guest") {
     questionQuery = questionQuery.where("Free", "==", true);
@@ -105,6 +105,67 @@ function loadOneSignalCredentials() {
   return { appId, apiKey };
 }
 
+const SPECIALTY_PLACEHOLDER = "{SPECIALTY}";
+const HEADING_TEMPLATES = [
+  "Your quick {SPECIALTY} question is ready.",
+  "Quick {SPECIALTY} refresher.",
+  "Your nightly {SPECIALTY} question is ready.",
+  "Evening {SPECIALTY} refresher.",
+  "Daily {SPECIALTY} check-in.",
+  "Stop doom scrolling for a second...",
+  "Swap one doom scroll for one high-yield scroll",
+];
+
+const CONTENT_TEMPLATES = [
+  "A fast high-yield question before you call it a night.",
+  "One quick question to keep your skills sharp.",
+  "Let's see what you remember today.",
+  "Take 20 seconds before you wrap up the day.",
+  "Tap for today’s high-yield question.",
+];
+
+function pickHeadingTemplate(trimmedSpecialty) {
+  const genericTemplates = HEADING_TEMPLATES.filter(
+    (template) => !template.includes(SPECIALTY_PLACEHOLDER)
+  );
+
+  const sourcePool =
+    trimmedSpecialty && trimmedSpecialty.length > 0
+      ? HEADING_TEMPLATES
+      : genericTemplates;
+
+  if (!sourcePool.length) {
+    return trimmedSpecialty
+      ? `Daily ${trimmedSpecialty} Question`
+      : "Daily Question";
+  }
+
+  const template =
+    sourcePool[Math.floor(Math.random() * sourcePool.length)];
+
+  if (
+    template.includes(SPECIALTY_PLACEHOLDER) &&
+    trimmedSpecialty &&
+    trimmedSpecialty.length > 0
+  ) {
+    return template.replaceAll(SPECIALTY_PLACEHOLDER, trimmedSpecialty);
+  }
+
+  if (template.includes(SPECIALTY_PLACEHOLDER)) {
+    return "Daily Question";
+  }
+
+  return template;
+}
+
+function pickContentMessage() {
+  if (!CONTENT_TEMPLATES.length) {
+    return "Quick high-yield question for you.";
+  }
+  const index = Math.floor(Math.random() * CONTENT_TEMPLATES.length);
+  return CONTENT_TEMPLATES[index];
+}
+
 async function sendOneSignalNotification(playerId, questionId, specialty) {
   const { appId, apiKey } = loadOneSignalCredentials();
   if (!appId || !apiKey) {
@@ -116,9 +177,8 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
   }
 
   const trimmedSpecialty = (specialty || "").trim();
-  const heading = trimmedSpecialty
-    ? `Daily ${trimmedSpecialty} Question`
-    : "Daily Question";
+  const heading = pickHeadingTemplate(trimmedSpecialty);
+  const contentsMessage = pickContentMessage();
 
   const deepLink = `https://medswipeapp.com/question/${encodeURIComponent(questionId)}`;
 
@@ -126,7 +186,7 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
     app_id: appId,
     include_player_ids: [playerId],
     headings: { en: heading },
-    contents: { en: "Quick high-yield question for you." },
+    contents: { en: contentsMessage },
     // Use additional data instead of url
     data: {
       questionId: questionId,
@@ -204,9 +264,13 @@ async function processUserDocument(userDoc, nowDate) {
       return { userId, status: "skipped", reason: "no_question" };
     }
 
+    const questionIdForNotification =
+      (question.data && (question.data.Question || question.data.question)) ||
+      question.id; // Fallback to doc ID if structured ID missing
+
     await sendOneSignalNotification(
       userData.oneSignalId,
-      question.id,
+      questionIdForNotification,
       userData.specialty
     );
 
@@ -217,10 +281,16 @@ async function processUserDocument(userDoc, nowDate) {
 
     logger.info("Scheduled daily question push.", {
       userId,
-      questionId: question.id,
+      questionId: questionIdForNotification,
+      questionDocId: question.id,
     });
 
-    return { userId, status: "sent", questionId: question.id };
+    return {
+      userId,
+      status: "sent",
+      questionId: questionIdForNotification,
+      questionDocId: question.id,
+    };
   } catch (error) {
     logger.error("Failed to send push notification.", {
       userId,
