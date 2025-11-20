@@ -1479,7 +1479,7 @@ async function saveProfileChanges() {
       throw new Error("Profile update service is not available.");
     }
     
-    await updateUserProfileFunction({
+    const profilePayload = {
       username: newUsername,
       experienceLevel: newExperienceLevel,
       spacedRepetitionSettings: {
@@ -1488,7 +1488,9 @@ async function saveProfileChanges() {
         easyInterval: easyInterval
       },
       hapticsEnabled
-    });
+    };
+    
+    await updateUserProfileFunction(profilePayload);
 
     // --- 4. Handle Success ---
     // Update the "View Mode" fields with the new data

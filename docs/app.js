@@ -1289,12 +1289,14 @@ let createCheckoutSessionFunction;
 let createPortalSessionFunction;
 let getCertificateDownloadUrlFunction;
 let deleteAccountFunction;
+let updateUserProfileCallable;
 try {
     if (functions && httpsCallable) { // Check if imports exist
          createCheckoutSessionFunction = httpsCallable(functions, 'createStripeCheckoutSession');
          createPortalSessionFunction = httpsCallable(functions, 'createStripePortalSession');
          getCertificateDownloadUrlFunction = httpsCallable(functions, 'getCertificateDownloadUrl');
          deleteAccountFunction = httpsCallable(functions, 'deleteAccount');
+         updateUserProfileCallable = httpsCallable(functions, 'updateUserProfile');
          console.log("Callable function reference 'createStripeCheckoutSession' created.");
     } else {
          console.error("Firebase Functions or httpsCallable not imported correctly.");
@@ -6294,6 +6296,18 @@ function ensureForgotPasswordModalExists() {
 }
 
 
+const ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS = 1;
+const ACCOUNT_SETTINGS_MAX_NOTIFICATION_FREQUENCY_DAYS = 7;
+
+function describeNotificationFrequency(days) {
+  const safeDays = Number.isFinite(days) ? days : ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS;
+  const clamped = Math.min(
+    ACCOUNT_SETTINGS_MAX_NOTIFICATION_FREQUENCY_DAYS,
+    Math.max(ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS, safeDays)
+  );
+  return clamped === 1 ? 'Every day' : `Every ${clamped} days`;
+}
+
 // This function controls the Account Settings modal logic
 async function showEditProfileModal() {
   const modal = document.getElementById('editProfileModal');
@@ -6332,6 +6346,19 @@ async function showEditProfileModal() {
     const currentExperienceValue = userData.experienceLevel || '';
     const experienceDisplay = currentExperienceValue || 'Not Set';
     const hapticsEnabled = userData.hapticsEnabled !== false;
+    const notificationOptIn = userData.notificationOptIn === true;
+    const pushSettingsAvailable = Boolean(isIosNativeApp);
+    const pushViewRow = document.getElementById('pushNotificationViewRow');
+    const viewPushStatusEl = document.getElementById('viewPushStatus');
+    const viewNotificationFrequencyEl = document.getElementById('viewNotificationFrequency');
+    const notificationFrequencyViewRow = document.getElementById('notificationFrequencyViewRow');
+    const rawFrequencyDays = Number(userData.notificationFrequencyDays);
+    const notificationFrequencyDays = Number.isFinite(rawFrequencyDays)
+      ? Math.min(
+          ACCOUNT_SETTINGS_MAX_NOTIFICATION_FREQUENCY_DAYS,
+          Math.max(ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS, rawFrequencyDays)
+        )
+      : ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS;
 
     // 4. POPULATE MODAL FIELDS
     document.getElementById('viewUsername').textContent = currentUsername;
@@ -6352,6 +6379,24 @@ async function showEditProfileModal() {
     if (window.authState) {
       window.authState.hapticsEnabled = hapticsEnabled;
     }
+
+    if (pushViewRow) {
+      pushViewRow.style.display = pushSettingsAvailable ? '' : 'none';
+    }
+    if (notificationFrequencyViewRow) {
+      notificationFrequencyViewRow.style.display = pushSettingsAvailable && notificationOptIn ? '' : 'none';
+    }
+    if (pushSettingsAvailable) {
+      if (viewPushStatusEl) {
+        viewPushStatusEl.textContent = notificationOptIn ? 'On' : 'Off';
+      }
+      if (viewNotificationFrequencyEl && notificationOptIn) {
+        viewNotificationFrequencyEl.textContent = describeNotificationFrequency(notificationFrequencyDays);
+      }
+    }
+    window.accountSettingsState = window.accountSettingsState || {};
+    window.accountSettingsState.notificationOptIn = notificationOptIn;
+    window.accountSettingsState.notificationFrequencyDays = notificationFrequencyDays;
 
     // Get custom intervals or use defaults
     const settings = userData.spacedRepetitionSettings || {};
@@ -6383,6 +6428,188 @@ async function showEditProfileModal() {
   } catch (error) {
     console.error("Error fetching user profile:", error);
     alert("An error occurred while fetching your account settings.");
+  }
+}
+
+function updatePushSettingsFrequencyState(enabled) {
+  const frequencySelect = document.getElementById('pushSettingsFrequency');
+  if (!frequencySelect) {
+    return;
+  }
+  frequencySelect.disabled = !enabled;
+  frequencySelect.style.opacity = enabled ? '1' : '0.5';
+}
+
+function openPushSettingsModal() {
+  if (!isIosNativeApp) {
+    alert('Push notifications are available in the iOS app.');
+    return;
+  }
+
+  const modal = document.getElementById('pushSettingsModal');
+  const toggleEl = document.getElementById('pushSettingsToggle');
+  const frequencySelect = document.getElementById('pushSettingsFrequency');
+  const messageEl = document.getElementById('pushSettingsMessage');
+
+  if (!modal || !toggleEl || !frequencySelect) {
+    console.error('Push settings modal elements are missing.');
+    return;
+  }
+
+  const state = window.accountSettingsState || {};
+  const enabled = Boolean(state.notificationOptIn);
+  const frequencyDays =
+    Number.isInteger(state.notificationFrequencyDays)
+      ? Math.min(
+          ACCOUNT_SETTINGS_MAX_NOTIFICATION_FREQUENCY_DAYS,
+          Math.max(ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS, state.notificationFrequencyDays)
+        )
+      : ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS;
+
+  toggleEl.checked = enabled;
+  frequencySelect.value = String(frequencyDays);
+  updatePushSettingsFrequencyState(enabled);
+
+  if (messageEl) {
+    messageEl.textContent = '';
+    messageEl.className = 'auth-error';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closePushSettingsModal() {
+  const modal = document.getElementById('pushSettingsModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  setPushSettingsModalBusy(false);
+}
+
+function setPushSettingsModalBusy(isBusy) {
+  const saveBtn = document.getElementById('savePushSettingsBtn');
+  const cancelBtn = document.getElementById('cancelPushSettingsBtn');
+  if (saveBtn) {
+    saveBtn.disabled = Boolean(isBusy);
+  }
+  if (cancelBtn) {
+    cancelBtn.disabled = Boolean(isBusy);
+  }
+}
+
+async function handlePushSettingsSave() {
+  if (!isIosNativeApp) {
+    alert('Push notifications are available in the iOS app.');
+    closePushSettingsModal();
+    return;
+  }
+
+  if (!updateUserProfileCallable) {
+    alert('Notification settings are temporarily unavailable. Please try again later.');
+    return;
+  }
+
+  const toggleEl = document.getElementById('pushSettingsToggle');
+  const frequencySelect = document.getElementById('pushSettingsFrequency');
+  const messageEl = document.getElementById('pushSettingsMessage');
+
+  if (!toggleEl || !frequencySelect) {
+    console.error('Push settings controls are missing.');
+    return;
+  }
+
+  const previousState = window.accountSettingsState || {};
+  const previouslyOptedIn = Boolean(previousState.notificationOptIn);
+  const desiredOptIn = Boolean(toggleEl.checked);
+  let frequencyDays = Number.parseInt(frequencySelect.value, 10);
+  if (!Number.isInteger(frequencyDays)) {
+    frequencyDays = previousState.notificationFrequencyDays || ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS;
+  }
+  frequencyDays = Math.min(
+    ACCOUNT_SETTINGS_MAX_NOTIFICATION_FREQUENCY_DAYS,
+    Math.max(ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS, frequencyDays)
+  );
+  if (!desiredOptIn && Number.isInteger(previousState.notificationFrequencyDays)) {
+    frequencyDays = Math.min(
+      ACCOUNT_SETTINGS_MAX_NOTIFICATION_FREQUENCY_DAYS,
+      Math.max(ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS, previousState.notificationFrequencyDays)
+    );
+  }
+
+  if (desiredOptIn && frequencySelect.disabled) {
+    frequencySelect.disabled = false;
+  }
+
+  if (messageEl) {
+    messageEl.textContent = '';
+    messageEl.className = 'auth-error';
+  }
+
+  if (desiredOptIn && frequencyDays < ACCOUNT_SETTINGS_DEFAULT_NOTIFICATION_FREQUENCY_DAYS) {
+    if (messageEl) {
+      messageEl.textContent = 'Choose how often we should notify you.';
+    }
+    return;
+  }
+
+  if (desiredOptIn && !previouslyOptedIn) {
+    let permissionGranted = false;
+    if (typeof window.requestOneSignalPushPermission === 'function') {
+      try {
+        const permissionResult = await window.requestOneSignalPushPermission();
+        permissionGranted = Boolean(permissionResult && permissionResult.allowed);
+      } catch (permissionError) {
+        console.error('Failed to request push permission from Account Settings:', permissionError);
+      }
+    }
+    if (!permissionGranted) {
+      if (messageEl) {
+        messageEl.textContent = 'Enable notifications in iOS Settings to turn this on.';
+      }
+      toggleEl.checked = false;
+      updatePushSettingsFrequencyState(false);
+      return;
+    }
+  }
+
+  const payload = {
+    notificationOptIn: desiredOptIn,
+  };
+  if (desiredOptIn) {
+    payload.notificationFrequencyDays = frequencyDays;
+  }
+
+  setPushSettingsModalBusy(true);
+
+  try {
+    await updateUserProfileCallable(payload);
+
+    const viewPushStatusEl = document.getElementById('viewPushStatus');
+    const viewNotificationFrequencyEl = document.getElementById('viewNotificationFrequency');
+    const notificationFrequencyViewRow = document.getElementById('notificationFrequencyViewRow');
+
+    if (viewPushStatusEl) {
+      viewPushStatusEl.textContent = desiredOptIn ? 'On' : 'Off';
+    }
+    if (notificationFrequencyViewRow) {
+      notificationFrequencyViewRow.style.display = desiredOptIn ? '' : 'none';
+    }
+    if (viewNotificationFrequencyEl && desiredOptIn) {
+      viewNotificationFrequencyEl.textContent = describeNotificationFrequency(frequencyDays);
+    }
+
+    window.accountSettingsState = window.accountSettingsState || {};
+    window.accountSettingsState.notificationOptIn = desiredOptIn;
+    window.accountSettingsState.notificationFrequencyDays = frequencyDays;
+
+    closePushSettingsModal();
+  } catch (error) {
+    console.error('Error saving push settings:', error);
+    if (messageEl) {
+      messageEl.textContent = error.message || 'Unable to save notification settings right now.';
+    }
+  } finally {
+    setPushSettingsModalBusy(false);
   }
 }
 
@@ -6540,6 +6767,45 @@ function setupEditProfileModalListeners() {
     changeHapticsLink.addEventListener('click', (e) => {
       e.preventDefault();
       switchToEditMode();
+    });
+  }
+
+  const changePushLink = document.getElementById('changePushNotificationsLink');
+  if (changePushLink) {
+    changePushLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      openPushSettingsModal();
+    });
+  }
+
+  const pushSettingsToggle = document.getElementById('pushSettingsToggle');
+  if (pushSettingsToggle) {
+    pushSettingsToggle.addEventListener('change', () => {
+      updatePushSettingsFrequencyState(pushSettingsToggle.checked);
+    });
+  }
+
+  const savePushSettingsBtn = document.getElementById('savePushSettingsBtn');
+  if (savePushSettingsBtn) {
+    savePushSettingsBtn.addEventListener('click', handlePushSettingsSave);
+  }
+
+  const cancelPushSettingsBtn = document.getElementById('cancelPushSettingsBtn');
+  if (cancelPushSettingsBtn) {
+    cancelPushSettingsBtn.addEventListener('click', closePushSettingsModal);
+  }
+
+  const closePushSettingsBtn = document.getElementById('closePushSettingsModal');
+  if (closePushSettingsBtn) {
+    closePushSettingsBtn.addEventListener('click', closePushSettingsModal);
+  }
+
+  const pushSettingsModal = document.getElementById('pushSettingsModal');
+  if (pushSettingsModal) {
+    pushSettingsModal.addEventListener('click', (event) => {
+      if (event.target === pushSettingsModal) {
+        closePushSettingsModal();
+      }
     });
   }
 

@@ -1103,6 +1103,22 @@
           <span id="viewExperienceLevel"></span>
           <a href="#" id="changeExperienceLink" class="change-link">Change</a>
         </div>
+      </div>
+      <div class="form-group ios-only-setting" id="pushNotificationViewRow" style="display: none;">
+        <label>Push Notifications</label>
+        <div class="profile-view-field">
+          <span id="viewPushStatus">Off</span>
+          <a href="#" id="changePushNotificationsLink" class="change-link">Change</a>
+        </div>
+        <small>Available in the iOS app.</small>
+      </div>
+      <div class="form-group ios-only-setting" id="notificationFrequencyViewRow" style="display: none;">
+        <label>Notification Frequency</label>
+        <div class="profile-view-field">
+          <span id="viewNotificationFrequency">Every day</span>
+        </div>
+        <small>Delivered every few days when push is enabled.</small>
+      </div>
         <div class="form-group">
           <label>Spaced Repetition Intervals (Days)</label>
           <div class="profile-view-field">
@@ -1182,6 +1198,42 @@
           <button type="button" id="cancelProfileChangesBtn" class="auth-secondary-btn">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Push Notification Settings Modal -->
+<div class="auth-modal" id="pushSettingsModal" style="display: none; z-index: 2050;">
+  <div class="auth-modal-content small-modal push-settings-modal">
+    <button class="auth-close-btn" id="closePushSettingsModal">×</button>
+    <h3>Push Notification Settings</h3>
+    <div id="pushSettingsMessage" class="auth-error" style="min-height: 20px;"></div>
+    <div class="form-group">
+      <label for="pushSettingsToggle">Push Notifications</label>
+      <div class="profile-toggle">
+        <label>
+          <input type="checkbox" id="pushSettingsToggle">
+          Enable reminders on this device
+        </label>
+      </div>
+      <small>Requires enabling notifications in iOS Settings.</small>
+    </div>
+    <div class="form-group">
+      <label for="pushSettingsFrequency">Notification Frequency</label>
+      <select id="pushSettingsFrequency">
+        <option value="1">Every day</option>
+        <option value="2">Every 2 days</option>
+        <option value="3">Every 3 days</option>
+        <option value="4">Every 4 days</option>
+        <option value="5">Every 5 days</option>
+        <option value="6">Every 6 days</option>
+        <option value="7">Every 7 days</option>
+      </select>
+      <small>Choose how often we send reminders.</small>
+    </div>
+    <div class="auth-buttons horizontal">
+      <button type="button" id="cancelPushSettingsBtn" class="auth-secondary-btn">Cancel</button>
+      <button type="button" id="savePushSettingsBtn" class="auth-primary-btn">Save</button>
     </div>
   </div>
 </div>

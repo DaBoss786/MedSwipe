@@ -1681,7 +1681,10 @@ exports.updateUserProfile = onCall(
       'specialty',
       'experienceLevel',
       'spacedRepetitionSettings',
-      'hapticsEnabled'
+      'hapticsEnabled',
+      'notificationOptIn',
+      'notificationFrequencyDays',
+      'notificationOptInAt'
     ];
     
     // 3. Validate input data
@@ -1701,6 +1704,23 @@ exports.updateUserProfile = onCall(
     if (updateData.hapticsEnabled !== undefined && typeof updateData.hapticsEnabled !== 'boolean') {
       logger.warn(`User ${uid} tried to update hapticsEnabled with invalid value:`, updateData.hapticsEnabled);
       throw new HttpsError("invalid-argument", "Haptics preference must be true or false.");
+    }
+    if (updateData.notificationOptIn !== undefined) {
+      if (typeof updateData.notificationOptIn !== 'boolean') {
+        logger.warn(`User ${uid} tried to update notificationOptIn with invalid value:`, updateData.notificationOptIn);
+        throw new HttpsError("invalid-argument", "Notification opt-in must be true or false.");
+      }
+      if (updateData.notificationOptIn) {
+        updateData.notificationOptInAt = admin.firestore.FieldValue.serverTimestamp();
+      }
+    }
+    if (updateData.notificationFrequencyDays !== undefined) {
+      const frequency = Number(updateData.notificationFrequencyDays);
+      if (!Number.isInteger(frequency) || frequency < 1 || frequency > 365) {
+        logger.warn(`User ${uid} tried to update notificationFrequencyDays with invalid value:`, updateData.notificationFrequencyDays);
+        throw new HttpsError("invalid-argument", "Notification frequency must be an integer between 1 and 365 days.");
+      }
+      updateData.notificationFrequencyDays = frequency;
     }
     // You could add similar validation for experienceLevel if needed, e.g.,
     // if (updateData.experienceLevel !== undefined && !['PGY-1', 'PGY-2', ...].includes(updateData.experienceLevel)) { ... }
