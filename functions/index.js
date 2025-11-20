@@ -1890,6 +1890,13 @@ exports.getLeaderboardData = onCall(
         usersSnapshot = await currentDbInstance
           .collection("users")
           .where("specialty", "==", currentUserSpecialty)
+          .select(
+            "specialty",
+            "stats",
+            "streaks",
+            "username",
+            "answeredQuestions"
+          )
           .get();
         logger.info(
           `Specialty-filtered query successful. Found ${usersSnapshot.size} users.`
@@ -1901,6 +1908,16 @@ exports.getLeaderboardData = onCall(
           indexError.message
         );
         usersSnapshot = await currentDbInstance.collection("users").get();
+        usersSnapshot = await currentDbInstance
+        .collection("users")
+        .select(
+          "specialty",
+          "stats",
+          "streaks",
+          "username",
+          "answeredQuestions"
+        )
+        .get();
         logger.info(
           `Fallback query returned ${usersSnapshot.size} total users.`
         );
@@ -1915,11 +1932,6 @@ exports.getLeaderboardData = onCall(
         const userData = rawData || {};
 
         if (userData.specialty !== currentUserSpecialty) {
-          return;
-        }
-
-        const premium = computePremiumFlags(userData);
-        if (!premium.hasPremium) {
           return;
         }
 
@@ -2216,6 +2228,7 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
         .where("email", "!=", null)
         .where("mailerLiteSubscriberId", "==", null)
         .where("hasActiveTrial", "==", true)
+        .where("marketingOptIn", "==", true)
         .limit(MAX_USERS_TO_PROCESS_PER_RUN)
         .get();
 
@@ -2233,16 +2246,22 @@ exports.syncUsersToMailerLiteDaily = onSchedule(
         const userId = userDoc.id;
         const userData = userDoc.data();
 
-        // Since we're now querying for hasActiveTrial=true, we know these are trial users
-// Just do a quick verification
-if (!userData.hasActiveTrial) {
-  logger.warn(`User ${userId} was in trial query but hasActiveTrial is false. Skipping.`);
-  skippedCount++;
-  continue;
-}
+        if (userData.marketingOptIn !== true) {
+          logger.info(`User ${userId} has not opted into marketing. Skipping MailerLite sync.`);
+          skippedCount++;
+          continue;
+        }
 
-// Get the trial type from the data
-const trialType = userData.trialType || "unknown_trial";
+        // Since we're now querying for hasActiveTrial=true, we know these are trial users
+        // Just do a quick verification
+        if (!userData.hasActiveTrial) {
+          logger.warn(`User ${userId} was in trial query but hasActiveTrial is false. Skipping.`);
+          skippedCount++;
+          continue;
+        }
+
+        // Get the trial type from the data
+        const trialType = userData.trialType || "unknown_trial";
 
         // Check if they have trial end dates (indicating they're on a trial)
         const hasBoardReviewTrial = userData.boardReviewTrialEndDate ? true : false;
@@ -2293,8 +2312,7 @@ userData.trialType === "board_review" ? "board_review_trial" :
                 customer_type: "free_trial",
                 ttrial_type: trialTypeForMailerLite,
                 subscription_plan: userData.cmeSubscriptionPlan || userData.boardReviewTier || "Free Trial",
-                // Track marketing consent even though we're adding them regardless
-                has_marketing_consent: userData.marketingOptIn ? "yes" : "no"
+has_marketing_consent: "yes"
               },
               groups: [MAILERLITE_GROUP_ID],
               status: "active", // Active for transactional trial emails
@@ -2411,6 +2429,13 @@ exports.syncActivityToMailerLite = onSchedule(
         skippedCount++;
         continue;
       }
+
+            // Respect marketing opt-out
+            if (userData.marketingOptIn !== true) {
+              skippedCount++;
+              continue;
+            }
+      
 
       // Skip users without valid emails
       if (!userData.email || typeof userData.email !== 'string' || !userData.email.includes('@')) {
