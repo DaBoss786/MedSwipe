@@ -29,7 +29,7 @@ import {
   getAdditionalUserInfo
   // --- End added ---
 } from './firebase-config.js';
-import { isNativeApp } from './platform.js';
+import { isNativeApp, isIosNativeApp } from './platform.js';
 
 // Create a reference to the new Cloud Function
 let finalizeRegistrationFunction;
@@ -74,6 +74,15 @@ export function generateGuestUsername() {
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
   const num  = Math.floor(Math.random() * 9000) + 1000;
   return `${adj}${noun}${num}`;
+}
+
+function shouldAutoApplyIosNotificationDefaults() {
+  try {
+    return typeof isIosNativeApp === 'function' ? Boolean(isIosNativeApp()) : false;
+  } catch (err) {
+    console.warn('Unable to detect iOS native runtime for notification defaults:', err);
+    return false;
+  }
 }
 
 // ----------------------------------------------------
@@ -481,6 +490,8 @@ function initAuth() {
       window.authState.cmeSubscriptionEndDate = null;
       window.authState.cmeCreditsAvailable = 0;
 
+      const applyIosNotificationDefaults = shouldAutoApplyIosNotificationDefaults();
+
 
       // Shared references available after onAuthStateChanged completes
       let existingData = null;
@@ -555,6 +566,12 @@ function initAuth() {
         if (currentAuthIsRegistered && user.email) {
           userDataForWrite.email = user.email;
         }
+
+        if (applyIosNotificationDefaults) {
+          userDataForWrite.notificationOptIn = true;
+          userDataForWrite.notificationOptInAt = serverTimestamp();
+        }
+
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
         window.authState.accessTier = "free_guest"; // Set explicitly for new user
         // Other authState fields remain default (false/null/0)
@@ -569,6 +586,15 @@ function initAuth() {
         );
 
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
+
+        const hasNotificationOptIn = typeof existingData.notificationOptIn === 'boolean';
+        if (applyIosNotificationDefaults && !hasNotificationOptIn) {
+          console.log(
+            `Legacy iOS user ${user.uid} missing notificationOptIn flag. Defaulting to opted-in.`
+          );
+          userDataForWrite.notificationOptIn = true;
+          userDataForWrite.notificationOptInAt = serverTimestamp();
+        }
 
         // ===== NEW: Detect returning anonymous users with progress =====
         if (user.isAnonymous) {
