@@ -4890,23 +4890,36 @@ async function loadLeaderboardPreview() {
   if (!hasBoardAccess) {
     console.log("loadLeaderboardPreview: User lacks board access. Showing upgrade prompt.");
     if (cardHeader) cardHeader.textContent = "Leaderboard"; // Reset header text
-    const message1 = "Leaderboards are a premium feature.";
-    const message2 = "Upgrade your account to unlock this feature!";
-    const buttonText = "Upgrade to Access";
-    leaderboardPreview.innerHTML = `
-        <div class="guest-analytics-prompt">
-            <p>${message1}</p>
-            <p>${message2}</p>
-            <button id="upgradeForLeaderboardBtn_preview" class="start-quiz-btn" style="margin-top:10px;">
-                ${buttonText}
-            </button>
+    leaderboardCard.classList.add("locked-feature-card", "locked-leaderboard-card");
+    const lockedMarkup = `
+        <div class="locked-feature-body">
+            <div class="locked-feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 64 64" role="img" focusable="false">
+                    <path d="M18 16h28v8c0 7.7-6.3 14-14 14s-14-6.3-14-14v-8z" fill="rgba(255,255,255,0.95)"></path>
+                    <path d="M18 16h-8v6c0 7 5 12 12 12" fill="none" stroke="#F5A623" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M46 16h8v6c0 7-5 12-12 12" fill="none" stroke="#F5A623" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M28 38c0 4.4 3.6 8 8 8s8-3.6 8-8" fill="none" stroke="#F5A623" stroke-width="4"></path>
+                    <rect x="26" y="46" width="12" height="6" rx="2" fill="#ffffff"></rect>
+                    <rect x="22" y="52" width="20" height="4" rx="2" fill="rgba(255,255,255,0.9)"></rect>
+                </svg>
+            </div>
+            <div class="locked-feature-copy">
+                <p>Leaderboards are a premium feature.</p>
+                <p>Upgrade your account to unlock this feature.</p>
+            </div>
         </div>
+        <button id="upgradeForLeaderboardBtn_preview" type="button" class="start-quiz-btn locked-feature-cta-btn">
+            Upgrade to Access
+        </button>
     `;
+    leaderboardPreview.innerHTML = lockedMarkup;
+    leaderboardPreview.classList.add("locked-feature-content");
     const upgradeBtn = document.getElementById('upgradeForLeaderboardBtn_preview');
     if (upgradeBtn) {
         const newUpgradeBtn = upgradeBtn.cloneNode(true);
         upgradeBtn.parentNode.replaceChild(newUpgradeBtn, upgradeBtn);
-        newUpgradeBtn.addEventListener('click', function () {
+        newUpgradeBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
             console.log("Leaderboard Preview 'Upgrade' button clicked.");
             if (typeof ensureAllScreensHidden === 'function') ensureAllScreensHidden();
             showPaywallScreen();
@@ -4916,6 +4929,9 @@ async function loadLeaderboardPreview() {
     isLeaderboardPreviewLoadingOrLoaded = false;
     return;
   }
+
+  leaderboardCard.classList.remove("locked-feature-card", "locked-leaderboard-card");
+  leaderboardPreview.classList.remove("locked-feature-content");
 
   // For paying tiers:
   console.log("loadLeaderboardPreview: User eligible. Calling Cloud Function 'getLeaderboardData'.");
@@ -5404,56 +5420,67 @@ async function countDueReviews() {
 
 // Function to update the Review Queue card in the dashboard
 async function updateReviewQueue() {
-  const reviewCountEl = document.getElementById("reviewCount"); // Renamed for clarity
+  const reviewQueueCard = document.getElementById("reviewQueueCard");
   const reviewQueueContent = document.getElementById("reviewQueueContent");
-  const reviewProgressBar = document.getElementById("reviewProgressBar");
-  if (!reviewCountEl || !reviewQueueContent || !reviewProgressBar) return;
+  if (!reviewQueueCard || !reviewQueueContent) return;
 
-  const accessTier = window.authState?.accessTier;
+  const footerText = reviewQueueCard.querySelector(".card-footer span:first-child");
   const hasBoardAccess = userHasBoardReviewAccess();
 
   if (!hasBoardAccess) {
-    const message1 = "Spaced repetition is a premium feature.";
-    const message2 = "Upgrade your account to unlock this feature!";
-    const buttonText = "Upgrade to Access";
-
-    reviewQueueContent.innerHTML = `
-      <div class="review-empty-state guest-analytics-prompt">
-        <p>${message1}</p>
-        <p>${message2}</p>
-        <button id="upgradeForReviewQueueBtn" class="start-quiz-btn" style="margin-top:10px;">${buttonText}</button>
+    reviewQueueCard.classList.add("locked-feature-card", "locked-review-card");
+    const lockedMarkup = `
+      <div class="locked-feature-body">
+        <div class="locked-feature-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" focusable="false">
+            <rect x="12" y="16" width="40" height="34" rx="6" fill="#ffffff"></rect>
+            <rect x="12" y="24" width="40" height="26" rx="6" fill="rgba(255,255,255,0.85)"></rect>
+            <rect x="20" y="10" width="6" height="12" rx="3" fill="#0c72d3"></rect>
+            <rect x="38" y="10" width="6" height="12" rx="3" fill="#0c72d3"></rect>
+            <line x1="12" y1="24" x2="52" y2="24" stroke="#2E6DD3" stroke-width="3"></line>
+            <rect x="23" y="32" width="18" height="14" rx="3" fill="#2E6DD3"></rect>
+            <polyline points="27,39 32,44 39,35" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+        </div>
+        <div class="locked-feature-copy">
+          <p>Spaced repetition is a premium feature.</p>
+          <p>Upgrade your account to unlock this feature.</p>
+        </div>
       </div>
+      <button id="upgradeForReviewQueueBtn" type="button" class="start-quiz-btn locked-feature-cta-btn">Upgrade to Access</button>
     `;
-    reviewCountEl.textContent = "0";
-    reviewProgressBar.style.width = "0%";
+    reviewQueueContent.innerHTML = lockedMarkup;
+    reviewQueueContent.classList.add("locked-feature-content");
 
-    const upgradeBtn = document.getElementById('upgradeForReviewQueueBtn');
+    const upgradeBtn = document.getElementById("upgradeForReviewQueueBtn");
     if (upgradeBtn) {
-      // Remove any old listeners by cloning the button
       const newUpgradeBtn = upgradeBtn.cloneNode(true);
       upgradeBtn.parentNode.replaceChild(newUpgradeBtn, upgradeBtn);
-      
-      newUpgradeBtn.addEventListener('click', function() {
-        // For BOTH anonymous and registered "free_guest", go to main paywall
+
+      newUpgradeBtn.addEventListener("click", function(event) {
+        event.stopPropagation();
         console.log("Review Queue 'Upgrade to Access' button clicked. Redirecting to paywall.");
-        ensureAllScreensHidden(); // Hide other screens
+        ensureAllScreensHidden();
         showPaywallScreen();
       });
     }
 
-    const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
     if (footerText) {
-      footerText.textContent = "Upgrade to Access"; // Consistent footer text
+      footerText.textContent = "Upgrade to Access";
     }
     return;
+  }
+
+  reviewQueueCard.classList.remove("locked-feature-card", "locked-review-card");
+  reviewQueueContent.classList.remove("locked-feature-content");
+  if (footerText) {
+    footerText.textContent = "Start Review";
   }
 
   // For "board_review", "cme_annual", "cme_credits_only" tiers:
   try {
     const { dueCount, nextReviewDate } = await countDueReviews();
-    reviewCountEl.textContent = dueCount;
     const progressPercent = Math.min(100, (dueCount / 20) * 100); // Assuming 20 is a target
-    reviewProgressBar.style.width = `${progressPercent}%`;
 
     if (dueCount > 0) {
       reviewQueueContent.innerHTML = `
@@ -5476,15 +5503,9 @@ async function updateReviewQueue() {
         </div>
       `;
     }
-    const footerText = document.querySelector("#reviewQueueCard .card-footer span:first-child");
-    if (footerText) {
-      footerText.textContent = "Start Review";
-    }
   } catch (error) {
     console.error("Error updating review queue:", error);
     reviewQueueContent.innerHTML = `<div class="review-empty-state"><p>Error loading review queue</p></div>`;
-    reviewCountEl.textContent = "0";
-    reviewProgressBar.style.width = "0%";
   }
 }
 
