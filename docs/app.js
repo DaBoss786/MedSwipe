@@ -1353,34 +1353,154 @@ window.getActiveCmeYearIdFromFirestore = async function() {
 document.addEventListener('DOMContentLoaded', async function() { // <-- Made this async
   const welcomeScreen = document.getElementById('welcomeScreen');
   const mainOptions = document.getElementById('mainOptions');
+  let splashFadeScheduled = false;
+  let slowInitSettled = null;
+  let slowInitTasks = [];
+  let initObservationScheduled = false;
+  let initObservationRequested = false;
+  const SPLASH_MIN_DISPLAY_MS = 1000;
+  const splashDisplayStartedAt = performance.now();
 
-  initializeOneSignalPush();
-  initializeOneSignalIdentityObservers();
-
-  // --- Payment Initialization ---
-  // The app dynamically picks the correct billing provider at runtime.
-  try {
-    if (isNativeApp) {
-      const revenueCatModule = await import('./revenuecat-native.js');
-      await revenueCatModule.initialize();
-    } else {
-      await initializeBilling();
+  function scheduleInitOutcomeReporting() {
+    initObservationRequested = true;
+    if (initObservationScheduled || !slowInitSettled) {
+      return;
     }
-  } catch (error) {
-    const providerLabel = isNativeApp ? 'RevenueCat' : 'Stripe';
-    console.error(`${providerLabel} failed to initialize. Payment functionality will be limited.`, error);
+
+    initObservationScheduled = true;
+    const reportResults = () => {
+      slowInitSettled.then((results) => {
+        results.forEach((result, index) => {
+          const label = slowInitTasks[index]?.label || `Startup task ${index + 1}`;
+          if (result.status === 'rejected') {
+            console.error(`${label} failed to complete during startup.`, result.reason);
+          }
+        });
+      });
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(reportResults);
+    } else {
+      setTimeout(reportResults, 0);
+    }
   }
-  // --- End Payment Initialization ---
 
-  // --- START OF NEW LOGIC ---
-  initializePaywallFreeAccessButton();
-  initializeIosPaywallUI();
-  setupRegistrationFollowupModals();
+  function fadeSplashScreen() {
+    if (splashFadeScheduled) {
+      return;
+    }
+    splashFadeScheduled = true;
+    const splashScreenEl = document.getElementById('splashScreen');
+    if (!splashScreenEl) {
+      return;
+    }
 
-  // First, check if the URL is a deep link. We still continue with normal startup
-  // so that the dashboard/state refresh logic is available once the quiz ends.
-  await handleQuestionDeepLink(window.location?.href);
-  // --- END OF NEW LOGIC ---
+    const runFade = () => {
+      splashScreenEl.classList.add('fade-out');
+      setTimeout(() => {
+        splashScreenEl.style.display = 'none';
+      }, 500);
+    };
+
+    const elapsed = performance.now() - splashDisplayStartedAt;
+    const delay = Math.max(SPLASH_MIN_DISPLAY_MS - elapsed, 0);
+
+    if (delay > 0) {
+      setTimeout(() => {
+        if (typeof window.requestAnimationFrame === 'function') {
+          window.requestAnimationFrame(runFade);
+        } else {
+          runFade();
+        }
+      }, delay);
+      return;
+    }
+
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(runFade);
+      return;
+    }
+    runFade();
+  }
+
+  const handleAuthStateChanged = function(event) {
+    console.log('Auth state changed in app.js:', event.detail);
+    console.log('[APP] received authStateChanged', {
+      hasProgress: event.detail.hasProgress,
+      isRegistered: event.detail.isRegistered,
+      isLoading: event.detail.isLoading,
+      timestamp: Date.now()
+    });
+    window.authState = event.detail; 
+    handleOneSignalAuthStateChange(event.detail);
+
+    if (event.detail.accessTier) {
+      setAnalyticsUserProperties({
+        access_tier: event.detail.accessTier
+      });
+    }
+
+    if (event.detail.user && event.detail.user.isAnonymous && !event.detail.isRegistered) {
+      cleanupOnLogout();
+    }
+    
+    const isRegistrationInProgress = document.getElementById('postRegistrationLoadingScreen')?.style.display === 'flex';
+    if (!event.detail.isLoading && !isRegistrationInProgress) {
+      fadeSplashScreen();
+      scheduleInitOutcomeReporting();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('register') === 'true') {
+        console.log("Direct registration link detected. Showing registration form.");
+        ensureAllScreensHidden(); 
+        if (typeof showRegisterForm === 'function') {
+            showRegisterForm();
+        }
+        return; // Stop further execution
+      }
+      
+      if (window.isDeepLinkQuizActive) {
+        console.log('Deep link quiz active; deferring standard routing.');
+        return;
+      }
+
+      handleUserRouting(event.detail);
+      queueDashboardRefresh();
+    }
+  };
+
+  window.addEventListener('authStateChanged', handleAuthStateChanged);
+
+  function trackInitTask(label, executor) {
+    return {
+      label,
+      promise: Promise.resolve().then(executor),
+    };
+  }
+
+  const billingTaskLabel = isNativeApp
+    ? 'RevenueCat initialization'
+    : 'Stripe billing initialization';
+
+  slowInitTasks = [
+    trackInitTask('OneSignal push bootstrap', () => initializeOneSignalPush()),
+    trackInitTask('OneSignal identity observers', () => initializeOneSignalIdentityObservers()),
+    trackInitTask('Deep link handler', () => handleQuestionDeepLink(window.location?.href)),
+    trackInitTask(billingTaskLabel, () => {
+      if (isNativeApp) {
+        return import('./revenuecat-native.js').then((mod) => mod.initialize());
+      }
+      return initializeBilling();
+    }),
+  ];
+  slowInitSettled = Promise.allSettled(slowInitTasks.map((task) => task.promise));
+
+  if (initObservationRequested && !initObservationScheduled) {
+    scheduleInitOutcomeReporting();
+  }
+
+
   try {
     // Ensure imported 'functions' instance exists
     if (typeof functions === 'undefined') {
@@ -1459,68 +1579,16 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     usernamePickScreen
   ].filter(Boolean);
 
-  initializeOnboardingProgressIndicators(onboardingScreenSequence);
+  let onboardingProgressInitialized = false;
+  function ensureOnboardingProgressIndicatorsInitialized() {
+    if (onboardingProgressInitialized || onboardingScreenSequence.length === 0) {
+      return;
+    }
+    initializeOnboardingProgressIndicators(onboardingScreenSequence);
+    onboardingProgressInitialized = true;
+  }
+
   initializeNotificationExplainer();
-
-  // Update the auth state change listener to properly handle welcome screen
-	window.addEventListener('authStateChanged', function(event) {
-	  console.log('Auth state changed in app.js:', event.detail);
-	  console.log('[APP] received authStateChanged', {
-	    hasProgress: event.detail.hasProgress,
-	    isRegistered: event.detail.isRegistered,
-	    isLoading: event.detail.isLoading,
-	    timestamp: Date.now()
-	  });
-  window.authState = event.detail; 
-  handleOneSignalAuthStateChange(event.detail);
-
-  if (event.detail.accessTier) {
-    setAnalyticsUserProperties({
-      access_tier: event.detail.accessTier
-    });
-  }
-
-  if (event.detail.user && event.detail.user.isAnonymous && !event.detail.isRegistered) {
-    cleanupOnLogout();
-  }
-  
-  // Only proceed once auth is fully loaded
-  const isRegistrationInProgress = document.getElementById('postRegistrationLoadingScreen')?.style.display === 'flex';
-  if (!event.detail.isLoading && !isRegistrationInProgress) {
-
-        // This outer timeout handles the splash screen fade-out
-        setTimeout(function() {
-          const splashScreenEl = document.getElementById('splashScreen');
-          if (splashScreenEl) {
-            splashScreenEl.classList.add('fade-out');
-            setTimeout(() => {
-              if (splashScreenEl) splashScreenEl.style.display = 'none';
-            }, 500);
-          }
-      
-      // Handle direct ?register=true link
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('register') === 'true') {
-        console.log("Direct registration link detected. Showing registration form.");
-        ensureAllScreensHidden(); 
-        if (typeof showRegisterForm === 'function') {
-            showRegisterForm();
-        }
-        return; // Stop further execution
-      }
-      
-      // For all other normal page loads and auth changes, use our centralized router
-      if (window.isDeepLinkQuizActive) {
-        console.log('Deep link quiz active; deferring standard routing.');
-        return;
-      }
-
-      handleUserRouting(event.detail);
-      queueDashboardRefresh();
-      
-    }, 2100); // Allow progress bar to finish (~3.5s) before fading splash
-  }
-});
   
   // Handle welcome screen buttons
   const startLearningBtn = document.getElementById('startLearningBtn');
@@ -1529,6 +1597,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   if (startLearningBtn && welcomeScreen && specialtyPickScreen) { // Added specialtyPickScreen check
     startLearningBtn.addEventListener("click", function() {
       console.log("Start Learning button clicked, showing Specialty Pick screen.");
+      ensureOnboardingProgressIndicatorsInitialized();
       welcomeScreen.style.opacity = '0';
       setTimeout(function() {
         welcomeScreen.style.display = 'none';
@@ -1865,7 +1934,28 @@ function getPaywallScreen() {
   return document.getElementById('newPaywallScreen');
 }
 
+let paywallUiInitialized = false;
+function ensurePaywallUiInitialized() {
+  if (paywallUiInitialized) {
+    return;
+  }
+  initializeIosPaywallUI();
+  initializePaywallFreeAccessButton();
+  paywallUiInitialized = true;
+}
+
+let registrationFollowupModalsInitialized = false;
+function ensureRegistrationFollowupModalsInitialized() {
+  if (registrationFollowupModalsInitialized) {
+    return;
+  }
+  setupRegistrationFollowupModals();
+  registrationFollowupModalsInitialized = true;
+}
+
 function showPaywallScreen() {
+  ensurePaywallUiInitialized();
+  ensureRegistrationFollowupModalsInitialized();
   const screen = getPaywallScreen();
   if (!screen) {
     return;
@@ -1914,6 +2004,7 @@ if (typeof window !== 'undefined') {
       return;
     }
     setTimeout(() => {
+      ensureRegistrationFollowupModalsInitialized();
       showModal('postPurchaseRegistrationModal');
     }, 400);
   });
@@ -1974,6 +2065,7 @@ function showFreeAccessRegistrationPrompt() {
     return;
   }
   hidePaywallScreens();
+  ensureRegistrationFollowupModalsInitialized();
   showModal('freeAccessRegistrationModal');
 }
 

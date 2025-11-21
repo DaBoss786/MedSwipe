@@ -2838,22 +2838,13 @@ button:not(:disabled):active {
   animation: pulse 2s infinite alternate;
 }
 
-.splash-loader {
-  width: 200px;
-  max-width: 80%;
-  height: 6px;
-  background-color: rgba(12, 114, 211, 0.2);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 0 auto;
-}
-
-.loading-bar {
-  height: 100%;
-  width: 0;
-  background-color: #0C72D3;
-  border-radius: 3px;
-  animation: loading 2.0s ease-in-out forwards;
+.splash-spinner {
+  width: 44px;
+  height: 44px;
+  border: 5px solid rgba(12, 114, 211, 0.15);
+  border-top-color: #0C72D3;
+  border-radius: 50%;
+  animation: splashSpin 0.9s linear infinite;
 }
 
 @keyframes pulse {
@@ -2867,12 +2858,12 @@ button:not(:disabled):active {
   }
 }
 
-@keyframes loading {
+@keyframes splashSpin {
   0% {
-    width: 0;
+    transform: rotate(0deg);
   }
   100% {
-    width: 100%;
+    transform: rotate(360deg);
   }
 }
 /* Welcome Screen Styles */
