@@ -463,6 +463,230 @@ async function requestOneSignalPushPermission() {
 
 window.requestOneSignalPushPermission = requestOneSignalPushPermission;
 
+function normalizeOneSignalPermissionValue(rawValue) {
+  if (typeof rawValue === 'boolean') {
+    return rawValue;
+  }
+  if (typeof rawValue === 'number') {
+    if (rawValue === 1) return true;
+    if (rawValue === 0) return false;
+  }
+  if (typeof rawValue === 'string') {
+    const normalized = rawValue.trim().toLowerCase();
+    if (
+      normalized === 'authorized' ||
+      normalized === 'granted' ||
+      normalized === 'allow' ||
+      normalized === 'allowed' ||
+      normalized === 'provisional' ||
+      normalized === 'ephemeral' ||
+      normalized === 'temporary' ||
+      normalized === 'true' ||
+      normalized === 'yes' ||
+      normalized === 'on'
+    ) {
+      return true;
+    }
+    if (
+      normalized === 'denied' ||
+      normalized === 'blocked' ||
+      normalized === 'not_authorized' ||
+      normalized === 'not-authorized' ||
+      normalized === 'not allowed' ||
+      normalized === 'not-allowed' ||
+      normalized === 'disabled' ||
+      normalized === 'false' ||
+      normalized === 'no' ||
+      normalized === 'off'
+    ) {
+      return false;
+    }
+    return null;
+  }
+  if (rawValue && typeof rawValue === 'object') {
+    const keys = ['allowed', 'permission', 'state', 'status', 'value'];
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(rawValue, key)) {
+        const nested = normalizeOneSignalPermissionValue(rawValue[key]);
+        if (nested !== null) {
+          return nested;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+async function readCurrentPushPermission(oneSignal) {
+  if (!oneSignal || !oneSignal.Notifications) {
+    return { allowed: null, source: 'notifications-unavailable' };
+  }
+
+  const notifications = oneSignal.Notifications;
+
+  if (typeof notifications.hasPermission === 'function') {
+    try {
+      const direct = await notifications.hasPermission();
+      const normalized = normalizeOneSignalPermissionValue(direct);
+      if (normalized !== null) {
+        return { allowed: normalized, source: 'hasPermission' };
+      }
+    } catch (error) {
+      console.warn('OneSignal.Notifications.hasPermission failed:', error);
+    }
+  }
+
+  if (typeof notifications.getPermissionState === 'function') {
+    try {
+      const state = await notifications.getPermissionState();
+      const normalized = normalizeOneSignalPermissionValue(state);
+      if (normalized !== null) {
+        return { allowed: normalized, source: 'getPermissionState' };
+      }
+    } catch (error) {
+      console.warn('OneSignal.Notifications.getPermissionState failed:', error);
+    }
+  }
+
+  const fallbackFields = [
+    notifications.permission,
+    notifications.permissionState,
+    notifications.permissionStatus,
+    notifications.permissionNative
+  ];
+
+  for (const field of fallbackFields) {
+    const normalized = normalizeOneSignalPermissionValue(field);
+    if (normalized !== null) {
+      return { allowed: normalized, source: 'notifications-field' };
+    }
+  }
+
+  const subscription = oneSignal.User?.pushSubscription;
+  if (subscription) {
+    if (typeof subscription.getPermissionState === 'function') {
+      try {
+        const pushState = await subscription.getPermissionState();
+        const normalized = normalizeOneSignalPermissionValue(pushState);
+        if (normalized !== null) {
+          return { allowed: normalized, source: 'pushSubscription-permission' };
+        }
+      } catch (error) {
+        console.warn('OneSignal pushSubscription permission check failed:', error);
+      }
+    }
+    const subscriptionFields = [
+      subscription.permission,
+      subscription.permissionState,
+      subscription.state,
+      subscription.enabled,
+      subscription.optedIn
+    ];
+    for (const field of subscriptionFields) {
+      const normalized = normalizeOneSignalPermissionValue(field);
+      if (normalized !== null) {
+        return { allowed: normalized, source: 'pushSubscription-field' };
+      }
+    }
+  }
+
+  return { allowed: null, source: 'unknown' };
+}
+
+let notificationPermissionSyncPromise = null;
+
+async function syncNotificationOptInWithSystemPermission({ reason = 'unspecified' } = {}) {
+  if (!isIosNativeApp) {
+    return { skipped: true, reason: 'not-ios' };
+  }
+  if (!auth || !auth.currentUser) {
+    return { skipped: true, reason: 'no-user' };
+  }
+  if (notificationPermissionSyncPromise) {
+    return notificationPermissionSyncPromise;
+  }
+
+  notificationPermissionSyncPromise = (async () => {
+    const oneSignal = await oneSignalReadyPromise;
+    if (!oneSignal) {
+      console.warn('Cannot sync notification opt-in: OneSignal is not ready.');
+      return { skipped: true, reason: 'onesignal-unavailable' };
+    }
+
+    const permission = await readCurrentPushPermission(oneSignal);
+    if (permission.allowed !== false) {
+      return { skipped: true, reason: 'permission-not-disabled', permission };
+    }
+
+    const { currentUser } = auth;
+    if (!currentUser) {
+      return { skipped: true, reason: 'no-user-after-permission' };
+    }
+
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const userSnapshot = await getDoc(userDocRef);
+    if (!userSnapshot.exists()) {
+      return { skipped: true, reason: 'user-doc-missing' };
+    }
+
+    const userData = userSnapshot.data() || {};
+    if (userData.notificationOptIn !== true) {
+      return { skipped: true, reason: 'already-opted-out' };
+    }
+
+    await updateDoc(userDocRef, {
+      notificationOptIn: false,
+      notificationOptInUpdatedAt: serverTimestamp()
+    });
+
+    console.log('notificationOptIn disabled after detecting revoked iOS push permission.', {
+      reason,
+      permissionSource: permission.source
+    });
+
+    return { updated: true };
+  })()
+    .catch((error) => {
+      console.error('Failed to sync notification opt-in with system permission:', error);
+      return { error };
+    })
+    .finally(() => {
+      notificationPermissionSyncPromise = null;
+    });
+
+  return notificationPermissionSyncPromise;
+}
+
+function requestNotificationPermissionSync(reason = 'unspecified') {
+  if (!isIosNativeApp || !auth || !auth.currentUser) {
+    return;
+  }
+  void syncNotificationOptInWithSystemPermission({ reason });
+}
+
+let notificationPermissionMonitorInitialized = false;
+
+function initializeNotificationPermissionMonitor() {
+  if (notificationPermissionMonitorInitialized || !isIosNativeApp) {
+    return;
+  }
+  notificationPermissionMonitorInitialized = true;
+
+  if (App && typeof App.addListener === 'function') {
+    App.addListener('appStateChange', (state) => {
+      if (state?.isActive) {
+        requestNotificationPermissionSync('app-state-active');
+      }
+    });
+  }
+
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('resume', () => {
+      requestNotificationPermissionSync('cordova-resume');
+    });
+  }
+}
+
 const ONE_SIGNAL_SYNC_MAX_ATTEMPTS = 10;
 const ONE_SIGNAL_SYNC_BASE_DELAY_MS = 2500;
 const ONE_SIGNAL_SYNC_MAX_DELAY_MS = 30000;
@@ -1434,6 +1658,9 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     });
     window.authState = event.detail; 
     handleOneSignalAuthStateChange(event.detail);
+    if (event.detail?.user && !event.detail.isLoading) {
+      requestNotificationPermissionSync('auth-state-change');
+    }
 
     if (event.detail.accessTier) {
       setAnalyticsUserProperties({
@@ -1471,6 +1698,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
   };
 
   window.addEventListener('authStateChanged', handleAuthStateChanged);
+  initializeNotificationPermissionMonitor();
 
   function trackInitTask(label, executor) {
     return {
