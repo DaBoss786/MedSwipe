@@ -212,6 +212,7 @@ const oneSignalReadyPromise = new Promise((resolve) => {
   resolveOneSignalReady = resolve;
 });
 let oneSignalNotificationHandlerRegistered = false;
+let oneSignalBootstrapStarted = false;
 
 const pendingOneSignalDeepLinks = [];
 let processingOneSignalDeepLinks = false;
@@ -330,8 +331,14 @@ let selectedNotificationFrequency = DEFAULT_NOTIFICATION_FREQUENCY;
 
 function initializeOneSignalPush() {
   if (!isIosNativeApp) {
+    markOneSignalReady(null);
     return;
   }
+
+  if (oneSignalBootstrapStarted) {
+    return;
+  }
+  oneSignalBootstrapStarted = true;
 
   const registerNotificationHandlers = (oneSignal, { warnIfUnavailable = true } = {}) => {
     if (!oneSignal || oneSignalNotificationHandlerRegistered) {
@@ -437,6 +444,9 @@ function initializeOneSignalPush() {
   // Fallback: attempt setup immediately if running in a non-Cordova environment that still exposes OneSignal
   setup();
 }
+
+// Start OneSignal setup immediately so cold-start notification clicks are captured
+initializeOneSignalPush();
 
 async function requestOneSignalPushPermission() {
   if (!isIosNativeApp) {
@@ -1687,6 +1697,12 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
         return; // Stop further execution
       }
       
+      if (pendingOneSignalDeepLinks.length > 0 || processingOneSignalDeepLinks) {
+        console.log('Pending OneSignal deep link detected; deferring dashboard routing.');
+        void processPendingOneSignalDeepLinks();
+        return;
+      }
+
       if (window.isDeepLinkQuizActive) {
         console.log('Deep link quiz active; deferring standard routing.');
         return;
