@@ -302,7 +302,7 @@ async function processUserDocument(userDoc, nowDate) {
 
 exports.sendDailyQuestionPushes = onSchedule(
   {
-    schedule: "every 24 hours",
+    schedule: "0 21 * * *", // Run once daily at 9 PM Pacific
     timeZone: "America/Los_Angeles",
     secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret],
   },

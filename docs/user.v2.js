@@ -1559,24 +1559,10 @@ async function maybeShowIosReviewPrompt() {
   }
 
   try {
-    const wantsReview = await showReviewPrePrompt();
-    if (!wantsReview) {
-      return;
-    }
-
     await appReviewPlugin.requestReview();
   } catch (error) {
     console.error("Unable to present the iOS review prompt:", error);
   }
-}
-
-function showReviewPrePrompt() {
-  if (typeof window === 'undefined') {
-    return Promise.resolve(false);
-  }
-
-  const message = "Enjoying MedSwipe so far? Tap OK to rate us in the App Store.";
-  return Promise.resolve(window.confirm(message));
 }
 
 export {
