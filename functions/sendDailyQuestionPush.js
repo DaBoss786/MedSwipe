@@ -107,13 +107,15 @@ function loadOneSignalCredentials() {
 
 const SPECIALTY_PLACEHOLDER = "{SPECIALTY}";
 const HEADING_TEMPLATES = [
-  "Your quick {SPECIALTY} question is ready.",
-  "Quick {SPECIALTY} refresher.",
-  "Your nightly {SPECIALTY} question is ready.",
-  "Evening {SPECIALTY} refresher.",
-  "Daily {SPECIALTY} check-in.",
-  "Stop doom scrolling for a second...",
-  "Swap one doom scroll for one high-yield scroll",
+  "🧠 Your quick {SPECIALTY} question is ready.",
+  "🧠 Quick {SPECIALTY} refresher.",
+  "🌙 Your nightly {SPECIALTY} question is ready.",
+  "😴 Evening {SPECIALTY} refresher.",
+  "⚡ Daily {SPECIALTY} check-in.",
+  "🛑 Stop doom scrolling for a second...",
+  "📱 Swap one doom scroll for one high-yield scroll",
+  "🎯 Let's keep the streak alive.",
+  "😴 Before you sleep: one quick question."
 ];
 
 const CONTENT_TEMPLATES = [

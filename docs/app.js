@@ -2671,7 +2671,7 @@ async function handleNotificationPromptDecline() {
   notificationPromptHandled = true;
   setNotificationExplainerBusy(true);
   try {
-    await persistNotificationPreference(false);
+    await persistNotificationPreference(true);
   } finally {
     continueToOnboardingCarouselFromPrompt();
   }
