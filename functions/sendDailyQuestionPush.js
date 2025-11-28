@@ -200,6 +200,8 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
     },
     // Remove url field or ensure fallback only
     // url: deepLink,  <-- KEEP DISABLED for iOS deep-link suppression
+    ios_badgeType: "Increase",  // Options: "None", "SetTo", "Increase"
+    ios_badgeCount: 1,          // Increment by 1 each notification
 delayed_option: "timezone",
 delivery_time_of_day: "21:00"
   };
@@ -367,7 +369,9 @@ exports.testSendPush = onRequest({ secrets: [oneSignalAppIdSecret, oneSignalApiK
       data: {
         questionId: testQuestionId,
         deep_link: `https://medswipeapp.com/question/${encodeURIComponent(testQuestionId)}`
-      }
+      },
+      ios_badgeType: "Increase",  // Options: "None", "SetTo", "Increase"
+      ios_badgeCount: 1,          // Increment by 1 each notification
     };
 
     const response = await fetch("https://api.onesignal.com/notifications", {
