@@ -297,6 +297,40 @@ function queueOneSignalDeepLink(target) {
   }
 }
 
+/**
+ * Checks whether the app was launched from a OneSignal notification on cold start.
+ * Uses getInitialNotification when available, otherwise inspects launchURL.
+ */
+function checkLaunchNotification(oneSignal) {
+  if (!oneSignal?.Notifications) {
+    return;
+  }
+
+  console.log('[OneSignal] Checking for cold-start launch notification...');
+
+  if (typeof oneSignal.Notifications.getInitialNotification === 'function') {
+    Promise.resolve(oneSignal.Notifications.getInitialNotification())
+      .then((notification) => {
+        if (!notification) {
+          return;
+        }
+        console.log('[OneSignal] Cold-start notification found:', notification);
+        const { target } = extractOneSignalNotificationTarget({ notification });
+        if (target) {
+          queueOneSignalDeepLink(target);
+        }
+      })
+      .catch((err) => console.warn('[OneSignal] getInitialNotification failed:', err));
+    return;
+  }
+
+  const launchURL = oneSignal.Notifications.launchURL;
+  if (typeof launchURL === 'string' && launchURL.includes('/question/')) {
+    console.log('[OneSignal] Found launchURL:', launchURL);
+    queueOneSignalDeepLink(launchURL);
+  }
+}
+
 function markOneSignalReady(instance) {
   if (oneSignalReadyResolved) {
     return;
@@ -416,6 +450,7 @@ function initializeOneSignalPush() {
         Promise.resolve(initResult)
           .then(() => {
             registerNotificationHandlers(oneSignal);
+            checkLaunchNotification(oneSignal);
             markOneSignalReady(oneSignal);
           })
           .catch((error) => {

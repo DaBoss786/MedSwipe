@@ -19,6 +19,7 @@ const USERS_COLLECTION = "users";
 const QUESTIONS_COLLECTION = "questions";
 const QUESTION_QUERY_LIMIT = 50;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const DAY_JITTER_TOLERANCE_MS = 60 * 60 * 1000; // 1h slack for scheduler drift
 
 function getDateFromField(value) {
   if (!value) {
@@ -57,7 +58,10 @@ function isUserDueForPush(userData = {}, nowDate = new Date()) {
   }
 
   const elapsedMs = nowDate.getTime() - lastPushDate.getTime();
-  const elapsedDays = Math.floor(elapsedMs / MS_PER_DAY);
+  // Add tolerance so 23h+ counts as one day to avoid scheduler drift skipping a day
+  const elapsedDays = Math.floor(
+    (elapsedMs + DAY_JITTER_TOLERANCE_MS) / MS_PER_DAY
+  );
 
   if (elapsedDays >= frequency) {
     return { due: true, reason: `elapsed_${elapsedDays}_days` };
@@ -65,7 +69,7 @@ function isUserDueForPush(userData = {}, nowDate = new Date()) {
 
   return {
     due: false,
-    reason: `waiting_${frequency - elapsedDays}_days`,
+    reason: `waiting_${Math.max(frequency - elapsedDays, 0)}_days`,
   };
 }
 
@@ -350,15 +354,32 @@ exports.sendDailyQuestionPushes = onSchedule(
 // ───────────────────────────────
 exports.testSendPush = onRequest({ secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret] }, async (req, res) => {
   try {
-    const testPlayerId   = "e789936f-a26a-40be-8e3f-3d0744daca71"; // your provided ID
+    const { appId, apiKey } = loadOneSignalCredentials();
+    
+    const testPlayerId = "6302155a-527f-4fff-93dd-c55ac77fa720";
     const testQuestionId = "Which condition is characterized by recurrent facial nerve palsies, facial edema, and a fissured tongue?";
-    const testSpecialty  = "ENT";
 
-    const result = await sendOneSignalNotification(
-      testPlayerId,
-      testQuestionId,
-      testSpecialty
-    );
+    const payload = {
+      app_id: appId,
+      include_player_ids: [testPlayerId],
+      headings: { en: "🧪 Test Deep Link" },
+      contents: { en: "Tap to test cold-start routing" },
+      data: {
+        questionId: testQuestionId,
+        deep_link: `https://medswipeapp.com/question/${encodeURIComponent(testQuestionId)}`
+      }
+    };
+
+    const response = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        Authorization: `Key ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
     res.status(200).send({ success: true, result });
   } catch (error) {
     logger.error("Error sending test push:", { error: error.message });
