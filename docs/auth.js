@@ -570,6 +570,7 @@ function initAuth() {
         if (applyIosNotificationDefaults) {
           userDataForWrite.notificationOptIn = true;
           userDataForWrite.notificationOptInAt = serverTimestamp();
+          userDataForWrite.notificationFrequencyDays = 1;
         }
 
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
@@ -594,6 +595,16 @@ function initAuth() {
           );
           userDataForWrite.notificationOptIn = true;
           userDataForWrite.notificationOptInAt = serverTimestamp();
+        }
+
+        if (
+          applyIosNotificationDefaults &&
+          (typeof existingData.notificationFrequencyDays !== 'number' || existingData.notificationFrequencyDays <= 0)
+        ) {
+          console.log(
+            `Legacy iOS user ${user.uid} missing notificationFrequencyDays. Defaulting to 1.`
+          );
+          userDataForWrite.notificationFrequencyDays = 1;
         }
 
         // ===== NEW: Detect returning anonymous users with progress =====

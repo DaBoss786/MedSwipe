@@ -1,19 +1,19 @@
 const { logger } = require("firebase-functions/v2");
-  const { onSchedule } = require("firebase-functions/v2/scheduler");
-  const admin = require("firebase-admin");
-  const { FieldValue } = require("firebase-admin/firestore");
-  const fetch = global.fetch || require("node-fetch");
-  const { onRequest } = require("firebase-functions/v2/https");
-  const { defineSecret } = require("firebase-functions/params");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const admin = require("firebase-admin");
+const { FieldValue } = require("firebase-admin/firestore");
+const fetch = global.fetch || require("node-fetch");
+const { onRequest } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 
-  const oneSignalAppIdSecret = defineSecret("ONESIGNAL_APP_ID");
-  const oneSignalApiKeySecret = defineSecret("ONESIGNAL_API_KEY");
+const oneSignalAppIdSecret = defineSecret("ONESIGNAL_APP_ID");
+const oneSignalApiKeySecret = defineSecret("ONESIGNAL_API_KEY");
 
-  if (admin.apps.length === 0) {
-    admin.initializeApp();
-  }
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
-  const db = admin.firestore();
+const db = admin.firestore();
 
 const USERS_COLLECTION = "users";
 const QUESTIONS_COLLECTION = "questions";
@@ -127,7 +127,7 @@ const CONTENT_TEMPLATES = [
   "One quick question to keep your skills sharp.",
   "Let's see what you remember today.",
   "Take 20 seconds before you wrap up the day.",
-  "Tap for today’s high-yield question.",
+  "Tap for today's high-yield question.",
 ];
 
 function pickHeadingTemplate(trimmedSpecialty) {
@@ -186,24 +186,33 @@ async function sendOneSignalNotification(playerId, questionId, specialty) {
   const heading = pickHeadingTemplate(trimmedSpecialty);
   const contentsMessage = pickContentMessage();
 
-  const deepLink = `https://medswipeapp.com/question/${encodeURIComponent(questionId)}`;
+  // Encode the question ID for URL safety
+  const encodedQuestionId = encodeURIComponent(questionId);
+  
+  // Universal link - used for BOTH data.deep_link and url field for consistency
+  const universalLink = `https://medswipeapp.com/question/${encodedQuestionId}`;
 
   const payload = {
     app_id: appId,
     include_player_ids: [playerId],
     headings: { en: heading },
     contents: { en: contentsMessage },
-    // Use additional data instead of url
+    
+    // ✅ data: Used by OneSignal click listener for warm/background starts
     data: {
       questionId: questionId,
-      deep_link: deepLink
+      deep_link: universalLink,  // Full URL for consistency
+      type: 'question'
     },
-    // Remove url field or ensure fallback only
-    // url: deepLink,  <-- KEEP DISABLED for iOS deep-link suppression
-    ios_badgeType: "Increase",  // Options: "None", "SetTo", "Increase"
-    ios_badgeCount: 1,          // Increment by 1 each notification
-delayed_option: "timezone",
-delivery_time_of_day: "21:00"
+    
+    // ✅ url (Launch URL): Used by Capacitor appUrlOpen for cold starts
+    // OneSignal_suppress_launch_urls in Info.plist prevents Safari from opening
+    url: universalLink,
+    
+    ios_badgeType: "Increase",
+    ios_badgeCount: 1,
+    delayed_option: "timezone",
+    delivery_time_of_day: "21:00"
   };
 
   const response = await fetch("https://api.onesignal.com/notifications", {
@@ -236,6 +245,8 @@ delivery_time_of_day: "21:00"
   logger.info("OneSignal notification queued.", {
     playerId,
     questionId,
+    hasUrl: true,
+    hasData: true
   });
 
   return responseBody;
@@ -310,7 +321,7 @@ async function processUserDocument(userDoc, nowDate) {
 
 exports.sendDailyQuestionPushes = onSchedule(
   {
-    schedule: "0 21 * * *", // Run once daily at 9 PM Pacific
+    schedule: "0 6,12,18,21 * * *", // 6 AM, noon, 6 PM, 9 PM Pacific
     timeZone: "America/Los_Angeles",
     secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret],
   },
@@ -351,27 +362,38 @@ exports.sendDailyQuestionPushes = onSchedule(
   }
 );
 
-// ───────────────────────────────
+// ———————————————————————————————
 // Temporary HTTP endpoint for testing
-// ───────────────────────────────
+// ———————————————————————————————
 exports.testSendPush = onRequest({ secrets: [oneSignalAppIdSecret, oneSignalApiKeySecret] }, async (req, res) => {
   try {
     const { appId, apiKey } = loadOneSignalCredentials();
     
-    const testPlayerId = "6302155a-527f-4fff-93dd-c55ac77fa720";
+    const testPlayerId = "64833690-0b1c-4133-87d5-398b10ce5db9";
     const testQuestionId = "Which condition is characterized by recurrent facial nerve palsies, facial edema, and a fissured tongue?";
+    const encodedQuestionId = encodeURIComponent(testQuestionId);
+    
+    // Use full URL for consistency across both fields
+    const universalLink = `https://medswipeapp.com/question/${encodedQuestionId}`;
 
     const payload = {
       app_id: appId,
       include_player_ids: [testPlayerId],
       headings: { en: "🧪 Test Deep Link" },
       contents: { en: "Tap to test cold-start routing" },
+      
+      // data: for warm-start handling via OneSignal click listener
       data: {
         questionId: testQuestionId,
-        deep_link: `https://medswipeapp.com/question/${encodeURIComponent(testQuestionId)}`
+        deep_link: universalLink,
+        type: 'question'
       },
-      ios_badgeType: "Increase",  // Options: "None", "SetTo", "Increase"
-      ios_badgeCount: 1,          // Increment by 1 each notification
+      
+      // url: for cold-start handling via Capacitor appUrlOpen
+      url: universalLink,
+      
+      ios_badgeType: "Increase",
+      ios_badgeCount: 1,
     };
 
     const response = await fetch("https://api.onesignal.com/notifications", {

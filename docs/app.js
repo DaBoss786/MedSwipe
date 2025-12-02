@@ -64,6 +64,7 @@ function clearPendingDeepLink(options = {}) {
 if (typeof window !== 'undefined') {
   window.pendingDeepLinkQuestionId = null;
   window.isDeepLinkQuizActive = false;
+  window.coldStartDeepLinkPending = false;
   window.setPendingDeepLink = setPendingDeepLink;
   window.clearPendingDeepLink = clearPendingDeepLink;
 }
@@ -187,23 +188,54 @@ if (typeof App?.addListener === 'function') {
         return;
       }
 
-      console.log('[Capacitor] appUrlOpen', urlString);
-      const url = new URL(urlString, typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://medswipeapp.com');
+      console.log('[Capacitor] appUrlOpen received:', urlString);
+      
+      const url = new URL(
+        urlString, 
+        typeof window !== 'undefined' && window.location?.origin 
+          ? window.location.origin 
+          : 'https://medswipeapp.com'
+      );
 
       const pathname = url.pathname ?? '';
       const hashPath = url.hash ?? '';
 
-      if (pathname.startsWith('/question/') || hashPath.startsWith('#/question/')) {
-        Promise.resolve(handleQuestionDeepLink(urlString)).catch((error) => {
-          console.error('Error handling deep link from appUrlOpen', error);
-        });
+      const isQuestionUrl = 
+        pathname.startsWith('/question/') || 
+        hashPath.startsWith('#/question/');
+
+      if (isQuestionUrl) {
+        console.log('[Capacitor] Cold-start question deep link detected');
+        
+        if (typeof window !== 'undefined') {
+          window.coldStartDeepLinkPending = true;
+        }
+        
+        Promise.resolve(handleQuestionDeepLink(urlString))
+          .then((handled) => {
+            console.log('[Capacitor] Deep link handled:', handled);
+            if (typeof window !== 'undefined') {
+              window.coldStartDeepLinkPending = false;
+            }
+          })
+          .catch((error) => {
+            console.error('[Capacitor] Error handling cold-start deep link:', error);
+            if (typeof window !== 'undefined') {
+              window.coldStartDeepLinkPending = false;
+            }
+          });
       } else {
-        console.log('[Capacitor] appUrlOpen ignored (not a question URL)');
+        console.log('[Capacitor] appUrlOpen ignored (not a question URL):', urlString);
       }
     } catch (err) {
-      console.error('Error in appUrlOpen handler', err);
+      console.error('[Capacitor] Error in appUrlOpen handler:', err);
+      if (typeof window !== 'undefined') {
+        window.coldStartDeepLinkPending = false;
+      }
     }
   });
+  
+  console.log('[Capacitor] appUrlOpen listener registered for cold-start deep links');
 }
 
 let resolveOneSignalReady;
@@ -294,40 +326,6 @@ function queueOneSignalDeepLink(target) {
   pendingOneSignalDeepLinks.push(target);
   if (!processingOneSignalDeepLinks) {
     void processPendingOneSignalDeepLinks();
-  }
-}
-
-/**
- * Checks whether the app was launched from a OneSignal notification on cold start.
- * Uses getInitialNotification when available, otherwise inspects launchURL.
- */
-function checkLaunchNotification(oneSignal) {
-  if (!oneSignal?.Notifications) {
-    return;
-  }
-
-  console.log('[OneSignal] Checking for cold-start launch notification...');
-
-  if (typeof oneSignal.Notifications.getInitialNotification === 'function') {
-    Promise.resolve(oneSignal.Notifications.getInitialNotification())
-      .then((notification) => {
-        if (!notification) {
-          return;
-        }
-        console.log('[OneSignal] Cold-start notification found:', notification);
-        const { target } = extractOneSignalNotificationTarget({ notification });
-        if (target) {
-          queueOneSignalDeepLink(target);
-        }
-      })
-      .catch((err) => console.warn('[OneSignal] getInitialNotification failed:', err));
-    return;
-  }
-
-  const launchURL = oneSignal.Notifications.launchURL;
-  if (typeof launchURL === 'string' && launchURL.includes('/question/')) {
-    console.log('[OneSignal] Found launchURL:', launchURL);
-    queueOneSignalDeepLink(launchURL);
   }
 }
 
@@ -450,7 +448,6 @@ function initializeOneSignalPush() {
         Promise.resolve(initResult)
           .then(() => {
             registerNotificationHandlers(oneSignal);
-            checkLaunchNotification(oneSignal);
             markOneSignalReady(oneSignal);
           })
           .catch((error) => {
@@ -1735,6 +1732,11 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
       if (pendingOneSignalDeepLinks.length > 0 || processingOneSignalDeepLinks) {
         console.log('Pending OneSignal deep link detected; deferring dashboard routing.');
         void processPendingOneSignalDeepLinks();
+        return;
+      }
+
+      if (window.coldStartDeepLinkPending) {
+        console.log('Cold-start deep link pending (via Capacitor); deferring dashboard routing.');
         return;
       }
 
