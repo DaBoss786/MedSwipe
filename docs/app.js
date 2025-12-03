@@ -4470,6 +4470,13 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
   const logoClick = document.getElementById("logoClick");
   if (logoClick) {
     logoClick.addEventListener("click", function() {
+      if (typeof window.clearPendingDeepLink === 'function') {
+        window.clearPendingDeepLink({ reroute: false });
+      } else {
+        window.pendingDeepLinkQuestionId = null;
+        window.isDeepLinkQuizActive = false;
+      }
+
       closeSideMenu();
       closeUserMenu();
       if (typeof window.unlockBodyScroll === 'function') {
@@ -4503,6 +4510,11 @@ if (cmeDashboard) cmeDashboard.style.display = "none";
       const mainOptions = document.getElementById("mainOptions");
       if (mainOptions) mainOptions.style.display = "flex";
       showMainToolbarInfo();
+
+      queueDashboardRefresh();
+      if (typeof setupDashboardEvents === 'function') {
+        setupDashboardEvents();
+      }
     });
   }
   
