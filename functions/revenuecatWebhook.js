@@ -878,17 +878,14 @@ function resolveAppUserId(body) {
     event.app_user_id,
     event.appUserId,
     event.appUserID,
-    event.original_app_user_id,
-    event.alias,
-    event.aliases,
+    subscriber.app_user_id,
+    subscriber.alias,
+    subscriber.aliases,
     body.app_user_id,
     body.appUserId,
     body.appUserID,
-    body.original_app_user_id,
-    subscriber.app_user_id,
-    subscriber.original_app_user_id,
-    subscriber.alias,
-    subscriber.aliases,
+    event.alias,
+    event.aliases,
     purchasedProduct.app_user_id,
     purchasedProduct.appUserId,
     transaction.app_user_id,
@@ -897,6 +894,9 @@ function resolveAppUserId(body) {
     storeTransaction.app_user_id,
     storeTransaction.appUserId,
     storeTransaction.appUserID,
+    event.original_app_user_id,
+    body.original_app_user_id,
+    subscriber.original_app_user_id,
     subscriberAttrs.firebase_uid?.value,
     subscriberAttrs.firebaseUid?.value,
     subscriberAttrs.firebase_uid,
@@ -911,6 +911,61 @@ function resolveAppUserId(body) {
   }
 
   return null;
+}
+
+function resolveTransferAppUserIds(body) {
+  if (!body) {
+    return { from: null, to: null };
+  }
+
+  const event = body.event || {};
+  const subscriber = event.subscriber || body.subscriber || {};
+
+  const fromCandidates = [
+    event.transferred_from,
+    event.transferredFrom,
+    event.transfer_from,
+    event.transferFrom,
+    event.original_app_user_id,
+    subscriber.original_app_user_id,
+    body.original_app_user_id,
+  ];
+
+  const toCandidates = [
+    event.transferred_to,
+    event.transferredTo,
+    event.transfer_to,
+    event.transferTo,
+    event.new_app_user_id,
+    event.newAppUserId,
+    event.app_user_id,
+    subscriber.app_user_id,
+    body.app_user_id,
+  ];
+
+  const aliases = []
+    .concat(Array.isArray(event.aliases) ? event.aliases : [])
+    .concat(Array.isArray(subscriber.aliases) ? subscriber.aliases : [])
+    .concat(Array.isArray(body.aliases) ? body.aliases : []);
+
+  const from = coerceAppUserId(fromCandidates);
+  let to = coerceAppUserId(toCandidates);
+
+  if (!to && aliases.length) {
+    const cleanedAliases = aliases
+      .map((alias) => (typeof alias === 'string' ? alias.trim() : alias))
+      .filter((alias) => typeof alias === 'string' && alias.length > 0);
+
+    if (from) {
+      to = cleanedAliases.find((alias) => alias !== from) || null;
+    }
+
+    if (!to && cleanedAliases.length) {
+      to = cleanedAliases[cleanedAliases.length - 1];
+    }
+  }
+
+  return { from, to };
 }
 
 // -----------------------------------------------------------------------------
@@ -935,14 +990,16 @@ const revenuecatWebhook = onRequest(
     }
 
     const eventPayload = req.body?.event || req.body;
-    const appUserId = resolveAppUserId(req.body);
     const eventType = eventPayload?.event_type || eventPayload?.type || 'UNKNOWN';
+    const transferIds = eventType === 'TRANSFER' ? resolveTransferAppUserIds(req.body) : null;
+    const appUserId = (transferIds && transferIds.to) ? transferIds.to : resolveAppUserId(req.body);
     const eventId = resolveEventId(eventPayload);
 
     if (!appUserId) {
       const diagnosticPayload = {
         eventType,
         eventId,
+        transferIds,
         rootKeys: Object.keys(req.body || {}),
         eventKeys: Object.keys(eventPayload || {}),
         hasSubscriber: !!eventPayload?.subscriber,
@@ -978,6 +1035,7 @@ const revenuecatWebhook = onRequest(
       appUserId,
       eventType,
       eventId,
+      transferIds,
       hasSubscriber: !!eventPayload?.subscriber,
       rootKeys: Object.keys(req.body || {}),
       eventKeys: Object.keys(eventPayload || {}),
