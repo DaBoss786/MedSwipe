@@ -199,6 +199,32 @@ const isIosNativeApp = (() => {
   }
 })();
 
+const defaultStartupInitDependencies = {
+  initializeOneSignalPush: () => initializeOneSignalPush(),
+  initializeOneSignalIdentityObservers: () => initializeOneSignalIdentityObservers(),
+  handleQuestionDeepLink: (urlOrPath) => handleQuestionDeepLink(urlOrPath),
+  initializeWebBilling: () => initializeBilling(),
+  initializeNativeBilling: () =>
+    import('./revenuecat-native.js').then((mod) => mod.initialize()),
+  handleUserRouting: (authState) => handleUserRouting(authState),
+  queueDashboardRefresh: () => queueDashboardRefresh(),
+  processPendingOneSignalDeepLinks: () => processPendingOneSignalDeepLinks()
+};
+
+const startupInitDependencies = { ...defaultStartupInitDependencies };
+
+function __setStartupInitDependencies(overrides = {}) {
+  Object.entries(overrides).forEach(([key, value]) => {
+    if (typeof value === 'function' && key in startupInitDependencies) {
+      startupInitDependencies[key] = value;
+    }
+  });
+}
+
+function __resetStartupInitDependencies() {
+  Object.assign(startupInitDependencies, defaultStartupInitDependencies);
+}
+
 if (typeof App?.addListener === 'function') {
   App.addListener('appUrlOpen', (event) => {
     try {
@@ -267,6 +293,16 @@ let oneSignalBootstrapStarted = false;
 
 const pendingOneSignalDeepLinks = [];
 let processingOneSignalDeepLinks = false;
+
+function __setPendingOneSignalDeepLinkState({ pending = [], processing = false } = {}) {
+  pendingOneSignalDeepLinks.length = 0;
+  if (Array.isArray(pending)) {
+    pending.forEach((target) => {
+      pendingOneSignalDeepLinks.push(target);
+    });
+  }
+  processingOneSignalDeepLinks = Boolean(processing);
+}
 
 function extractOneSignalNotificationTarget(event) {
   const notification = event?.notification || event || {};
@@ -1750,7 +1786,7 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
       
       if (pendingOneSignalDeepLinks.length > 0 || processingOneSignalDeepLinks) {
         console.log('Pending OneSignal deep link detected; deferring dashboard routing.');
-        void processPendingOneSignalDeepLinks();
+        void startupInitDependencies.processPendingOneSignalDeepLinks();
         return;
       }
 
@@ -1764,8 +1800,8 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
         return;
       }
 
-      handleUserRouting(event.detail);
-      queueDashboardRefresh();
+      startupInitDependencies.handleUserRouting(event.detail);
+      startupInitDependencies.queueDashboardRefresh();
     }
   };
 
@@ -1784,14 +1820,20 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     : 'Stripe billing initialization';
 
   slowInitTasks = [
-    trackInitTask('OneSignal push bootstrap', () => initializeOneSignalPush()),
-    trackInitTask('OneSignal identity observers', () => initializeOneSignalIdentityObservers()),
-    trackInitTask('Deep link handler', () => handleQuestionDeepLink(window.location?.href)),
+    trackInitTask('OneSignal push bootstrap', () =>
+      startupInitDependencies.initializeOneSignalPush()
+    ),
+    trackInitTask('OneSignal identity observers', () =>
+      startupInitDependencies.initializeOneSignalIdentityObservers()
+    ),
+    trackInitTask('Deep link handler', () =>
+      startupInitDependencies.handleQuestionDeepLink(window.location?.href)
+    ),
     trackInitTask(billingTaskLabel, () => {
       if (isNativeApp) {
-        return import('./revenuecat-native.js').then((mod) => mod.initialize());
+        return startupInitDependencies.initializeNativeBilling();
       }
-      return initializeBilling();
+      return startupInitDependencies.initializeWebBilling();
     }),
   ];
   slowInitSettled = Promise.allSettled(slowInitTasks.map((task) => task.promise));
@@ -7519,7 +7561,14 @@ function handleUserRouting(authState) {
   }
 }
 
-export { handleUserRouting, __setDeepLinkRoutingHandlers, __resetDeepLinkRoutingHandlers };
+export {
+  handleUserRouting,
+  __setDeepLinkRoutingHandlers,
+  __resetDeepLinkRoutingHandlers,
+  __setStartupInitDependencies,
+  __resetStartupInitDependencies,
+  __setPendingOneSignalDeepLinkState
+};
 
 // Fix for main login screen
 document.addEventListener('DOMContentLoaded', function() {
