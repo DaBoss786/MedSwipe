@@ -6,6 +6,7 @@
     "test": "vitest --config vitest.config.mjs"
   },
   "devDependencies": {
+    "jsdom": "^27.4.0",
     "vitest": "^1.6.0"
   }
 }

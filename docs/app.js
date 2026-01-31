@@ -7410,7 +7410,8 @@ function handleUserRouting(authState) {
     }
 
     const accessTier = authState.accessTier;
-    const hasPremiumAccess = userHasAnyPremiumAccess();
+    const hasPremiumAccess =
+      typeof userHasAnyPremiumAccess === 'function' ? userHasAnyPremiumAccess() : false;
     console.log(`Routing registered user. Access Tier: [${accessTier}], HasPremiumAccess: ${hasPremiumAccess}.`);
 
     // 2. If the user has a paid or promotional tier, always show the main dashboard.
@@ -7459,7 +7460,8 @@ function handleUserRouting(authState) {
         }
       }
   } else {
-    const hasPremiumAccess = userHasAnyPremiumAccess();
+    const hasPremiumAccess =
+      typeof userHasAnyPremiumAccess === 'function' ? userHasAnyPremiumAccess() : false;
     const hasProgress = !!authState.hasProgress;
     console.log('[ROUTER] anonymous branch evaluation', {
       hasProgress,
@@ -7497,6 +7499,8 @@ function handleUserRouting(authState) {
     window.updateUserXP();
   }
 }
+
+export { handleUserRouting };
 
 // Fix for main login screen
 document.addEventListener('DOMContentLoaded', function() {
