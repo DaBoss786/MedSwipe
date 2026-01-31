@@ -2,6 +2,7 @@
 import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, httpsCallable, setDoc, updateProfile } from './firebase-config.js'; // Adjust path if needed
 import { setHapticsEnabled } from './haptics.js';
 import { isIosNativeApp } from './platform.js';
+import { getAnsweredQuestionIds, recordAnsweredQuestion } from './answered-questions.js';
 
 // user.js - After imports
 
@@ -51,7 +52,7 @@ async function fetchPersistentAnsweredIds() {
     const userDocSnap = await getDoc(userDocRef);
     if (userDocSnap.exists()){
       let data = userDocSnap.data();
-      return Object.keys(data.answeredQuestions || {});
+      return getAnsweredQuestionIds(data.answeredQuestions);
     }
   } catch (error) {
     console.error("Error fetching answered IDs:", error);
@@ -148,13 +149,18 @@ async function recordAnswer(questionId, category, isCorrect, timeSpent) {
       const currentTimestamp = currentDate.getTime();
       const currentFormatted = currentDate.toLocaleString();
       
-      data.answeredQuestions[questionId] = { 
-        isCorrect, 
-        category, 
-        timestamp: currentTimestamp, 
-        timestampFormatted: currentFormatted, 
-        timeSpent 
-      };
+      const { answeredQuestions: updatedAnsweredQuestions } = recordAnsweredQuestion(
+        data.answeredQuestions,
+        questionId,
+        { 
+          isCorrect, 
+          category, 
+          timestamp: currentTimestamp, 
+          timestampFormatted: currentFormatted, 
+          timeSpent 
+        }
+      );
+      data.answeredQuestions = updatedAnsweredQuestions;
       
       // Update basic stats
       data.stats.totalAnswered++;
