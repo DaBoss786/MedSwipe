@@ -1,0 +1,384 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		375380DB6A9640E1A4F66990 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD7F2DC2D69409CBF0BCF94 /* UserProfile.swift */; };
+		45C9D3AF3DA54195BE6A3FC8 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C47CF6887843AFBEDD646C /* AuthService.swift */; };
+		60971BE606B14CDA95FB1D03 /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3A7C76D2784C3C93C0A6E5 /* DataService.swift */; };
+		62233030FFAB4E9AA517CBF0 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10EB05521AA47ACBEF608EB /* RootView.swift */; };
+		88588931A83F4BA5B18478F2 /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2166CB7903DA48F0970A4D02 /* FirebaseService.swift */; };
+		8DD4DA233BCB4A8EA4348D33 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 94CB0961117442F785FB9630 /* LaunchScreen.storyboard */; };
+		8F0D743D396B4B85BD0729E2 /* AppContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2437612FFFFF43B6BFB4C5E4 /* AppContainer.swift */; };
+		937E763F7C284E3C914272D0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF35C566DB6406688874440 /* ContentView.swift */; };
+		9E98A70A0831420AB1748D0C /* UserService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35075DC041E429799AD3727 /* UserService.swift */; };
+		B0784AFAD193456DAE99BF3E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BE5BD360870F489487E95A19 /* GoogleService-Info.plist */; };
+		B4DCF7B215E14DE4A51C4A0C /* MedSwipeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1BD07D5DB6E45469F8713B0 /* MedSwipeApp.swift */; };
+		BAAA47F5D12647DAB3B95015 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6581B7859DEB412FB88E1171 /* Assets.xcassets */; };
+		C5E64205FC5F45238CAAD590 /* StubServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE07734958784E50B463FD17 /* StubServices.swift */; };
+		D4D425612F2D9B1E00AA8DE3 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D4D425602F2D9B1E00AA8DE3 /* FirebaseAuth */; };
+		D4D425632F2D9B1E00AA8DE3 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = D4D425622F2D9B1E00AA8DE3 /* FirebaseCore */; };
+		D4D425652F2D9B1E00AA8DE3 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = D4D425642F2D9B1E00AA8DE3 /* FirebaseDatabase */; };
+		D4D425672F2D9B1E00AA8DE3 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = D4D425662F2D9B1E00AA8DE3 /* FirebaseFirestore */; };
+		D4D425692F2D9B1E00AA8DE3 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = D4D425682F2D9B1E00AA8DE3 /* FirebaseFunctions */; };
+		D4D4256B2F2D9B1E00AA8DE3 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = D4D4256A2F2D9B1E00AA8DE3 /* FirebaseStorage */; };
+		DA22C24ED36A440BA45BEA55 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E25B19954F0B45D083819052 /* AuthViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1CD7F2DC2D69409CBF0BCF94 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		2166CB7903DA48F0970A4D02 /* FirebaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
+		2437612FFFFF43B6BFB4C5E4 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
+		2820FAFBC7CC41D1A6965F99 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		5AF35C566DB6406688874440 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		6581B7859DEB412FB88E1171 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		94CB0961117442F785FB9630 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		98C9B62C9DB9499299DC6A1B /* MedSwipe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MedSwipe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA3A7C76D2784C3C93C0A6E5 /* DataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
+		BE5BD360870F489487E95A19 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		D35075DC041E429799AD3727 /* UserService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserService.swift; sourceTree = "<group>"; };
+		D5CAB610819E493A94DB5EBD /* MedSwipeSwiftUI.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MedSwipeSwiftUI.entitlements; sourceTree = "<group>"; };
+		DE07734958784E50B463FD17 /* StubServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubServices.swift; sourceTree = "<group>"; };
+		E0C47CF6887843AFBEDD646C /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		E1BD07D5DB6E45469F8713B0 /* MedSwipeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MedSwipeApp.swift; sourceTree = "<group>"; };
+		E25B19954F0B45D083819052 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		F10EB05521AA47ACBEF608EB /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		73F28D3F38BC4277A29C3CA7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D4D425652F2D9B1E00AA8DE3 /* FirebaseDatabase in Frameworks */,
+				D4D425672F2D9B1E00AA8DE3 /* FirebaseFirestore in Frameworks */,
+				D4D425692F2D9B1E00AA8DE3 /* FirebaseFunctions in Frameworks */,
+				D4D425632F2D9B1E00AA8DE3 /* FirebaseCore in Frameworks */,
+				D4D425612F2D9B1E00AA8DE3 /* FirebaseAuth in Frameworks */,
+				D4D4256B2F2D9B1E00AA8DE3 /* FirebaseStorage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		053D28AED6424F12B1E476BF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6581B7859DEB412FB88E1171 /* Assets.xcassets */,
+				94CB0961117442F785FB9630 /* LaunchScreen.storyboard */,
+				2820FAFBC7CC41D1A6965F99 /* Info.plist */,
+				BE5BD360870F489487E95A19 /* GoogleService-Info.plist */,
+				D5CAB610819E493A94DB5EBD /* MedSwipeSwiftUI.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		0FCD696986CA42B891A969FD /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1CD7F2DC2D69409CBF0BCF94 /* UserProfile.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		320772688DA64D74B4D6AA22 /* UIComponents */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = UIComponents;
+			sourceTree = "<group>";
+		};
+		3E731C9BD12145E1AE54D556 = {
+			isa = PBXGroup;
+			children = (
+				8B6943E6F2D344C9A5DEEAA4 /* MedSwipeSwiftUI */,
+				9C31598FC4584354A99D7A58 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4F6D1C174CE04D79A5C72531 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				E25B19954F0B45D083819052 /* AuthViewModel.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		59362CC860F74784A9828622 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				E1BD07D5DB6E45469F8713B0 /* MedSwipeApp.swift */,
+				5AF35C566DB6406688874440 /* ContentView.swift */,
+				F10EB05521AA47ACBEF608EB /* RootView.swift */,
+				2437612FFFFF43B6BFB4C5E4 /* AppContainer.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		84931B4622464F82B2ECFFD9 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E0C47CF6887843AFBEDD646C /* AuthService.swift */,
+				D35075DC041E429799AD3727 /* UserService.swift */,
+				AA3A7C76D2784C3C93C0A6E5 /* DataService.swift */,
+				DE07734958784E50B463FD17 /* StubServices.swift */,
+				2166CB7903DA48F0970A4D02 /* FirebaseService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		8B6943E6F2D344C9A5DEEAA4 /* MedSwipeSwiftUI */ = {
+			isa = PBXGroup;
+			children = (
+				59362CC860F74784A9828622 /* App */,
+				A0583B1F7DB34EAFB4EF4FBA /* Features */,
+				84931B4622464F82B2ECFFD9 /* Services */,
+				0FCD696986CA42B891A969FD /* Models */,
+				320772688DA64D74B4D6AA22 /* UIComponents */,
+				053D28AED6424F12B1E476BF /* Resources */,
+			);
+			path = MedSwipeSwiftUI;
+			sourceTree = "<group>";
+		};
+		9C31598FC4584354A99D7A58 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				98C9B62C9DB9499299DC6A1B /* MedSwipe.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A0583B1F7DB34EAFB4EF4FBA /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				4F6D1C174CE04D79A5C72531 /* Auth */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		726F964328D9474197D406FE /* MedSwipeSwiftUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6C37FEAD7F2940AF8E8731E2 /* Build configuration list for PBXNativeTarget "MedSwipeSwiftUI" */;
+			buildPhases = (
+				B9149DC3ABFC4DD4BA06F6B4 /* Sources */,
+				FCC0308C3E484259B40D2ECE /* Resources */,
+				73F28D3F38BC4277A29C3CA7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MedSwipeSwiftUI;
+			productName = MedSwipeSwiftUI;
+			productReference = 98C9B62C9DB9499299DC6A1B /* MedSwipe.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E1D37D93AE774955A33BC2BA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = D327D4B7156F4BD98B5E1DAF /* Build configuration list for PBXProject "MedSwipeSwiftUI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 3E731C9BD12145E1AE54D556;
+			packageReferences = (
+				D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			productRefGroup = 9C31598FC4584354A99D7A58 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				726F964328D9474197D406FE /* MedSwipeSwiftUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FCC0308C3E484259B40D2ECE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BAAA47F5D12647DAB3B95015 /* Assets.xcassets in Resources */,
+				8DD4DA233BCB4A8EA4348D33 /* LaunchScreen.storyboard in Resources */,
+				B0784AFAD193456DAE99BF3E /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B9149DC3ABFC4DD4BA06F6B4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B4DCF7B215E14DE4A51C4A0C /* MedSwipeApp.swift in Sources */,
+				937E763F7C284E3C914272D0 /* ContentView.swift in Sources */,
+				62233030FFAB4E9AA517CBF0 /* RootView.swift in Sources */,
+				8F0D743D396B4B85BD0729E2 /* AppContainer.swift in Sources */,
+				DA22C24ED36A440BA45BEA55 /* AuthViewModel.swift in Sources */,
+				45C9D3AF3DA54195BE6A3FC8 /* AuthService.swift in Sources */,
+				9E98A70A0831420AB1748D0C /* UserService.swift in Sources */,
+				60971BE606B14CDA95FB1D03 /* DataService.swift in Sources */,
+				C5E64205FC5F45238CAAD590 /* StubServices.swift in Sources */,
+				88588931A83F4BA5B18478F2 /* FirebaseService.swift in Sources */,
+				375380DB6A9640E1A4F66990 /* UserProfile.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		23B19AAF482D407D8190967A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = MedSwipeSwiftUI/Resources/MedSwipeSwiftUI.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MedSwipeSwiftUI/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.medswipe.swiftui;
+				PRODUCT_NAME = MedSwipe;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5320C8C75A6043A282817762 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		93CB00C7F1894E0193982A5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = MedSwipeSwiftUI/Resources/MedSwipeSwiftUI.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MedSwipeSwiftUI/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.medswipe.swiftui;
+				PRODUCT_NAME = MedSwipe;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		9814E8AC14CE4B8B9C462763 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6C37FEAD7F2940AF8E8731E2 /* Build configuration list for PBXNativeTarget "MedSwipeSwiftUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23B19AAF482D407D8190967A /* Debug */,
+				93CB00C7F1894E0193982A5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D327D4B7156F4BD98B5E1DAF /* Build configuration list for PBXProject "MedSwipeSwiftUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9814E8AC14CE4B8B9C462763 /* Debug */,
+				5320C8C75A6043A282817762 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D4D425602F2D9B1E00AA8DE3 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		D4D425622F2D9B1E00AA8DE3 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		D4D425642F2D9B1E00AA8DE3 /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+		D4D425662F2D9B1E00AA8DE3 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		D4D425682F2D9B1E00AA8DE3 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+		D4D4256A2F2D9B1E00AA8DE3 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D4D4255F2F2D9B1E00AA8DE3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E1D37D93AE774955A33BC2BA /* Project object */;
+}
