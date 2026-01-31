@@ -38,6 +38,25 @@ function setPendingDeepLink(questionId) {
   }
 }
 
+const deepLinkRoutingHandlers = {
+  handleUserRouting,
+  queueDashboardRefresh
+};
+
+function __setDeepLinkRoutingHandlers(overrides = {}) {
+  if (typeof overrides.handleUserRouting === 'function') {
+    deepLinkRoutingHandlers.handleUserRouting = overrides.handleUserRouting;
+  }
+  if (typeof overrides.queueDashboardRefresh === 'function') {
+    deepLinkRoutingHandlers.queueDashboardRefresh = overrides.queueDashboardRefresh;
+  }
+}
+
+function __resetDeepLinkRoutingHandlers() {
+  deepLinkRoutingHandlers.handleUserRouting = handleUserRouting;
+  deepLinkRoutingHandlers.queueDashboardRefresh = queueDashboardRefresh;
+}
+
 function clearPendingDeepLink(options = {}) {
   if (typeof window === 'undefined') {
     return;
@@ -56,8 +75,8 @@ function clearPendingDeepLink(options = {}) {
 
   if (reroute && window.authState) {
     console.log('Resuming standard routing after deep link quiz.');
-    handleUserRouting(window.authState);
-    queueDashboardRefresh();
+    deepLinkRoutingHandlers.handleUserRouting(window.authState);
+    deepLinkRoutingHandlers.queueDashboardRefresh();
   }
 }
 
@@ -7500,7 +7519,7 @@ function handleUserRouting(authState) {
   }
 }
 
-export { handleUserRouting };
+export { handleUserRouting, __setDeepLinkRoutingHandlers, __resetDeepLinkRoutingHandlers };
 
 // Fix for main login screen
 document.addEventListener('DOMContentLoaded', function() {
