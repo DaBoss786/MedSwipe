@@ -1,0 +1,11 @@
+{
+  "name": "medswipe-docs-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest --config vitest.config.mjs"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0"
+  }
+}

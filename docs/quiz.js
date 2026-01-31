@@ -1,5 +1,6 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
+import { applyCategoryAndAnsweredFilters } from './quiz-filtering.js';
 import { auth, db, doc, getDoc, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
 import { logAnalyticsEvent } from './analytics.js';
 import {
@@ -191,13 +192,15 @@ async function loadQuestions(options = {}) {
             return;
           }
           filteredQuestions = filteredQuestions.filter(q => bookmarks.includes(q["Question"]?.trim()));
-        } else if (options.category && options.category !== "") {
-          filteredQuestions = filteredQuestions.filter(q => q["Category"] && q["Category"].trim() === options.category);
         }
 
-        if (!options.bookmarksOnly && !options.includeAnswered && relevantAnsweredIdsForCurrentYear.length > 0) {
-          filteredQuestions = filteredQuestions.filter(q => !relevantAnsweredIdsForCurrentYear.includes(q["Question"]?.trim()));
-        }
+        filteredQuestions = applyCategoryAndAnsweredFilters({
+          questions: filteredQuestions,
+          category: options.category,
+          bookmarksOnly: options.bookmarksOnly,
+          includeAnswered: options.includeAnswered,
+          answeredIds: relevantAnsweredIdsForCurrentYear
+        });
       }
     }
     // --- END of corrected logic block ---
