@@ -224,6 +224,40 @@ describe('startup initialization orchestration', () => {
     expect(billing.initialize).toHaveBeenCalledTimes(1);
   });
 
+  it('attaches authStateChanged listener before startup init tasks run', async () => {
+    appModule = await loadAppModule({ isNative: false });
+
+    const initializeOneSignalPush = vi.fn();
+    const initializeOneSignalIdentityObservers = vi.fn();
+    const handleQuestionDeepLink = vi.fn();
+
+    appModule.__setStartupInitDependencies({
+      initializeOneSignalPush,
+      initializeOneSignalIdentityObservers,
+      handleQuestionDeepLink
+    });
+
+    expect(window.authState).toBeUndefined();
+
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+
+    const authStatePayload = { isLoading: true, user: null };
+    window.dispatchEvent(
+      new CustomEvent('authStateChanged', { detail: authStatePayload })
+    );
+
+    expect(window.authState).toEqual(authStatePayload);
+    expect(initializeOneSignalPush).not.toHaveBeenCalled();
+    expect(initializeOneSignalIdentityObservers).not.toHaveBeenCalled();
+    expect(handleQuestionDeepLink).not.toHaveBeenCalled();
+
+    await flushMicrotasks();
+
+    expect(initializeOneSignalPush).toHaveBeenCalledTimes(1);
+    expect(initializeOneSignalIdentityObservers).toHaveBeenCalledTimes(1);
+    expect(handleQuestionDeepLink).toHaveBeenCalledTimes(1);
+  });
+
   it('selects RevenueCat native billing when running natively', async () => {
     appModule = await loadAppModule({ isNative: true });
 
