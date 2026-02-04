@@ -53,6 +53,101 @@ const storage = admin.storage();
 const bucket = storage.bucket(BUCKET_NAME);
 // --- End PDF Configuration ---
 
+// --- Rate limiting (per-user) ---
+const RATE_LIMITS_COLLECTION = "rateLimits";
+const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+
+const RATE_LIMIT_CONFIG = Object.freeze({
+  recordCmeAnswerV2: [
+    { windowMs: MS_PER_MINUTE, max: 45 },
+  ],
+  generateCmeCertificate: [
+    { windowMs: MS_PER_MINUTE, max: 1 },
+    { windowMs: MS_PER_DAY, max: 10 },
+  ],
+  getLeaderboardData: [
+    { windowMs: MS_PER_MINUTE, max: 5 },
+  ],
+  finalizeRegistration: [
+    { windowMs: MS_PER_HOUR, max: 5 },
+  ],
+  createStripeCheckoutSession: [
+    { windowMs: MS_PER_MINUTE, max: 3 },
+    { windowMs: MS_PER_HOUR, max: 10 },
+  ],
+  updateUserProfile: [
+    { windowMs: MS_PER_MINUTE, max: 20 },
+  ],
+  getCertificateDownloadUrl: [
+    { windowMs: MS_PER_MINUTE, max: 10 },
+  ],
+  deleteAccount: [
+    { windowMs: MS_PER_DAY, max: 1 },
+  ],
+});
+
+function buildRateLimitDocId(uid, key, windowStartMs, windowMs) {
+  return `${uid}_${key}_${windowMs}_${windowStartMs}`;
+}
+
+async function enforceRateLimit(uid, key, limits) {
+  if (!uid || !Array.isArray(limits) || limits.length === 0) {
+    return;
+  }
+
+  const nowMs = Date.now();
+  const limitsRef = db.collection(RATE_LIMITS_COLLECTION);
+
+  await db.runTransaction(async (tx) => {
+    for (const limit of limits) {
+      const windowMs = limit.windowMs;
+      const windowStartMs = Math.floor(nowMs / windowMs) * windowMs;
+      const windowEndMs = windowStartMs + windowMs;
+      const docId = buildRateLimitDocId(uid, key, windowStartMs, windowMs);
+      const docRef = limitsRef.doc(docId);
+      const snap = await tx.get(docRef);
+      const currentCount = snap.exists ? Number(snap.data().count || 0) : 0;
+
+      if (currentCount >= limit.max) {
+        const retryAfterSeconds = Math.max(
+          1,
+          Math.ceil((windowEndMs - nowMs) / 1000)
+        );
+        throw new HttpsError(
+          "resource-exhausted",
+          "Too many requests. Please try again later.",
+          {
+            retryAfterSeconds,
+            limit: limit.max,
+            windowMs,
+            key,
+          }
+        );
+      }
+
+      tx.set(
+        docRef,
+        {
+          uid,
+          key,
+          windowStartMs,
+          windowEndMs,
+          windowMs,
+          count: admin.firestore.FieldValue.increment(1),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          expiresAt: admin.firestore.Timestamp.fromMillis(
+            windowEndMs + MS_PER_HOUR
+          ),
+        },
+        { merge: true }
+      );
+    }
+  });
+}
+
+
 async function deleteDocsByQuery(collectionPath, field, value, batchSize = 100) {
   if (!collectionPath || !field) {
     return;
@@ -284,6 +379,8 @@ exports.generateCmeCertificate = onCall(
     secrets: [], 
     timeoutSeconds: 120,
     memory: "512MiB",
+    enforceAppCheck: true,
+
   },
   async (request) => {
     /* ───────── 1. Auth & Input Validation ───────── */
@@ -292,6 +389,7 @@ exports.generateCmeCertificate = onCall(
       throw new HttpsError("unauthenticated", "Please log in.");
     }
     const uid = request.auth.uid;
+    await enforceRateLimit(uid, "generateCmeCertificate", RATE_LIMIT_CONFIG.generateCmeCertificate);
     const { certificateFullName, creditsToClaim, certificateDegree, evaluationData } = request.data;
 
     if (!certificateFullName || typeof certificateFullName !== 'string' || certificateFullName.trim() === "") {
@@ -990,12 +1088,15 @@ if (session.mode === "payment") {
         region: "us-central1",
         memory: "256MiB",
         secrets: ["STRIPE_SECRET_KEY"],
+    enforceAppCheck: true,
+
       },
       async (req) => {
         if (!req.auth) {
           throw new HttpsError("unauthenticated", "Login required.");
         }
         const uid        = req.auth.uid;
+        await enforceRateLimit(uid, "createStripeCheckoutSession", RATE_LIMIT_CONFIG.createStripeCheckoutSession);
         const priceId    = req.data.priceId;        // required
         const planName   = req.data.planName || "Subscription";
         const tier       = req.data.tier;           // required on client
@@ -1055,7 +1156,9 @@ exports.createStripePortalSession = onCall(
   {
     region: "us-central1", // Or your preferred region
     memory: "256MiB",
-    secrets: ["STRIPE_SECRET_KEY"] // Needs the secret key
+    secrets: ["STRIPE_SECRET_KEY"], // Needs the secret key
+    enforceAppCheck: true,
+
   },
   async (request) => {
     logger.log("createStripePortalSession called.");
@@ -1128,6 +1231,8 @@ exports.getCertificateDownloadUrl = onCall(
   {
     secrets: [], // No secrets needed for this one
     region: "us-central1",
+    enforceAppCheck: true,
+
   },
   async (request) => {
     // 1. Authentication Check
@@ -1136,6 +1241,7 @@ exports.getCertificateDownloadUrl = onCall(
       throw new HttpsError("unauthenticated", "You must be logged in to download certificates.");
     }
     const uid = request.auth.uid;
+    await enforceRateLimit(uid, "getCertificateDownloadUrl", RATE_LIMIT_CONFIG.getCertificateDownloadUrl);
 
     // 2. Input Validation
     const { filePath } = request.data;
@@ -1188,6 +1294,8 @@ exports.recordCmeAnswerV2 = onCall(
     region: "us-central1", // Or your preferred region
     memory: "512MiB",
     timeoutSeconds: 60,
+    enforceAppCheck: true,
+
   },
   async (event) => { // 'event' contains 'auth' and 'data'
 
@@ -1197,6 +1305,7 @@ exports.recordCmeAnswerV2 = onCall(
       throw new HttpsError("unauthenticated", "Please log in first.");
     }
     const uid = event.auth.uid;
+    await enforceRateLimit(uid, "recordCmeAnswerV2", RATE_LIMIT_CONFIG.recordCmeAnswerV2);
     logger.info(`recordCmeAnswerV2: Called by authenticated user: ${uid}`);
 
     /* 2. Validate payload */
@@ -1466,13 +1575,18 @@ exports.initializeNewUser = onDocumentCreated("users/{userId}", async (event) =>
 // This function is called by the client when a user finalizes their registration.
 // It now includes logic to check for and apply promotional access.
 exports.finalizeRegistration = onCall(
-  { region: "us-central1", memory: "512MiB" }, // Increased memory slightly for safety
+  {
+    region: "us-central1",
+    memory: "512MiB", // Increased memory slightly for safety
+    enforceAppCheck: true,
+  },
   async (request) => {
     // 1. Authentication check (as before)
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Please log in to register.");
     }
     const uid = request.auth.uid;
+    await enforceRateLimit(uid, "finalizeRegistration", RATE_LIMIT_CONFIG.finalizeRegistration);
     const tokenEmail =
       typeof request.auth.token?.email === "string"
         ? request.auth.token.email.trim()
@@ -1664,6 +1778,8 @@ exports.updateUserProfile = onCall(
   {
     region: "us-central1",
     memory: "256MiB",
+    enforceAppCheck: true,
+
   },
   async (request) => {
     // 1. Authentication check
@@ -1671,6 +1787,7 @@ exports.updateUserProfile = onCall(
       throw new HttpsError("unauthenticated", "Please log in first.");
     }
     const uid = request.auth.uid;
+    await enforceRateLimit(uid, "updateUserProfile", RATE_LIMIT_CONFIG.updateUserProfile);
     
     // 2. Define allowed fields that users can update
     const allowedFields = [
@@ -1755,6 +1872,8 @@ exports.getLeaderboardData = onCall(
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 60,
+    enforceAppCheck: true,
+
   },
   async (request) => {
     logger.info("getLeaderboardData function called", { authUid: request.auth?.uid });
@@ -1781,6 +1900,7 @@ exports.getLeaderboardData = onCall(
       );
     }
     const currentAuthUid = request.auth.uid;
+    await enforceRateLimit(currentAuthUid, "getLeaderboardData", RATE_LIMIT_CONFIG.getLeaderboardData);
 
     // 2. Get the calling user's data and validate
     const currentUserDocRef = currentDbInstance.collection("users").doc(currentAuthUid);
@@ -2041,6 +2161,8 @@ exports.deleteAccount = onCall(
     memory: "512MiB",
     timeoutSeconds: 120,
     secrets: ["STRIPE_SECRET_KEY", "MAILERLITE_API_KEY", "REVENUECAT_API_KEY"],
+    enforceAppCheck: true,
+
   },
   async (request) => {
     if (!request.auth) {
@@ -2048,6 +2170,7 @@ exports.deleteAccount = onCall(
     }
 
     const uid = request.auth.uid;
+    await enforceRateLimit(uid, "deleteAccount", RATE_LIMIT_CONFIG.deleteAccount);
     logger.info(`Account deletion requested for UID ${uid}`);
 
     const userRef = db.collection("users").doc(uid);
@@ -2869,6 +2992,8 @@ exports.recomputeAccessTier = onCall(
     region: "us-central1",
     memory: "256MiB",
     timeoutSeconds: 120,
+    enforceAppCheck: true,
+
   },
   async (request) => {
     if (!request.auth) {
