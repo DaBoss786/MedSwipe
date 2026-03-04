@@ -3,6 +3,7 @@ import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, http
 import { setHapticsEnabled } from './haptics.js';
 import { isIosNativeApp } from './platform.js';
 import { getAnsweredQuestionIds, recordAnsweredQuestion } from './answered-questions.js';
+import { getSpecialtyPolicy } from './specialty-policy.js';
 
 // user.js - After imports
 
@@ -713,12 +714,16 @@ async function updateUserMenu() {
 
         if (isAnonymousUser) {
             if (hasPremiumAccess) {
-                // ANONYMOUS PREMIUM: Offer registration only
+                // ANONYMOUS PREMIUM/PILOT: Offer registration and login
                 registerMenuItem.style.display = "block";
+                guestLoginMenuItem.style.display = "block";
                 if (menuList) {
                     const firstElement = menuList.firstElementChild;
                     if (firstElement !== registerMenuItem) {
                         menuList.insertBefore(registerMenuItem, firstElement);
+                    }
+                    if (registerMenuItem.nextElementSibling !== guestLoginMenuItem) {
+                        menuList.insertBefore(guestLoginMenuItem, registerMenuItem.nextElementSibling);
                     }
                 }
             } else {
@@ -744,7 +749,7 @@ async function updateUserMenu() {
         } else { // User is REGISTERED (not anonymous)
             logoutUserBtnItem.style.display = "block"; // Show logout for any registered user
 
-            if (accessTier === "free_guest") {
+            if (accessTier === "free_guest" && !hasPremiumAccess) {
                 // REGISTERED FREE_GUEST: Show "Subscribe to Premium"
                 subscribeMenuItem.style.display = "block"; // Or "list-item"
                 // Log In button remains hidden for registered users
@@ -1374,6 +1379,12 @@ async function saveOnboardingSelections(specialty, experienceLevel, username) {
 
     if (window.authState) {
       window.authState.username = username;
+      window.authState.specialty = specialty;
+      try {
+        window.authState.specialtyPolicy = await getSpecialtyPolicy(specialty);
+      } catch (policyError) {
+        console.warn("Unable to hydrate specialty policy after onboarding save:", policyError);
+      }
       if (window.authState.user) {
         window.authState.user.displayName = username;
       }

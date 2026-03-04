@@ -5,6 +5,11 @@ const { FieldValue } = require("firebase-admin/firestore");
 const fetch = global.fetch || require("node-fetch");
 const { onRequest } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
+const {
+  getSpecialtyPolicy,
+  shouldLimitQuestionsToFree,
+  getPilotQuestionAccessConfig,
+} = require("./specialtyAccess");
 
 const oneSignalAppIdSecret = defineSecret("ONESIGNAL_APP_ID");
 const oneSignalApiKeySecret = defineSecret("ONESIGNAL_API_KEY");
@@ -79,15 +84,31 @@ async function pickQuestionForUser(userData = {}) {
     return null;
   }
 
+  const specialtyPolicy = await getSpecialtyPolicy(db, specialty);
+
   let questionQuery = db
     .collection(QUESTIONS_COLLECTION)
     .where("Specialty", "==", specialty);
 
-  if (userData.accessTier === "free_guest") {
+  if (shouldLimitQuestionsToFree(userData, specialtyPolicy)) {
     questionQuery = questionQuery.where("Free", "==", true);
   }
 
-  const snapshot = await questionQuery.limit(QUESTION_QUERY_LIMIT).get();
+  const pilotConfig = getPilotQuestionAccessConfig(userData, specialtyPolicy);
+  if (pilotConfig.enabled && pilotConfig.questionPilotFlagField) {
+    questionQuery = questionQuery.where(
+      pilotConfig.questionPilotFlagField,
+      "==",
+      true
+    );
+  }
+
+  const queryLimit =
+    pilotConfig.enabled && pilotConfig.questionCap
+      ? Math.min(QUESTION_QUERY_LIMIT, pilotConfig.questionCap)
+      : QUESTION_QUERY_LIMIT;
+
+  const snapshot = await questionQuery.limit(queryLimit).get();
 
   if (snapshot.empty) {
     return null;

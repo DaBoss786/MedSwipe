@@ -11,6 +11,15 @@ describe('canAccessPremiumContent', () => {
     expect(canAccessPremiumContent({ accessTier: 'cme_annual' })).toBe(true);
   });
 
+  it('allows pilot free users when policy grants full feature access', () => {
+    expect(
+      canAccessPremiumContent(
+        { accessTier: 'free_guest' },
+        { enabled: true, fullFeaturePilotForFreeGuest: true }
+      )
+    ).toBe(true);
+  });
+
   it('handles missing tier or anonymous users safely', () => {
     expect(canAccessPremiumContent()).toBe(false);
     expect(canAccessPremiumContent(null)).toBe(false);

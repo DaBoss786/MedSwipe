@@ -15,6 +15,10 @@ const crypto = require("crypto");
 const axios = require("axios"); // For MailerLite
 const { revenuecatWebhook } = require("./revenuecatWebhook");
 const { sendDailyQuestionPushes, testSendPush } = require("./sendDailyQuestionPush");
+const {
+  getSpecialtyPolicy,
+  computePremiumFlags,
+} = require("./specialtyAccess");
 
 exports.revenuecatWebhook = revenuecatWebhook;
 exports.sendDailyQuestionPushes = sendDailyQuestionPushes;
@@ -1919,24 +1923,11 @@ exports.getLeaderboardData = onCall(
 
     const currentUserData = currentUserDoc.data();
 
-    function computePremiumFlags(data = {}) {
-      const accessTier = data.accessTier || null;
-      const hasBoard =
-        data.boardReviewActive === true ||
-        accessTier === "board_review" ||
-        accessTier === "cme_annual";
-      const hasCme =
-        data.cmeSubscriptionActive === true ||
-        accessTier === "cme_annual" ||
-        (data.cmeCreditsAvailable || 0) > 0;
-      return {
-        hasBoard,
-        hasCme,
-        hasPremium: hasBoard || hasCme,
-      };
-    }
-
-    const premiumStatus = computePremiumFlags(currentUserData);
+    const specialtyPolicy = await getSpecialtyPolicy(
+      currentDbInstance,
+      currentUserData.specialty || ""
+    );
+    const premiumStatus = computePremiumFlags(currentUserData, specialtyPolicy);
     const signInProvider =
       request.auth?.token?.firebase?.sign_in_provider || "unknown";
     if (!premiumStatus.hasPremium) {

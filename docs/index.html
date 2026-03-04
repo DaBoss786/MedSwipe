@@ -62,7 +62,7 @@
 <div id="welcomeScreen" class="welcome-screen">
   <div class="welcome-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="welcome-logo">
-    <h1 class="welcome-tagline">Swipe. Learn. <span class="gradient-text">Master ENT.</span></h1>
+    <h1 class="welcome-tagline">Swipe. Learn. <span class="gradient-text">Master Your Specialty.</span></h1>
     <div class="welcome-buttons">
       <button id="startLearningBtn" class="welcome-primary-btn">Start Learning</button>
       <button id="existingAccountBtn" class="welcome-secondary-btn">I Already Have an Account</button>
@@ -82,6 +82,9 @@
     <div class="onboarding-options-grid">
       <button class="onboarding-option-card" data-specialty="ENT">
         ENT (Otolaryngology)
+      </button>
+      <button class="onboarding-option-card" data-specialty="Neurosurgery">
+        Neurosurgery
       </button>
       <!-- Add more specialty cards here in the future -->
       <!-- Example:
@@ -178,7 +181,7 @@
 <div id="notificationPromptScreen" class="onboarding-screen" style="display: none;">
   <div class="onboarding-content notification-explainer-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="onboarding-logo">
-    <h1 class="notification-explainer-title">Get ENT Questions on Your Schedule</h1>
+    <h1 class="notification-explainer-title">Get Specialty Questions on Your Schedule</h1>
     <p class="notification-frequency-heading">Choose your practice schedule:</p>
     <div class="notification-frequency-selector">
       <button type="button" class="notification-frequency-option selected" data-frequency="daily">Daily</button>
@@ -880,6 +883,20 @@
   <div class="btnRow">
     <button id="startCasePrepBtn">Start Prep</button>
     <button id="cancelCasePrepBtn" class="cancel">Cancel</button>
+  </div>
+</div>
+
+<div id="casePrepComingSoonModal" class="modal" style="display: none; z-index: 2110;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Case Prep Coming Soon</h2>
+      <span id="casePrepComingSoonCloseBtn" class="close-modal">×</span>
+    </div>
+    <div class="modal-body">
+      <p style="line-height: 1.6; font-size: 1rem;">
+        Neurosurgery Case Prep is coming soon. You can still use Start Quiz, spaced repetition, leaderboards, and analytics in the pilot.
+      </p>
+    </div>
   </div>
 </div>
 

@@ -90,11 +90,11 @@ function showFAQ() {
     <ul>
       <li>
         <strong>What is MedSwipe?</strong><br>
-        MedSwipe is a dynamic, swipe‑based quiz app designed for ENT professionals and learners. It offers a more casual, engaging alternative to traditional, regimented board review resources.
+        MedSwipe is a dynamic, swipe‑based quiz app designed for medical professionals and learners. It offers a more casual, engaging alternative to traditional, regimented board review resources.
       </li>
       <li>
         <strong>How Does MedSwipe Work?</strong><br>
-        MedSwipe presents ENT questions in an intuitive, swipe‑based format. As you answer, you'll earn XP (experience points) to level up and compete with others on the leaderboard.
+        MedSwipe presents specialty questions in an intuitive, swipe‑based format. As you answer, you'll earn XP (experience points) to level up and compete with others on the leaderboard.
       </li>
       <li>
         <strong>How Does the XP System Work?</strong><br>

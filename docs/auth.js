@@ -30,6 +30,7 @@ import {
   // --- End added ---
 } from './firebase-config.js';
 import { isNativeApp, isIosNativeApp } from './platform.js';
+import { getSpecialtyPolicy } from './specialty-policy.js';
 
 // Create a reference to the new Cloud Function
 let finalizeRegistrationFunction;
@@ -62,7 +63,9 @@ window.authState = {
   boardReviewSubscriptionEndDate: null, // <<< ADD
   cmeSubscriptionActive: false, // <<< ADD
   cmeSubscriptionEndDate: null, // <<< ADD
-  cmeCreditsAvailable: 0 // <<< ADD
+  cmeCreditsAvailable: 0, // <<< ADD
+  specialty: null,
+  specialtyPolicy: null
 };
 
 // ----------------------------------------------------
@@ -82,6 +85,27 @@ function shouldAutoApplyIosNotificationDefaults() {
   } catch (err) {
     console.warn('Unable to detect iOS native runtime for notification defaults:', err);
     return false;
+  }
+}
+
+function sanitizeSpecialty(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+async function hydrateSpecialtyPolicyOnAuthState(rawSpecialty) {
+  const specialty = sanitizeSpecialty(rawSpecialty) || 'ENT';
+  window.authState.specialty = specialty;
+  try {
+    window.authState.specialtyPolicy = await getSpecialtyPolicy(specialty);
+  } catch (error) {
+    console.warn('Failed to hydrate specialty policy; using fallback policy.', error);
+    window.authState.specialtyPolicy = await getSpecialtyPolicy(specialty, {
+      forceRefresh: false
+    });
   }
 }
 
@@ -489,6 +513,8 @@ function initAuth() {
       window.authState.cmeSubscriptionActive = false;
       window.authState.cmeSubscriptionEndDate = null;
       window.authState.cmeCreditsAvailable = 0;
+      window.authState.specialty = null;
+      window.authState.specialtyPolicy = null;
 
       const applyIosNotificationDefaults = shouldAutoApplyIosNotificationDefaults();
 
@@ -723,6 +749,12 @@ function initAuth() {
          console.log(`User doc for ${user.uid} exists and is up-to-date. Effective Tier: ${window.authState.accessTier}`);
       }
 
+      const resolvedSpecialty =
+        sanitizeSpecialty(existingData?.specialty) ||
+        sanitizeSpecialty(userDataForWrite?.specialty) ||
+        'ENT';
+      await hydrateSpecialtyPolicyOnAuthState(resolvedSpecialty);
+
       if (recomputeAccessTierFunction) {
         try {
           const recomputeResult = await recomputeAccessTierFunction();
@@ -793,6 +825,7 @@ function initAuth() {
         isAnonymous: window.authState.user?.isAnonymous ?? null,
         hasProgress: window.authState.hasProgress,
         accessTier: window.authState.accessTier,
+        specialty: window.authState.specialty,
         xp: existingData?.stats?.xp ?? null,
         totalAnswered: existingData?.stats?.totalAnswered ?? null,
         fromCache: userDocFromCache,
@@ -814,7 +847,9 @@ function initAuth() {
           boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
           cmeSubscriptionActive: window.authState.cmeSubscriptionActive,
           cmeSubscriptionEndDate: window.authState.cmeSubscriptionEndDate,
-          cmeCreditsAvailable: window.authState.cmeCreditsAvailable
+          cmeCreditsAvailable: window.authState.cmeCreditsAvailable,
+          specialty: window.authState.specialty,
+          specialtyPolicy: window.authState.specialtyPolicy
         }
       })
     );
@@ -872,6 +907,7 @@ function snapshotCurrentAuthState() {
   const state = window?.authState || {};
   return {
     accessTier: state.accessTier,
+    specialty: sanitizeSpecialty(state.specialty),
     boardReviewActive: !!state.boardReviewActive,
     boardReviewSubscriptionEndDate: state.boardReviewSubscriptionEndDate instanceof Date
       ? state.boardReviewSubscriptionEndDate
@@ -957,8 +993,10 @@ export async function refreshAuthStateFromFirestore(options = {}) {
   const cmeSubscriptionActive = !!data.cmeSubscriptionActive;
   const cmeSubscriptionEndDate = timestampToDate(data.cmeSubscriptionEndDate);
   const cmeCreditsAvailable = Number(data.cmeCreditsAvailable || 0);
+  const specialty = sanitizeSpecialty(data.specialty) || 'ENT';
 
   window.authState.accessTier = accessTier;
+  window.authState.specialty = specialty;
   window.authState.boardReviewActive = boardReviewActive;
   window.authState.boardReviewSubscriptionEndDate = boardReviewSubscriptionEndDate;
   window.authState.cmeSubscriptionActive = cmeSubscriptionActive;
@@ -968,9 +1006,11 @@ export async function refreshAuthStateFromFirestore(options = {}) {
     ? data.isRegistered
     : !currentUser.isAnonymous;
   window.authState.isLoading = false;
+  window.authState.specialtyPolicy = await getSpecialtyPolicy(specialty);
 
   const changed =
     previous.accessTier !== accessTier ||
+    previous.specialty !== specialty ||
     previous.boardReviewActive !== boardReviewActive ||
     previous.cmeSubscriptionActive !== cmeSubscriptionActive ||
     previous.cmeCreditsAvailable !== cmeCreditsAvailable ||
@@ -989,7 +1029,9 @@ export async function refreshAuthStateFromFirestore(options = {}) {
           boardReviewSubscriptionEndDate: window.authState.boardReviewSubscriptionEndDate,
           cmeSubscriptionActive: window.authState.cmeSubscriptionActive,
           cmeSubscriptionEndDate: window.authState.cmeSubscriptionEndDate,
-          cmeCreditsAvailable: window.authState.cmeCreditsAvailable
+          cmeCreditsAvailable: window.authState.cmeCreditsAvailable,
+          specialty: window.authState.specialty,
+          specialtyPolicy: window.authState.specialtyPolicy
         }
       })
     );
@@ -999,6 +1041,7 @@ export async function refreshAuthStateFromFirestore(options = {}) {
     refreshed: true,
     changed,
     accessTier,
+    specialty,
     boardReviewActive,
     cmeSubscriptionActive,
     cmeCreditsAvailable

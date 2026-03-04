@@ -11,6 +11,18 @@ import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
 import { playTap, playLight } from './haptics.js';
+import {
+  getSpecialtyPolicy,
+  resolvePolicyFromAuthState,
+  userHasBoardReviewAccess as hasBoardReviewAccessByPolicy,
+  userHasAnyPremiumAccess as hasAnyPremiumAccessByPolicy,
+  shouldHideCmeUi,
+  applyQuestionAccessPolicy,
+  specialtyMatchesQuestion,
+  shouldSkipOnboardingQuiz,
+  shouldSkipOnboardingCarousel,
+  shouldSkipPaywall
+} from './specialty-policy.js';
 
 const App = typeof window !== 'undefined'
   ? window.Capacitor?.App ?? window.Capacitor?.Plugins?.App ?? null
@@ -1314,29 +1326,46 @@ export async function handleQuestionDeepLink(urlOrPath) {
     }
 
     const authState = await waitForResolvedAuthState();
-    const accessTier = authState?.accessTier || 'free_guest';
+    const effectiveAuthState = {
+      ...(authState || {}),
+      accessTier: authState?.accessTier || 'free_guest',
+      specialty: authState?.specialty || getCurrentUserSpecialty() || 'ENT'
+    };
+    effectiveAuthState.specialtyPolicy = resolvePolicyFromAuthState(effectiveAuthState);
+
+    const accessTier = effectiveAuthState.accessTier || 'free_guest';
     const questionIsBoardReview =
       questionData['Board Review'] === true || questionData.BoardReview === true;
 
     const hasBoardAccess =
-      userHasBoardReviewAccess() ||
+      hasBoardReviewAccessByPolicy(effectiveAuthState) ||
       accessTier === 'cme_credits_only';
 
     const hasAnyPremiumAccess =
-      hasBoardAccess ||
-      Boolean(authState?.cmeSubscriptionActive) ||
-      accessTier === 'cme_annual' ||
+      hasAnyPremiumAccessByPolicy(effectiveAuthState) ||
       accessTier === 'cme_credits_only';
 
     if (questionIsBoardReview) {
       if (!hasBoardAccess) {
         throw new Error('This question requires active Board Review access.');
       }
-      return;
+    } else if (!hasAnyPremiumAccess) {
+      throw new Error('This question requires a premium subscription.');
     }
 
-    if (!hasAnyPremiumAccess) {
-      throw new Error('This question requires a premium subscription.');
+    if (!specialtyMatchesQuestion(questionData, effectiveAuthState.specialty)) {
+      throw new Error('This question is not available for your selected specialty.');
+    }
+
+    const scopedAccessibleQuestions = applyQuestionAccessPolicy(
+      [questionData],
+      effectiveAuthState
+    );
+    if (scopedAccessibleQuestions.length === 0) {
+      if (effectiveAuthState.accessTier === 'free_guest' && effectiveAuthState.specialtyPolicy?.enabled) {
+        throw new Error('This question is not included in the current pilot set.');
+      }
+      throw new Error('This question is not available for your account.');
     }
   };
 
@@ -1399,6 +1428,15 @@ export async function handleQuestionDeepLink(urlOrPath) {
       const startCasePrepBtn = document.getElementById("startCasePrepBtn");
       const cancelCasePrepBtn = document.getElementById("cancelCasePrepBtn");
       const procedureSelect = document.getElementById("casePrepProcedureSelect");
+      const casePrepComingSoonModal = document.getElementById("casePrepComingSoonModal");
+      const casePrepComingSoonCloseBtn = document.getElementById("casePrepComingSoonCloseBtn");
+
+      function isCasePrepComingSoonForUser() {
+        const policy = resolvePolicyFromAuthState(window.authState || {
+          specialty: getCurrentUserSpecialty()
+        });
+        return policy.casePrepMode === 'coming_soon';
+      }
 
          /**
        * Populates the procedure dropdown based on the user's access tier AND specialty.
@@ -1502,6 +1540,13 @@ export async function handleQuestionDeepLink(urlOrPath) {
         casePrepBtn.addEventListener("click", async () => {
           console.log("Case Prep button clicked.");
 
+          if (isCasePrepComingSoonForUser()) {
+            if (casePrepComingSoonModal) {
+              casePrepComingSoonModal.style.display = "flex";
+            }
+            return;
+          }
+
           // This check is important to make sure Firebase is ready.
           if (!auth.currentUser) {
             console.warn("Auth is not ready yet, please wait a moment.");
@@ -1545,6 +1590,19 @@ export async function handleQuestionDeepLink(urlOrPath) {
       if (closeCasePrepIntroBtn) {
         closeCasePrepIntroBtn.addEventListener("click", () => {
           if (casePrepIntroModal) casePrepIntroModal.style.display = "none";
+        });
+      }
+
+      if (casePrepComingSoonCloseBtn) {
+        casePrepComingSoonCloseBtn.addEventListener("click", () => {
+          if (casePrepComingSoonModal) casePrepComingSoonModal.style.display = "none";
+        });
+      }
+      if (casePrepComingSoonModal) {
+        casePrepComingSoonModal.addEventListener("click", (event) => {
+          if (event.target === casePrepComingSoonModal) {
+            casePrepComingSoonModal.style.display = "none";
+          }
         });
       }
 
@@ -1602,6 +1660,7 @@ try {
 let selectedSpecialty = null;
 let selectedExperienceLevel = null;
 let fullQuestionBank = []; // To hold all questions for searching
+let modalQuestionPool = []; // Specialty + entitlement-scoped bank for modal filters
 let modalFilteredQuestions = []; // To hold the results of the modal's filters
 let selectedUsername = null;
 
@@ -1754,6 +1813,16 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
       timestamp: Date.now()
     });
     window.authState = event.detail; 
+    applySpecialtyUiPolicy();
+    if (window.authState?.specialty && !window.authState?.specialtyPolicy) {
+      void getSpecialtyPolicy(window.authState.specialty).then((policy) => {
+        if (!window.authState) {
+          return;
+        }
+        window.authState.specialtyPolicy = policy;
+        applySpecialtyUiPolicy();
+      });
+    }
     handleOneSignalAuthStateChange(event.detail);
     if (event.detail?.user && !event.detail.isLoading) {
       requestNotificationPermissionSync('auth-state-change');
@@ -2331,6 +2400,56 @@ function hidePaywallScreen() {
   screen.style.display = 'none';
 }
 
+function applySpecialtyUiPolicy() {
+  const state = window.authState || {};
+  const policy = resolvePolicyFromAuthState(state);
+  const hideCme = shouldHideCmeUi(state, policy);
+
+  const cmeModuleBtn = document.getElementById('cmeModuleBtn');
+  const cmeInfoMenuItem = document.getElementById('cmeInfoMenuItem');
+  const cmeHistoryMenuItem = document.getElementById('cmeHistoryMenuItem');
+  const cmeDashboardView = document.getElementById('cmeDashboardView');
+  const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
+  const mainOptions = document.getElementById('mainOptions');
+  const casePrepBtn = document.getElementById('casePrepBtn');
+  const dashboardRows = mainOptions
+    ? mainOptions.querySelectorAll('.dashboard-start-section')
+    : [];
+  const primaryRow = dashboardRows[0] || null;
+  const secondaryRow = dashboardRows[1] || null;
+
+  if (cmeModuleBtn) {
+    cmeModuleBtn.style.display = hideCme ? 'none' : '';
+  }
+  if (cmeInfoMenuItem) {
+    cmeInfoMenuItem.style.display = hideCme ? 'none' : '';
+  }
+  if (cmeHistoryMenuItem) {
+    cmeHistoryMenuItem.style.display = hideCme ? 'none' : '';
+  }
+  if (hideCme && cmeDashboardView) {
+    cmeDashboardView.style.display = 'none';
+  }
+  if (cmeToolbarTracker) {
+    cmeToolbarTracker.style.display = hideCme ? 'none' : cmeToolbarTracker.style.display;
+  }
+
+  if (primaryRow && secondaryRow && casePrepBtn) {
+    casePrepBtn.textContent = 'Case Prep';
+    if (hideCme) {
+      if (casePrepBtn.parentElement !== primaryRow) {
+        primaryRow.appendChild(casePrepBtn);
+      }
+      secondaryRow.style.display = 'none';
+    } else {
+      if (casePrepBtn.parentElement !== secondaryRow) {
+        secondaryRow.appendChild(casePrepBtn);
+      }
+      secondaryRow.style.display = 'flex';
+    }
+  }
+}
+
 if (typeof window !== 'undefined') {
   window.showPaywallScreen = showPaywallScreen;
   window.hidePaywallScreen = hidePaywallScreen;
@@ -2338,6 +2457,7 @@ if (typeof window !== 'undefined') {
   window.userHasCmeAccess = userHasCmeAccess;
   window.userHasAnyPremiumAccess = userHasAnyPremiumAccess;
   window.showDashboard = showDashboard;
+  window.applySpecialtyUiPolicy = applySpecialtyUiPolicy;
   window.addEventListener('nativePurchaseCompleted', () => {
     if (!isIosNativeApp) {
       return;
@@ -2353,21 +2473,7 @@ if (typeof window !== 'undefined') {
 }
 
 function userHasBoardReviewAccess() {
-  const state = window.authState || {};
-  if (!state) {
-    return false;
-  }
-  if (state.boardReviewActive) {
-    return true;
-  }
-  const tier = state.accessTier;
-  if (tier === 'board_review' || tier === 'cme_annual') {
-    return true;
-  }
-  if (state.boardReviewTier === 'Granted by CME Annual') {
-    return true;
-  }
-  return false;
+  return hasBoardReviewAccessByPolicy(window.authState || {});
 }
 
 function userHasCmeAccess() {
@@ -2388,11 +2494,12 @@ function userHasCmeAccess() {
 }
 
 function userHasAnyPremiumAccess() {
-  return userHasBoardReviewAccess() || userHasCmeAccess();
+  return hasAnyPremiumAccessByPolicy(window.authState || {});
 }
 
 function showDashboard() {
   clearPendingDeepLink({ reroute: false });
+  applySpecialtyUiPolicy();
   const mainOptions = document.getElementById('mainOptions');
   if (mainOptions) {
     mainOptions.style.display = 'flex';
@@ -2907,11 +3014,26 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
       await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel, window.selectedUsername);
       console.log("Successfully saved onboarding selections (including username) to Firestore.");
 
+      const selectedSpecialtyPolicy = await getSpecialtyPolicy(window.selectedSpecialty);
+      window.selectedSpecialtyPolicy = selectedSpecialtyPolicy;
+      if (window.authState) {
+        window.authState.specialty = window.selectedSpecialty;
+        window.authState.specialtyPolicy = selectedSpecialtyPolicy;
+      }
+
       if (window.selectedSpecialty) {
         setAnalyticsUserProperties({
           user_specialty: window.selectedSpecialty
         });
         console.log(`GA User Property 'user_specialty' set to: ${window.selectedSpecialty}`);
+      }
+
+      const shouldShowQuizLoading = !shouldSkipOnboardingQuiz(selectedSpecialtyPolicy);
+
+      if (!shouldShowQuizLoading) {
+        usernamePickScreen.style.display = 'none';
+        routeAfterOnboardingSelections(selectedSpecialtyPolicy);
+        return;
       }
 
       transitionOnboardingScreen(usernamePickScreen, onboardingLoadingScreen, {
@@ -2926,9 +3048,7 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
           onboardingLoadingScreen.style.display = 'none';
           onboardingLoadingScreen.style.pointerEvents = '';
           onboardingLoadingScreen.style.opacity = '1';
-          if (typeof startOnboardingQuiz === 'function') startOnboardingQuiz();
-          else if (typeof window.startOnboardingQuiz === 'function') window.startOnboardingQuiz();
-          else console.error("startOnboardingQuiz function not found!");
+          routeAfterOnboardingSelections(selectedSpecialtyPolicy);
         }, ONBOARDING_TRANSITION_DURATION);
       }, 2000);
 
@@ -2951,6 +3071,62 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
       includeAnswered: false,
       isOnboarding: true  // Flag to indicate this is the onboarding quiz
     });
+  }
+
+  function completeAbbreviatedOnboarding(policy) {
+    applySpecialtyUiPolicy();
+    hidePaywallScreens();
+    ensureAllScreensHidden();
+    showDashboard();
+    if (typeof initializeDashboard === 'function') {
+      initializeDashboard();
+    }
+    if (typeof setupDashboardEventListenersExplicitly === 'function') {
+      setupDashboardEventListenersExplicitly();
+    } else if (typeof setupDashboardEvents === 'function') {
+      setupDashboardEvents();
+    }
+
+    if (policy?.enabled && policy?.fullFeaturePilotForFreeGuest) {
+      setTimeout(() => {
+        ensureRegistrationFollowupModalsInitialized();
+        showModal('freeAccessRegistrationModal');
+      }, 400);
+    }
+  }
+
+  function routeAfterOnboardingSelections(policy) {
+    const effectivePolicy = policy || resolvePolicyFromAuthState({
+      specialty: window.selectedSpecialty,
+      specialtyPolicy: window.selectedSpecialtyPolicy
+    });
+
+    if (!shouldSkipOnboardingQuiz(effectivePolicy)) {
+      if (typeof startOnboardingQuiz === 'function') {
+        startOnboardingQuiz();
+        return;
+      }
+      if (typeof window.startOnboardingQuiz === 'function') {
+        window.startOnboardingQuiz();
+        return;
+      }
+      console.error("startOnboardingQuiz function not found!");
+      return;
+    }
+
+    if (!shouldSkipOnboardingCarousel(effectivePolicy)) {
+      if (typeof window.startOnboardingCarousel === 'function') {
+        window.startOnboardingCarousel();
+      }
+      return;
+    }
+
+    if (!shouldSkipPaywall(effectivePolicy)) {
+      showPaywallScreen();
+      return;
+    }
+
+    completeAbbreviatedOnboarding(effectivePolicy);
   }
 
 
@@ -3504,6 +3680,12 @@ async function handleRegistrationSuccessFlow({ finalizeResult, method }) {
     }
 
     const freshUserData = userDocSnap.data();
+    const specialty =
+      (typeof freshUserData.specialty === 'string' && freshUserData.specialty.trim()) ||
+      (typeof window.selectedSpecialty === 'string' && window.selectedSpecialty.trim()) ||
+      (typeof window.authState?.specialty === 'string' && window.authState.specialty.trim()) ||
+      'ENT';
+    const specialtyPolicy = await getSpecialtyPolicy(specialty);
 
     const freshAuthState = {
       user: currentUser,
@@ -3514,7 +3696,9 @@ async function handleRegistrationSuccessFlow({ finalizeResult, method }) {
       boardReviewSubscriptionEndDate: freshUserData.boardReviewSubscriptionEndDate || null,
       cmeSubscriptionActive: freshUserData.cmeSubscriptionActive || false,
       cmeSubscriptionEndDate: freshUserData.cmeSubscriptionEndDate || null,
-      cmeCreditsAvailable: freshUserData.cmeCreditsAvailable || 0
+      cmeCreditsAvailable: freshUserData.cmeCreditsAvailable || 0,
+      specialty,
+      specialtyPolicy
     };
 
     window.authState = freshAuthState;
@@ -5647,6 +5831,25 @@ function debounce(func, delay) {
   };
 }
 
+function getCurrentUserSpecialty() {
+  const specialtyFromAuth = window.authState?.specialty;
+  if (typeof specialtyFromAuth === 'string' && specialtyFromAuth.trim()) {
+    return specialtyFromAuth.trim();
+  }
+  if (typeof window.selectedSpecialty === 'string' && window.selectedSpecialty.trim()) {
+    return window.selectedSpecialty.trim();
+  }
+  return null;
+}
+
+function buildModalQuestionPool() {
+  const specialty = getCurrentUserSpecialty();
+  const specialtyScoped = fullQuestionBank.filter((q) =>
+    specialtyMatchesQuestion(q, specialty)
+  );
+  return applyQuestionAccessPolicy(specialtyScoped, window.authState || {});
+}
+
 // This is the core function that filters questions and updates the UI
 async function updateQuizFiltersAndCount() {
   const searchInput = document.getElementById('modalSearchInput');
@@ -5662,8 +5865,8 @@ async function updateQuizFiltersAndCount() {
   const selectedCategory = categorySelect.value;
   const boardReviewOnly = boardReviewCheckbox.checked;
 
-  // Filter the full question bank based on all active filters
-  modalFilteredQuestions = fullQuestionBank.filter(q => {
+  // Filter the scoped question pool based on all active filters
+  modalFilteredQuestions = modalQuestionPool.filter(q => {
     // 1. Category Filter
     if (selectedCategory && q.Category !== selectedCategory) {
       return false;
@@ -5680,7 +5883,7 @@ async function updateQuizFiltersAndCount() {
         return false;
       }
     }
-    return true;
+      return true;
   });
 
   const matchCount = modalFilteredQuestions.length;
@@ -5826,12 +6029,12 @@ if (cmeModuleBtn) {
       startQuizBtn.parentNode.replaceChild(newStartQuizBtn, startQuizBtn);
   
       newStartQuizBtn.addEventListener("click", async function() { // <-- Made this async
-        // --- START: New logic to show/hide search based on tier ---
+        const hasBoardAccess = userHasBoardReviewAccess();
         const accessTier = window.authState?.accessTier || 'free_guest';
         const searchGroup = document.getElementById('searchFormGroup'); // The container for the search bar
 
         if (searchGroup) {
-            if (accessTier === 'free_guest') {
+            if (!hasBoardAccess) {
                 searchGroup.style.display = 'none'; // Hide for free users
             } else {
                 searchGroup.style.display = 'block'; // Show for premium users
@@ -5849,6 +6052,12 @@ if (cmeModuleBtn) {
                 alert("Error preparing quiz options. Please try again.");
                 return;
             }
+        }
+
+        modalQuestionPool = buildModalQuestionPool();
+        if (modalQuestionPool.length === 0) {
+            alert("No questions are currently available for your specialty. Please try again later.");
+            return;
         }
 
         // Get references to all filter inputs inside the modal
@@ -5875,7 +6084,7 @@ if (cmeModuleBtn) {
         const boardReviewContainer = document.getElementById('boardReviewOnlyContainer');
 
         if (boardReviewContainer) {
-            if (accessTier === "board_review" || accessTier === "cme_annual" || accessTier === "cme_credits_only") {
+            if (hasBoardAccess) {
                 boardReviewContainer.style.display = 'block';
                 console.log("Board Review Only option shown for tiered user.");
             } else {
@@ -5891,7 +6100,7 @@ if (cmeModuleBtn) {
         // --- END: Board Review Checkbox Visibility ---
 
         if (spacedRepContainer) {
-            if (isAnonymousUser || accessTier === "free_guest") {
+            if (!hasBoardAccess && (isAnonymousUser || accessTier === "free_guest")) {
                 spacedRepContainer.style.display = 'none';
                 if (spacedRepCheckbox) spacedRepCheckbox.checked = false;
                 console.log("Spaced repetition option hidden for guest/free_guest user.");
@@ -6073,28 +6282,8 @@ async function populateCategoryDropdownForMainQuiz() {
       const allQuestions = await fetchQuestionBank();
       let relevantQuestions = allQuestions;
 
-      // --- NEW: Create maps to hold our counts ---
       const categoryTotals = {};
       const categoryAnswered = {};
-      // Create a quick lookup map for question data by its text
-      const questionBankMap = new Map(allQuestions.map(q => [q.Question.trim(), q]));
-
-      // --- NEW: Calculate total questions per category ---
-      allQuestions.forEach(q => {
-          const category = q.Category ? q.Category.trim() : null;
-          if (category) {
-              categoryTotals[category] = (categoryTotals[category] || 0) + 1;
-          }
-      });
-
-      // --- NEW: Calculate answered questions per category ---
-      answeredQuestionIds.forEach(answeredId => {
-          const questionData = questionBankMap.get(answeredId.trim());
-          if (questionData && questionData.Category) {
-              const category = questionData.Category.trim();
-              categoryAnswered[category] = (categoryAnswered[category] || 0) + 1;
-          }
-      });
 
 
       // --- START: EXISTING SPECIALTY FILTERING LOGIC (No changes here) ---
@@ -6125,9 +6314,27 @@ async function populateCategoryDropdownForMainQuiz() {
       }
       // --- END: EXISTING SPECIALTY FILTERING LOGIC ---
 
-      if (window.authState && window.authState.accessTier === "free_guest") {
-          relevantQuestions = relevantQuestions.filter(q => q.Free === true);
-      }
+      relevantQuestions = applyQuestionAccessPolicy(
+        relevantQuestions,
+        window.authState || { specialty: userSpecialty || window.selectedSpecialty || null }
+      );
+
+      const scopedQuestionMap = new Map(
+        relevantQuestions.map((q) => [q.Question.trim(), q])
+      );
+      relevantQuestions.forEach((q) => {
+        const category = q.Category ? q.Category.trim() : null;
+        if (category) {
+          categoryTotals[category] = (categoryTotals[category] || 0) + 1;
+        }
+      });
+      answeredQuestionIds.forEach((answeredId) => {
+        const questionData = scopedQuestionMap.get(answeredId.trim());
+        if (questionData && questionData.Category) {
+          const category = questionData.Category.trim();
+          categoryAnswered[category] = (categoryAnswered[category] || 0) + 1;
+        }
+      });
 
       const categories = [...new Set(relevantQuestions
           .map(q => q.Category ? q.Category.trim() : null)

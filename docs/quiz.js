@@ -14,6 +14,13 @@ import {
 } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
 import { playMedium, playLight, playTap } from './haptics.js';
+import {
+  applyQuestionAccessPolicy,
+  specialtyMatchesQuestion,
+  shouldLimitQuestionsToFree,
+  getPilotQuestionAccessConfig,
+  userHasBoardReviewAccess as hasBoardReviewAccessByPolicy
+} from './specialty-policy.js';
 
 // Quiz management variables
 let allQuestions = [];
@@ -127,13 +134,56 @@ function isQuestionCmeEligible(question) {
   return false;
 }
 
+function getCurrentUserSpecialty() {
+  const fromAuthState = window.authState?.specialty;
+  if (typeof fromAuthState === 'string' && fromAuthState.trim()) {
+    return fromAuthState.trim();
+  }
+
+  const fromSelectedSpecialty = window.selectedSpecialty;
+  if (typeof fromSelectedSpecialty === 'string' && fromSelectedSpecialty.trim()) {
+    return fromSelectedSpecialty.trim();
+  }
+
+  return 'ENT';
+}
+
+function getEffectiveAuthState() {
+  const state = window.authState || {};
+  return {
+    ...state,
+    accessTier: state.accessTier || 'free_guest',
+    specialty: state.specialty || getCurrentUserSpecialty()
+  };
+}
+
+function scopeQuestionsForCurrentUser(questions = []) {
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return [];
+  }
+
+  const effectiveAuthState = getEffectiveAuthState();
+  const specialty = effectiveAuthState.specialty || null;
+
+  const specialtyScoped = questions.filter((question) =>
+    specialtyMatchesQuestion(question, specialty)
+  );
+
+  return applyQuestionAccessPolicy(specialtyScoped, effectiveAuthState);
+}
+
+function hasBoardReviewAccessForCurrentUser() {
+  return hasBoardReviewAccessByPolicy(getEffectiveAuthState());
+}
+
 // MODIFIED loadQuestions function
 async function loadQuestions(options = {}) {
   console.log("Loading questions with options:", options);
   window.isOnboardingQuiz = options.isOnboarding || false;
 
   // Track quiz start
-  const accessTier = window.authState?.accessTier || 'free_guest';
+  const effectiveAuthState = getEffectiveAuthState();
+  const accessTier = effectiveAuthState.accessTier || 'free_guest';
   const isGuest = !auth.currentUser || auth.currentUser.isAnonymous;
 
   logAnalyticsEvent('quiz_start', {
@@ -161,11 +211,12 @@ async function loadQuestions(options = {}) {
       // SCENARIO 2: User did NOT search. Perform all filtering now.
       console.log("No pre-filtered questions. Fetching and filtering from scratch.");
       const allQuestionsData = await fetchQuestionBank();
+      const scopedQuestionBank = scopeQuestionsForCurrentUser(allQuestionsData);
       
       // This is the original filtering logic, now correctly placed inside the 'else'
       if (options.quizType === 'case_prep' && options.procedure) {
         // Case Prep logic...
-        let procedureQuestions = allQuestionsData.filter(q =>
+        let procedureQuestions = scopedQuestionBank.filter(q =>
           q.Procedures && q.Procedures.trim().toLowerCase() === options.procedure.trim().toLowerCase()
         );
         if (!options.includeAnswered) {
@@ -175,7 +226,7 @@ async function loadQuestions(options = {}) {
         filteredQuestions = procedureQuestions;
       } else {
         // Regular, CME, etc. logic...
-        filteredQuestions = allQuestionsData; // Start with all
+        filteredQuestions = scopedQuestionBank; // Start with scoped list
         let relevantAnsweredIdsForCurrentYear = [];
 
         if (options.quizType === 'cme' && !options.includeAnswered) {
@@ -213,23 +264,26 @@ async function loadQuestions(options = {}) {
         filteredQuestions = filteredQuestions.filter(q => targetIds.has((q["Question"] || '').trim()));
       }
     }
-
-    // --- Universal Free User Filter (Now works on BOTH scenarios) ---
-    const accessTier = window.authState?.accessTier || 'free_guest';
-    if (accessTier === "free_guest") {
-      console.log("Applying universal free user filter.");
-      filteredQuestions = filteredQuestions.filter(q => q.Free === true);
-    }
+    filteredQuestions = scopeQuestionsForCurrentUser(filteredQuestions);
 
     // --- Common logic for ALL quiz types ---
     if (filteredQuestions.length === 0) {
       let message = "No questions found matching your criteria.";
+      const isFreeTierLimited = shouldLimitQuestionsToFree(effectiveAuthState);
+      const pilotQuestionConfig = getPilotQuestionAccessConfig(effectiveAuthState);
       // This is the message that was showing incorrectly.
       if (options.quizType === 'cme') {
         message = "No CME-eligible questions found for your selection. Please adjust your filters.";
       }
-      if (accessTier === "free_guest" && !options.category && !options.prefilteredQuestions) {
+      if (isFreeTierLimited && !options.category && !options.prefilteredQuestions) {
         message = "You've completed all available free questions! Upgrade your account to access hundreds more questions and unlock premium features.";
+      } else if (
+        pilotQuestionConfig.enabled &&
+        pilotQuestionConfig.questionPilotFlagField &&
+        !options.category &&
+        !options.prefilteredQuestions
+      ) {
+        message = "No pilot questions are currently available. Please check back soon.";
       }
       alert(message);
 
@@ -291,8 +345,9 @@ async function fetchCmeAnsweredIds() {
 // Add this function to quiz.js
 async function loadQuestionsWithSpacedRepetition(options, allQuestions, answeredIds) {
   try {
+    const hasBoardAccess = hasBoardReviewAccessForCurrentUser();
     // Check if the user is anonymous/guest
-    if (auth && auth.currentUser && auth.currentUser.isAnonymous) {
+    if (auth && auth.currentUser && auth.currentUser.isAnonymous && !hasBoardAccess) {
       console.log("Guest user attempted to use spaced repetition");
       
       // Disable spaced repetition for guest users
@@ -309,6 +364,8 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
       loadQuestions(options);
       return;
     }
+    const scopedQuestions = scopeQuestionsForCurrentUser(allQuestions);
+
     // Get user's spaced repetition data
     const spacedRepetitionData = await fetchSpacedRepetitionData();
     if (!spacedRepetitionData) {
@@ -335,13 +392,13 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
     console.log(`Found ${dueQuestionIds.length} questions due for review`);
     
     // Get unanswered questions (excluding those already due for review)
-    const unansweredQuestions = allQuestions.filter(q => {
+    const unansweredQuestions = scopedQuestions.filter(q => {
       const qId = q["Question"].trim();
       return !answeredIds.includes(qId) && !dueQuestionIds.includes(qId);
     });
     
     // Get due review questions
-    const dueReviewQuestions = allQuestions.filter(q => {
+    const dueReviewQuestions = scopedQuestions.filter(q => {
       const qId = q["Question"].trim();
       return dueQuestionIds.includes(qId);
     });
@@ -1261,10 +1318,9 @@ function showSummary() {
     performanceMessage: "Quiz complete!"
   };
 
-  const accessTier = window.authState?.accessTier; // Get the current access tier
-  const isFreeGuest = accessTier === "free_guest"; // Check if user is free_guest
+  const hasBoardAccess = hasBoardReviewAccessForCurrentUser();
 
-  console.log(`Summary for accessTier: ${accessTier}, isFreeGuest: ${isFreeGuest}`);
+  console.log(`Summary board access: ${hasBoardAccess}`);
   
   // Create and add the summary slide
   const summarySlide = document.createElement("div");
@@ -1272,10 +1328,10 @@ function showSummary() {
 
   // Conditionally create the leaderboard button HTML
   let leaderboardButtonHtml = '';
-  if (!isFreeGuest) {
+  if (hasBoardAccess) {
     leaderboardButtonHtml = `<button id="leaderboardButton" class="start-quiz-btn">View Leaderboard</button>`;
   } else {
-    console.log("User is free_guest, hiding View Leaderboard button on summary.");
+    console.log("User lacks board access, hiding View Leaderboard button on summary.");
   }
 
   summarySlide.innerHTML = `
@@ -1338,7 +1394,7 @@ function showSummary() {
   }
   
   // Add event listener for the "View Leaderboard" button ONLY if it exists
-  if (!isFreeGuest) {
+  if (hasBoardAccess) {
     const leaderboardButton = document.getElementById("leaderboardButton");
     if (leaderboardButton) {
         // Clone and replace to ensure fresh listener
