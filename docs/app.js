@@ -11,6 +11,7 @@ import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
 import { playTap, playLight } from './haptics.js';
+import { getAvailableCategoriesForUser } from './quiz-filtering.js';
 import {
   getSpecialtyPolicy,
   resolvePolicyFromAuthState,
@@ -6254,6 +6255,38 @@ if (modalCancelQuizButton && quizSetupModalForCancel) {
   }
 }
 
+async function getQuizCategoryUserContext({ includeAnsweredQuestions = false } = {}) {
+  const context = {
+    specialty: getCurrentUserSpecialty(),
+    answeredQuestionIds: []
+  };
+
+  if (!auth.currentUser || auth.currentUser.isAnonymous) {
+    return context;
+  }
+
+  try {
+    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      return context;
+    }
+
+    const userData = userDocSnap.data() || {};
+    if (typeof userData.specialty === 'string' && userData.specialty.trim()) {
+      context.specialty = userData.specialty.trim();
+    }
+    if (includeAnsweredQuestions) {
+      context.answeredQuestionIds = Object.keys(userData.answeredQuestions || {});
+    }
+  } catch (error) {
+    console.error('Error fetching quiz category user context:', error);
+  }
+
+  return context;
+}
+
 async function populateCategoryDropdownForMainQuiz() {
   const categorySelect = document.getElementById("modalCategorySelect");
   if (!categorySelect) {
@@ -6267,94 +6300,29 @@ async function populateCategoryDropdownForMainQuiz() {
   }
 
   try {
-      // --- NEW: Get the user's answered questions first ---
-      let answeredQuestions = {};
-      if (auth.currentUser && !auth.currentUser.isAnonymous) {
-          const userDocRef = doc(db, 'users', auth.currentUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-              answeredQuestions = userDocSnap.data().answeredQuestions || {};
-          }
-      }
-      const answeredQuestionIds = Object.keys(answeredQuestions);
-
-      // --- Fetch all questions and process them ---
+      const { specialty: userSpecialty, answeredQuestionIds } = await getQuizCategoryUserContext({
+        includeAnsweredQuestions: true
+      });
       const allQuestions = await fetchQuestionBank();
-      let relevantQuestions = allQuestions;
-
-      const categoryTotals = {};
-      const categoryAnswered = {};
-
-
-      // --- START: EXISTING SPECIALTY FILTERING LOGIC (No changes here) ---
-      let userSpecialty = null;
-      if (auth.currentUser && !auth.currentUser.isAnonymous) {
-          try {
-              const userDocRef = doc(db, 'users', auth.currentUser.uid);
-              const userDocSnap = await getDoc(userDocRef);
-              if (userDocSnap.exists() && userDocSnap.data().specialty) {
-                  userSpecialty = userDocSnap.data().specialty;
-              }
-          } catch (error) {
-              console.error("Error fetching user specialty for category dropdown:", error);
-          }
-      }
-      if (!userSpecialty && window.selectedSpecialty) {
-          userSpecialty = window.selectedSpecialty;
-      }
-      if (userSpecialty) {
-          console.log(`Filtering categories for specialty: ${userSpecialty}`);
-          relevantQuestions = relevantQuestions.filter(q => {
-              const questionSpecialty = q.Specialty ? String(q.Specialty).trim() : null;
-              if (!questionSpecialty) return true;
-              return questionSpecialty.toLowerCase() === userSpecialty.toLowerCase();
-          });
-      } else {
-          console.log("No user specialty found; not filtering categories by specialty.");
-      }
-      // --- END: EXISTING SPECIALTY FILTERING LOGIC ---
-
-      relevantQuestions = applyQuestionAccessPolicy(
-        relevantQuestions,
-        window.authState || { specialty: userSpecialty || window.selectedSpecialty || null }
-      );
-
-      const scopedQuestionMap = new Map(
-        relevantQuestions.map((q) => [q.Question.trim(), q])
-      );
-      relevantQuestions.forEach((q) => {
-        const category = q.Category ? q.Category.trim() : null;
-        if (category) {
-          categoryTotals[category] = (categoryTotals[category] || 0) + 1;
-        }
-      });
-      answeredQuestionIds.forEach((answeredId) => {
-        const questionData = scopedQuestionMap.get(answeredId.trim());
-        if (questionData && questionData.Category) {
-          const category = questionData.Category.trim();
-          categoryAnswered[category] = (categoryAnswered[category] || 0) + 1;
-        }
+      const effectiveAuthState = {
+        ...(window.authState || {}),
+        specialty: userSpecialty || window.authState?.specialty || window.selectedSpecialty || null
+      };
+      const categories = getAvailableCategoriesForUser({
+        questions: allQuestions,
+        authState: effectiveAuthState,
+        specialty: effectiveAuthState.specialty,
+        includeCounts: true,
+        answeredQuestionIds
       });
 
-      const categories = [...new Set(relevantQuestions
-          .map(q => q.Category ? q.Category.trim() : null)
-          .filter(cat => cat && cat !== "")
-      )].sort();
-
-      // --- MODIFIED: Build the dropdown options with the new text format ---
-      categories.forEach(category => {
-          const total = categoryTotals[category] || 0;
-          const answered = categoryAnswered[category] || 0;
-          
-          // This is the new text format we decided on!
-          const optionText = `${category} (${answered}/${total})`;
-
+      categories.forEach(({ category, answeredCount, totalCount }) => {
           const option = document.createElement("option");
           option.value = category;
-          option.textContent = optionText; // Use our newly created text
+          option.textContent = `${category} (${answeredCount}/${totalCount})`;
           categorySelect.appendChild(option);
       });
-      console.log("Main quiz category dropdown populated with progress counts.");
+      console.log("Main quiz category dropdown populated with specialty-scoped progress counts.");
 
   } catch (error) {
       console.error("Error populating main quiz category dropdown:", error);
@@ -8290,34 +8258,27 @@ async function populateCmeCategoryDropdown() {
     }
 
     try {
-        // Fetch all questions to extract categories
-        // Note: This fetches all questions just for categories.
-        // If performance becomes an issue with a very large sheet,
-        // consider storing categories separately in Firestore.
-        const allQuestions = await fetchQuestionBank(); // Assuming fetchQuestionBank is globally available or defined in this file
-
-        // Filter for CME eligible questions first
-        const cmeEligibleQuestions = allQuestions.filter(q => {
-          const cmeEligibleValue = q["CME Eligible"];
-          // Handle both boolean true and string "yes" (case-insensitive)
-          return (typeof cmeEligibleValue === 'boolean' && cmeEligibleValue === true) ||
-                 (typeof cmeEligibleValue === 'string' && cmeEligibleValue.trim().toLowerCase() === 'yes');
-      });
-
-        // Get unique categories from CME-eligible questions
-        const categories = [...new Set(cmeEligibleQuestions
-            .map(q => q.Category ? q.Category.trim() : null) // Get category, trim whitespace
-            .filter(cat => cat && cat !== "") // Filter out null/empty categories
-        )].sort(); // Sort alphabetically
+        const { specialty: userSpecialty } = await getQuizCategoryUserContext();
+        const allQuestions = await fetchQuestionBank();
+        const effectiveAuthState = {
+          ...(window.authState || {}),
+          specialty: userSpecialty || window.authState?.specialty || window.selectedSpecialty || null
+        };
+        const categories = getAvailableCategoriesForUser({
+          questions: allQuestions,
+          authState: effectiveAuthState,
+          specialty: effectiveAuthState.specialty,
+          cmeOnly: true
+        });
 
         // Add categories to the dropdown
-        categories.forEach(category => {
+        categories.forEach(({ category }) => {
             const option = document.createElement("option");
             option.value = category;
             option.textContent = category;
             categorySelect.appendChild(option);
         });
-        console.log("CME Category dropdown populated with:", categories);
+        console.log("CME category dropdown populated with specialty-scoped categories:", categories);
 
     } catch (error) {
         console.error("Error fetching or processing questions for categories:", error);
