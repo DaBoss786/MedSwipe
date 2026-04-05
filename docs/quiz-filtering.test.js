@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   applyCategoryAndAnsweredFilters,
-  getAvailableCategoriesForUser
+  getAvailableCategoriesForUser,
+  getAvailableCasePrepProcedures
 } from './quiz-filtering.js';
 
 describe('applyCategoryAndAnsweredFilters', () => {
@@ -123,6 +124,122 @@ describe('getAvailableCategoriesForUser', () => {
         totalCount: 2,
         answeredCount: 1
       }
+    ]);
+  });
+});
+
+describe('getAvailableCasePrepProcedures', () => {
+  it('returns specialty-scoped and shared procedures for ENT users', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Thyroidectomy', Specialty: 'ENT' },
+      { Question: 'Q2', Procedures: 'Parotidectomy', Specialty: 'ENT' },
+      { Question: 'Q3', Procedures: 'Craniotomy', Specialty: 'Neurosurgery' },
+      { Question: 'Q4', Procedures: 'Core Skills' }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'ENT', accessTier: 'board_review' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Core Skills', enabled: true, lockedReason: null },
+      { name: 'Parotidectomy', enabled: true, lockedReason: null },
+      { name: 'Thyroidectomy', enabled: true, lockedReason: null }
+    ]);
+  });
+
+  it('returns specialty-scoped and shared procedures for neurosurgery users', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Thyroidectomy', Specialty: 'ENT', pilotNeurosurgery: true },
+      { Question: 'Q2', Procedures: 'Craniotomy', Specialty: 'Neurosurgery', pilotNeurosurgery: true },
+      { Question: 'Q3', Procedures: 'Aneurysm Clipping', Specialty: 'Neurosurgery', pilotNeurosurgery: true },
+      { Question: 'Q4', Procedures: 'Core Skills', pilotNeurosurgery: true }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'Neurosurgery', accessTier: 'board_review' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Aneurysm Clipping', enabled: true, lockedReason: null },
+      { name: 'Core Skills', enabled: true, lockedReason: null },
+      { name: 'Craniotomy', enabled: true, lockedReason: null }
+    ]);
+  });
+
+  it('shows premium-only procedures as disabled for free users', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Thyroidectomy', Specialty: 'ENT', Free: true },
+      { Question: 'Q2', Procedures: 'Parotidectomy', Specialty: 'ENT', Free: false },
+      { Question: 'Q3', Procedures: 'Shared Premium', Free: false }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'ENT', accessTier: 'free_guest' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Thyroidectomy', enabled: true, lockedReason: null },
+      { name: 'Parotidectomy', enabled: false, lockedReason: 'Subscription Required' },
+      { name: 'Shared Premium', enabled: false, lockedReason: 'Subscription Required' }
+    ]);
+  });
+
+  it('enables a mixed-access procedure if at least one question is accessible', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Thyroidectomy', Specialty: 'ENT', Free: false },
+      { Question: 'Q2', Procedures: 'Thyroidectomy', Specialty: 'ENT', Free: true },
+      { Question: 'Q3', Procedures: 'Parotidectomy', Specialty: 'ENT', Free: false }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'ENT', accessTier: 'free_guest' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Thyroidectomy', enabled: true, lockedReason: null },
+      { name: 'Parotidectomy', enabled: false, lockedReason: 'Subscription Required' }
+    ]);
+  });
+
+  it('sorts enabled procedures ahead of locked ones', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Zeta Procedure', Specialty: 'ENT', Free: false },
+      { Question: 'Q2', Procedures: 'Alpha Procedure', Specialty: 'ENT', Free: true },
+      { Question: 'Q3', Procedures: 'Beta Procedure', Specialty: 'ENT', Free: false }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'ENT', accessTier: 'free_guest' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Alpha Procedure', enabled: true, lockedReason: null },
+      { name: 'Beta Procedure', enabled: false, lockedReason: 'Subscription Required' },
+      { name: 'Zeta Procedure', enabled: false, lockedReason: 'Subscription Required' }
+    ]);
+  });
+
+  it('omits blank procedures and dedupes repeated labels', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Thyroidectomy', Specialty: 'ENT' },
+      { Question: 'Q2', Procedures: 'Thyroidectomy ', Specialty: 'ENT' },
+      { Question: 'Q3', Procedures: ' ', Specialty: 'ENT' },
+      { Question: 'Q4', Specialty: 'ENT' }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'ENT', accessTier: 'board_review' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Thyroidectomy', enabled: true, lockedReason: null }
     ]);
   });
 });

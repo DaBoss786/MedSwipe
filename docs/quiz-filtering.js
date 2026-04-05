@@ -178,6 +178,11 @@ function isQuestionCmeEligible(question) {
   return false;
 }
 
+function normalizeProcedureKey(procedure) {
+  const sanitized = sanitizeText(procedure, null);
+  return sanitized ? sanitized.toLowerCase() : null;
+}
+
 export function applyCategoryAndAnsweredFilters({
   questions,
   category,
@@ -265,4 +270,66 @@ export function getAvailableCategoriesForUser({
           answeredCount: 0
         }
     ));
+}
+
+export function getAvailableCasePrepProcedures({
+  questions = [],
+  authState = {},
+  specialty = null
+} = {}) {
+  const effectiveSpecialty = sanitizeText(
+    specialty || authState?.specialty || authState?.selectedSpecialty,
+    null
+  );
+  const effectiveAuthState = {
+    ...authState,
+    specialty: effectiveSpecialty || authState?.specialty || authState?.selectedSpecialty || ''
+  };
+  const effectivePolicy = resolvePolicyFromAuthState(effectiveAuthState, effectiveSpecialty);
+
+  const specialtyScopedQuestions = (Array.isArray(questions) ? questions : []).filter((question) =>
+    specialtyMatchesQuestion(question, effectiveSpecialty)
+  );
+  const accessibleQuestions = applyQuestionAccessPolicy(
+    specialtyScopedQuestions,
+    effectiveAuthState,
+    effectivePolicy
+  );
+
+  const accessibleProcedureKeys = new Set(
+    accessibleQuestions
+      .map((question) => normalizeProcedureKey(question?.Procedures))
+      .filter(Boolean)
+  );
+
+  const procedures = new Map();
+
+  specialtyScopedQuestions.forEach((question) => {
+    const procedureName = sanitizeText(question?.Procedures, null);
+    const procedureKey = normalizeProcedureKey(procedureName);
+    if (!procedureKey) {
+      return;
+    }
+
+    const existing = procedures.get(procedureKey) || {
+      name: procedureName,
+      enabled: false,
+      lockedReason: 'Subscription Required'
+    };
+
+    if (accessibleProcedureKeys.has(procedureKey)) {
+      existing.enabled = true;
+      existing.lockedReason = null;
+    }
+
+    procedures.set(procedureKey, existing);
+  });
+
+  return Array.from(procedures.values())
+    .sort((a, b) => {
+      if (a.enabled !== b.enabled) {
+        return a.enabled ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
 }

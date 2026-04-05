@@ -241,7 +241,7 @@
       </div>
 
       <!-- Slide 4: CME -->
-      <div class="swiper-slide">
+      <div class="swiper-slide" id="onboardingCmeSlide">
         <div class="onboarding-slide-content">
           <h2 class="onboarding-headline">Swipe, learn, get credit.</h2>
           <p class="onboarding-text">Earn up to 24 <i>AMA PRA Category 1 Credits™</i>. CME. Anytime, anywhere.</p>
@@ -390,7 +390,7 @@
   <div id="webPaywallContent" class="paywall-content">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="paywall-logo">
     <h1 class="paywall-title">Choose Your MedSwipe Experience</h1>
-    <p class="paywall-subtitle">From board/in-service prep to CME credits, we have a plan for you.</p>
+    <p id="paywallSubtitle" class="paywall-subtitle">From board/in-service prep to CME credits, we have a plan for you.</p>
 
     <div class="paywall-options-container">
 
@@ -422,7 +422,7 @@
       </div>
 
       <!-- Option 3: CME Module -->
-      <div class="paywall-option-card cme-module-card">
+      <div id="webCmePaywallCard" class="paywall-option-card cme-module-card">
         <div class="card-badge cme-eligible-badge">CME ELIGIBLE</div>
         <h2>Earn CME Credits Effortlessly</h2>
         <p class="price-highlight">$179/year <span id="cmePaywallPriceDetail" class="price-details">or $8 per credit</span></p>
@@ -453,7 +453,7 @@
     <div class="ios-plan-selector" role="tablist">
       <button class="ios-plan-selector-btn" data-plan="free" role="tab" aria-selected="false">Free</button>
       <button class="ios-plan-selector-btn active" data-plan="board" role="tab" aria-selected="true">Board Review</button>
-      <button class="ios-plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
+      <button id="iosCmePlanButton" class="ios-plan-selector-btn" data-plan="cme" role="tab" aria-selected="false">CME</button>
     </div>
 
     <div class="ios-paywall-card-stack">
@@ -486,7 +486,7 @@
         <button id="iosBoardCta" class="ios-paywall-primary-btn">Start 7-Day Free Trial</button>
       </section>
 
-      <section class="ios-paywall-card cme-module-card" data-plan-card="cme" role="tabpanel" aria-hidden="true">
+      <section id="iosCmePlanCard" class="ios-paywall-card cme-module-card" data-plan-card="cme" role="tabpanel" aria-hidden="true">
         <span class="ios-card-badge ios-cme-badge">CME Eligible</span>
         <h2>CME Access</h2>
         <p class="ios-price-highlight">
@@ -498,7 +498,7 @@
       </section>
     </div>
 
-    <div class="ios-inline-links" data-after-card="cme">
+    <div id="iosCmeInlineLinks" class="ios-inline-links" data-after-card="cme">
       <button class="ios-text-link" type="button" data-link="accreditation">Accreditation Statement</button>
       <button class="ios-text-link" type="button" data-link="learn-more">Learn More</button>
     </div>
@@ -851,7 +851,7 @@
     </div>
     <div class="modal-body">
       <p style="line-height: 1.6; font-size: 1rem;">
-        This section helps you quickly review surgical anatomy, steps, complications, and common intraoperative ‘pimp’ questions that attendings may ask. Designed for ENT residents prepping for the OR.
+        This section helps you quickly review surgical anatomy, steps, complications, and common intraoperative ‘pimp’ questions that attendings may ask. Designed for residents and attendings prepping for the OR.
       </p>
       <div class="auth-buttons" style="margin-top: 25px;">
         <button id="continueCasePrepBtn" class="auth-primary-btn">Continue</button>

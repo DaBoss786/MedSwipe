@@ -2,6 +2,7 @@ import { db, doc, getDoc } from './firebase-config.js';
 
 const SPECIALTY_POLICY_COLLECTION = 'specialtyAccessPolicies';
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const CME_MODULE_ENABLED = false;
 
 const BASE_POLICY = Object.freeze({
   enabled: false,
@@ -190,8 +191,12 @@ export function userHasAnyPremiumAccess(authState = {}, policy = resolvePolicyFr
   return userHasBoardReviewAccess(authState, policy) || userHasCmeAccess(authState);
 }
 
+export function isCmeGloballyEnabled() {
+  return CME_MODULE_ENABLED;
+}
+
 export function shouldHideCmeUi(authState = {}, policy = resolvePolicyFromAuthState(authState)) {
-  return policy.hideCme === true;
+  return !isCmeGloballyEnabled() || policy.hideCme === true;
 }
 
 export function shouldLimitQuestionsToFree(authState = {}, policy = resolvePolicyFromAuthState(authState)) {

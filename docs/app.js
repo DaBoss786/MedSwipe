@@ -11,9 +11,13 @@ import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
 import { playTap, playLight } from './haptics.js';
-import { getAvailableCategoriesForUser } from './quiz-filtering.js';
+import {
+  getAvailableCategoriesForUser,
+  getAvailableCasePrepProcedures
+} from './quiz-filtering.js';
 import {
   getSpecialtyPolicy,
+  isCmeGloballyEnabled,
   resolvePolicyFromAuthState,
   userHasBoardReviewAccess as hasBoardReviewAccessByPolicy,
   userHasAnyPremiumAccess as hasAnyPremiumAccessByPolicy,
@@ -1448,76 +1452,31 @@ export async function handleQuestionDeepLink(urlOrPath) {
           // Clear existing options
           procedureSelect.innerHTML = '<option value="">--Please choose a procedure--</option>';
     
-                // --- START: Get User's Specialty (Handles both Registered and Anonymous) ---
-        let userSpecialty = null;
+          const { specialty: userSpecialty } = await getQuizCategoryUserContext();
+          const allQuestions = await fetchQuestionBank();
+          const effectiveAuthState = {
+            ...(window.authState || {}),
+            specialty: userSpecialty || window.authState?.specialty || window.selectedSpecialty || null
+          };
+          const procedures = getAvailableCasePrepProcedures({
+            questions: allQuestions,
+            authState: effectiveAuthState,
+            specialty: effectiveAuthState.specialty
+          });
 
-        // 1. Try Firestore first for any authenticated user
-        if (auth.currentUser) {
-          try {
-            const userDocRef = doc(db, 'users', auth.currentUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists() && userDocSnap.data().specialty) {
-              userSpecialty = userDocSnap.data().specialty;
-              console.log(`User specialty found in Firestore: ${userSpecialty}`);
-            }
-          } catch (error) {
-            console.error("Error fetching user specialty for dropdown:", error);
-          }
-        }
-
-        // 2. Fallback to the window variable for anonymous users or if Firestore fails/is empty
-        if (!userSpecialty && window.selectedSpecialty) {
-          userSpecialty = window.selectedSpecialty;
-          console.log(`Using specialty from window (for anonymous/onboarding user): ${userSpecialty}`);
-        }
-
-        if (!userSpecialty) {
-            console.log("Could not determine user specialty from Firestore or window variable.");
-        }
-        // --- END: Get User's Specialty ---
-    
-          const accessTier = window.authState?.accessTier || 'free_guest';
-          const hasPremiumAccess = accessTier === 'board_review' || accessTier === 'cme_annual' || accessTier === 'cme_credits_only';
-    
-          const procedures = [
-            { name: "Thyroidectomy", premium: false, specialty: "ENT" },
-            { name: "Parotidectomy", premium: false, specialty: "ENT" },
-            { name: "Neck Dissection", premium: true, specialty: "ENT" },
-            { name: "Endoscopic Sinus Surgery", premium: true, specialty: "ENT" },
-            { name: "Septoplasty", premium: true, specialty: "ENT" },
-            { name: "Rhinoplasty", premium: true, specialty: "ENT" },
-            { name: "Tonsillectomy", premium: true, specialty: "ENT" },
-            { name: "Congenital Neck Masses", premium: true, specialty: "ENT" },
-            { name: "Mastoidectomy", premium: true, specialty: "ENT" },
-            { name: "Stapedectomy", premium: true, specialty: "ENT" },
-            { name: "Submandibular Gland Excision", premium: true, specialty: "ENT" },
-            { name: "Tracheostomy", premium: true, specialty: "ENT" },
-            { name: "Free Flaps", premium: true, specialty: "ENT" },
-            { name: "Mandible Fracture", premium: true, specialty: "ENT" },
-            { name: "Midface Trauma", premium: true, specialty: "ENT" },
-            { name: "Microlaryngoscopy", premium: true, specialty: "ENT" },
-          ];
-    
-          // --- START: Filter Procedures by Specialty ---
-          // If a specialty is found, filter the list. Otherwise, show nothing.
-          const specialtyProcedures = userSpecialty
-            ? procedures.filter(proc => proc.specialty === userSpecialty)
-            : []; // Default to an empty array if no specialty is set
-          // --- END: Filter Procedures by Specialty ---
-    
-          // Use the filtered list to populate the dropdown
-          specialtyProcedures.forEach(proc => { // <-- Changed to specialtyProcedures
+          procedures.forEach((proc) => {
             const option = document.createElement('option');
             option.value = proc.name;
             option.textContent = proc.name;
     
-            if (proc.premium && !hasPremiumAccess) {
+            if (!proc.enabled) {
               option.disabled = true;
-              option.textContent += " (Subscription Required)";
+              option.textContent += ` (${proc.lockedReason || 'Subscription Required'})`;
             }
             
             procedureSelect.appendChild(option);
           });
+          console.log('Case Prep procedure dropdown populated from backend questions:', procedures);
         }
 
       /**
@@ -2076,11 +2035,14 @@ function initializeIosPaywallUI() {
   const boardPriceCopy = iosRoot.querySelector('#iosBoardPriceCopy');
   const boardCta = iosRoot.querySelector('#iosBoardCta');
   const cmeCta = iosRoot.querySelector('#iosCmeCta');
+  const cmePlanButton = iosRoot.querySelector('#iosCmePlanButton');
+  const cmePlanCard = iosRoot.querySelector('#iosCmePlanCard');
   const freeCta = iosRoot.querySelector('#iosContinueFreeBtn');
   const restoreBtn = iosRoot.querySelector('#iosRestorePurchasesBtn');
   const inlineLinks = iosRoot.querySelector('.ios-inline-links');
   const infoLinkButtons = inlineLinks ? Array.from(inlineLinks.querySelectorAll('.ios-text-link')) : [];
   const backBtn = iosRoot.querySelector('#iosPaywallBackBtn');
+  const cmeEnabled = isCmeGloballyEnabled();
 
   let currentBoardCycle = 'monthly';
 
@@ -2187,6 +2149,10 @@ function initializeIosPaywallUI() {
   }
 
   function setActivePlan(planKey) {
+    if (!cmeEnabled && planKey === 'cme') {
+      planKey = 'board';
+    }
+
     planButtons.forEach((button) => {
       const isActive = button.dataset.plan === planKey;
       button.classList.toggle('active', isActive);
@@ -2213,7 +2179,7 @@ function initializeIosPaywallUI() {
     });
 
     if (inlineLinks) {
-      inlineLinks.style.display = planKey === 'cme' ? 'flex' : 'none';
+      inlineLinks.style.display = cmeEnabled && planKey === 'cme' ? 'flex' : 'none';
     }
   }
 
@@ -2261,6 +2227,17 @@ function initializeIosPaywallUI() {
 
   renderFeatures(freeFeaturesEl, planData.free.features);
   renderFeatures(cmeFeaturesEl, planData.cme.features);
+  if (!cmeEnabled) {
+    if (cmePlanButton) {
+      cmePlanButton.style.display = 'none';
+    }
+    if (cmePlanCard) {
+      cmePlanCard.style.display = 'none';
+    }
+    if (inlineLinks) {
+      inlineLinks.style.display = 'none';
+    }
+  }
   updateBoardPlan(currentBoardCycle);
   setActivePlan('board');
   requestAnimationFrame(adjustCardStackHeight);
@@ -2303,6 +2280,9 @@ function initializeIosPaywallUI() {
   if (cmeCta) {
     cmeCta.dataset.cycle = 'annual';
     cmeCta.addEventListener('click', () => {
+      if (routeAwayFromDisabledCme('paywall')) {
+        return;
+      }
       startCmeCheckout(cmeCta.dataset.cycle || 'annual', cmeCta);
     });
   }
@@ -2368,6 +2348,8 @@ function ensureRegistrationFollowupModalsInitialized() {
 function showPaywallScreen() {
   ensurePaywallUiInitialized();
   ensureRegistrationFollowupModalsInitialized();
+  clearDisabledCmeRedirectState();
+  applyGlobalCmeUiState();
   const screen = getPaywallScreen();
   if (!screen) {
     return;
@@ -2401,7 +2383,103 @@ function hidePaywallScreen() {
   screen.style.display = 'none';
 }
 
+const DISABLED_CME_REDIRECTS = new Set(['cme_info', 'cme_pricing']);
+
+function clearDisabledCmeRedirectState() {
+  if (typeof sessionStorage === 'undefined' || isCmeGloballyEnabled()) {
+    return;
+  }
+
+  const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
+  if (DISABLED_CME_REDIRECTS.has(pendingRedirect)) {
+    sessionStorage.removeItem('pendingRedirectAfterRegistration');
+  }
+}
+
+function hideCmeOverlaysAndScreens() {
+  [
+    'cmeDashboardView',
+    'cmeInfoScreen',
+    'cmePricingScreen',
+    'cmeLearnMoreModal',
+    'cmeAccreditationModal',
+    'cmeHistoryModal',
+    'cmeQuizSetupModal',
+    'cmeClaimModal',
+    'boardReviewCmeModal'
+  ].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = 'none';
+    }
+  });
+
+  const cmeModalOverlay = document.getElementById('cmeModalOverlay');
+  if (cmeModalOverlay) {
+    cmeModalOverlay.style.display = 'none';
+  }
+}
+
+function applyGlobalCmeUiState() {
+  clearDisabledCmeRedirectState();
+
+  const cmeEnabled = isCmeGloballyEnabled();
+  const onboardingCmeSlide = document.getElementById('onboardingCmeSlide');
+  if (!cmeEnabled && onboardingCmeSlide) {
+    onboardingCmeSlide.remove();
+  }
+
+  const paywallSubtitle = document.getElementById('paywallSubtitle');
+  if (paywallSubtitle) {
+    paywallSubtitle.textContent = cmeEnabled
+      ? 'From board/in-service prep to CME credits, we have a plan for you.'
+      : 'From board/in-service prep to focused question practice, we have a plan for you.';
+  }
+
+  const webCmePaywallCard = document.getElementById('webCmePaywallCard');
+  if (webCmePaywallCard) {
+    webCmePaywallCard.style.display = cmeEnabled ? '' : 'none';
+  }
+
+  const iosCmePlanButton = document.getElementById('iosCmePlanButton');
+  if (iosCmePlanButton) {
+    iosCmePlanButton.style.display = cmeEnabled ? '' : 'none';
+  }
+
+  const iosCmePlanCard = document.getElementById('iosCmePlanCard');
+  if (iosCmePlanCard) {
+    iosCmePlanCard.style.display = cmeEnabled ? '' : 'none';
+  }
+
+  const iosCmeInlineLinks = document.getElementById('iosCmeInlineLinks');
+  if (iosCmeInlineLinks) {
+    iosCmeInlineLinks.style.display = cmeEnabled ? '' : 'none';
+  }
+
+  if (!cmeEnabled) {
+    hideCmeOverlaysAndScreens();
+  }
+}
+
+function routeAwayFromDisabledCme(fallback = 'dashboard') {
+  if (isCmeGloballyEnabled()) {
+    return false;
+  }
+
+  console.log(`CME is globally disabled. Routing to ${fallback}.`);
+  clearDisabledCmeRedirectState();
+  hideCmeOverlaysAndScreens();
+
+  if (fallback === 'paywall') {
+    showPaywallScreen();
+  } else {
+    showDashboard();
+  }
+  return true;
+}
+
 function applySpecialtyUiPolicy() {
+  applyGlobalCmeUiState();
   const state = window.authState || {};
   const policy = resolvePolicyFromAuthState(state);
   const hideCme = shouldHideCmeUi(state, policy);
@@ -2411,6 +2489,7 @@ function applySpecialtyUiPolicy() {
   const cmeHistoryMenuItem = document.getElementById('cmeHistoryMenuItem');
   const cmeDashboardView = document.getElementById('cmeDashboardView');
   const cmeToolbarTracker = document.getElementById('cmeToolbarTracker');
+  const dashboardCmeCard = document.getElementById('dashboardCmeCard');
   const mainOptions = document.getElementById('mainOptions');
   const casePrepBtn = document.getElementById('casePrepBtn');
   const dashboardRows = mainOptions
@@ -2433,6 +2512,9 @@ function applySpecialtyUiPolicy() {
   }
   if (cmeToolbarTracker) {
     cmeToolbarTracker.style.display = hideCme ? 'none' : cmeToolbarTracker.style.display;
+  }
+  if (dashboardCmeCard) {
+    dashboardCmeCard.style.display = hideCme ? 'none' : dashboardCmeCard.style.display;
   }
 
   if (primaryRow && secondaryRow && casePrepBtn) {
@@ -2500,6 +2582,7 @@ function userHasAnyPremiumAccess() {
 
 function showDashboard() {
   clearPendingDeepLink({ reroute: false });
+  clearDisabledCmeRedirectState();
   applySpecialtyUiPolicy();
   const mainOptions = document.getElementById('mainOptions');
   if (mainOptions) {
@@ -3141,6 +3224,7 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
 
 // Make this function globally accessible so quiz.js can call it
 window.startOnboardingCarousel = function() {
+  applyGlobalCmeUiState();
   const quizSwiperElement = document.querySelector(".swiper");
   const bottomToolbar = document.getElementById("bottomToolbar");
   const iconBar = document.getElementById("iconBar");
@@ -5003,6 +5087,11 @@ async function showMainToolbarInfo() { // Make it async
 
 // Helper function to show the CME Tracker in the toolbar and update its values
 async function showCmeToolbarInfo() {
+  if (!isCmeGloballyEnabled()) {
+    await showMainToolbarInfo();
+    return;
+  }
+
   console.log("Attempting to show CME Toolbar Info...");
   const xpDisplay = document.getElementById('xpDisplay');
   const mainLevelCircleContainer = document.getElementById('mainLevelCircleContainer');
@@ -5448,7 +5537,8 @@ setTimeout(() => {
       const accessTier = window.authState?.accessTier;
       const hasCmeAccess = userHasCmeAccess();
 
-      if (hasCmeAccess &&
+      if (isCmeGloballyEnabled() &&
+          hasCmeAccess &&
           dashboardCmeCard && dashboardCmeAnswered && dashboardCmeAccuracy && dashboardCmeAvailable) {
 
           const cmeStats = data.cmeStats || {
@@ -5929,6 +6019,10 @@ if (cmeModuleBtn) {
 
     newCmeModuleBtn.addEventListener("click", async function() {
         console.log("--- CME Module Button Click Handler (Tier-Based) START ---");
+
+        if (routeAwayFromDisabledCme('dashboard')) {
+            return;
+        }
 
         // Ensure authState and user are available
         if (!window.authState || !window.authState.user) {
@@ -7934,6 +8028,10 @@ async function checkUserCmeSubscriptionStatus() {
 
 // Function to show the CME Dashboard and hide others
 function showCmeDashboard() {
+  if (routeAwayFromDisabledCme('dashboard')) {
+    return;
+  }
+
   clearPendingDeepLink({ reroute: false });
   console.log("Executing showCmeDashboard..."); // For debugging START
 
@@ -8550,6 +8648,10 @@ async function loadCmeDashboardData() {
 
 // --- Function to Show the CME Info/Paywall Screen ---
 function showCmeInfoScreen() {
+  if (routeAwayFromDisabledCme('dashboard')) {
+    return;
+  }
+
   clearPendingDeepLink({ reroute: false });
   console.log("Executing showCmeInfoScreen...");
 
@@ -8616,6 +8718,10 @@ if (unlockCmeBtn) {
   unlockCmeBtn.addEventListener("click", function() {
       console.log("Unlock CME button clicked.");
 
+      if (routeAwayFromDisabledCme('paywall')) {
+          return;
+      }
+
       if (userHasCmeAccess()) {
           console.log("User already has CME access. Launching CME dashboard.");
           hidePaywallScreens();
@@ -8674,6 +8780,10 @@ if (learnMoreCmeLink) {
 
 // --- Function to Show the CME Pricing Screen ---
 function showCmePricingScreen() {
+  if (routeAwayFromDisabledCme('paywall')) {
+    return;
+  }
+
   console.log("Executing showCmePricingScreen...");
 
   // Hide the Info Screen first
@@ -8829,6 +8939,11 @@ if (!isNativeApp && payPerCreditTabBtn && annualContent && payPerCreditContent) 
 
 // --- Function to Show the CME Learn More Modal ---
 function showCmeLearnMoreModal(returnTarget = 'cmeInfoScreen') {
+  const fallback = returnTarget === 'iosPaywall' ? 'paywall' : 'dashboard';
+  if (routeAwayFromDisabledCme(fallback)) {
+    return;
+  }
+
   console.log("Executing showCmeLearnMoreModal...");
 
   const cmeInfoScreen = document.getElementById("cmeInfoScreen");
@@ -9041,6 +9156,10 @@ if (exploreCmeModuleBtn) {
     exploreCmeModuleBtn.addEventListener("click", function() {
         console.log("Paywall 'Explore CME Module' button clicked.");
 
+        if (routeAwayFromDisabledCme('paywall')) {
+            return;
+        }
+
         if (isIosNativeApp) {
             const checkoutCycle = exploreCmeModuleBtn.dataset.cycle || 'annual';
             startCmeCheckout(checkoutCycle, exploreCmeModuleBtn);
@@ -9183,6 +9302,9 @@ if (boardReviewPricingBackBtn) {
 const cmeCheckoutAnnualBtn = document.getElementById("cmeCheckoutAnnualBtn");
 if (cmeCheckoutAnnualBtn) {
   cmeCheckoutAnnualBtn.addEventListener("click", function(e) {
+    if (routeAwayFromDisabledCme('paywall')) {
+      return;
+    }
     startCmeCheckout('annual', e.currentTarget);
   });
 }
@@ -9191,6 +9313,9 @@ if (cmeCheckoutAnnualBtn) {
 const cmeBuyCreditsBtn = document.getElementById("cmeBuyCreditsBtn");
 if (!isNativeApp && cmeBuyCreditsBtn) {
   cmeBuyCreditsBtn.addEventListener("click", function(e) {
+    if (routeAwayFromDisabledCme('paywall')) {
+      return;
+    }
     const quantityInput = document.getElementById("creditQty");
     const quantity = quantityInput ? parseInt(quantityInput.value, 10) : 1;
     if (isNaN(quantity) || quantity < 1 || quantity > 24) {
