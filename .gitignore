@@ -46,6 +46,9 @@ build/Release
 
 # Dependency directories
 node_modules/
+docs/node_modules/
+ios/App/App/public/node_modules/
+android/app/src/main/assets/public/node_modules/
 
 # Optional npm cache directory
 .npm
