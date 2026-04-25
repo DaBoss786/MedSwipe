@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedSwipe - Swipe. Learn. Master ENT.</title>
+    <title>MedSwipe - Swipe. Learn. Master Your Specialty.</title>
     
 <!-- SEO Meta Tags -->
-<meta name="description" content="MedSwipe - Gamified ENT board review and case prep. 800+ questions, mobile-first study, and high-yield learning built for busy clinicians. Start your 7-day free trial today.">
-<meta name="keywords" content="ENT board review, otolaryngology, medical education, board exam prep, ENT questions, case prep, medical app">
+<meta name="description" content="MedSwipe - Gamified ENT and Neurosurgery board review and case prep. 800+ questions, mobile-first study, and high-yield learning built for busy clinicians. Start your 7-day free trial today.">
+<meta name="keywords" content="ENT board review, neurosurgery board review, otolaryngology, neurosurgery, medical education, board exam prep, case prep, medical app">
 <meta name="author" content="MedSwipe">
 <meta name="robots" content="index, follow">
 <meta name="language" content="English">
@@ -16,8 +16,8 @@
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://medswipeapp.com/">
-<meta property="og:title" content="MedSwipe - Swipe. Learn. Master ENT.">
-<meta property="og:description" content="Board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
+<meta property="og:title" content="MedSwipe - Swipe. Learn. Master Your Specialty.">
+<meta property="og:description" content="ENT and Neurosurgery board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
 <meta property="og:image" content="https://medswipeapp.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -25,8 +25,8 @@
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://medswipeapp.com/">
-<meta property="twitter:title" content="MedSwipe - Swipe. Learn. Master ENT.">
-<meta property="twitter:description" content="Board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
+<meta property="twitter:title" content="MedSwipe - Swipe. Learn. Master Your Specialty.">
+<meta property="twitter:description" content="ENT and Neurosurgery board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
 <meta property="twitter:image" content="https://medswipeapp.com/assets/og-image.png">
 
 <!-- Canonical URL -->
@@ -234,7 +234,7 @@
         }
         
         .hero-inner {
-            max-width: 780px;
+            max-width: 960px;
             margin: 0 auto;
         }
         
@@ -247,22 +247,74 @@
             line-height: 1.1;
         }
         
-        .hero h1 span {
+        .hero h1 .specialty-rotator {
+            display: inline-grid;
+            max-width: 100%;
+            line-height: 1.08;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .specialty-sizer,
+        .specialty-current {
+            grid-area: 1 / 1;
+            white-space: nowrap;
+        }
+
+        .specialty-sizer {
+            visibility: hidden;
+        }
+
+        .specialty-current {
             background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.24s ease, transform 0.24s ease;
         }
-        
+
+        .specialty-current.is-changing {
+            opacity: 0;
+            transform: translateY(0.12em);
+        }
+
         .hero p {
             font-size: clamp(1.25rem, 3vw, 1.5rem);
             color: #666;
             margin-bottom: 28px;
             font-weight: 400;
-            max-width: 600px;
+            max-width: 660px;
             margin-left: auto;
             margin-right: auto;
             line-height: 1.5;
+        }
+
+        .hero-support {
+            display: block;
+            margin-top: 10px;
+            color: #5f6f7d;
+            font-size: clamp(1rem, 2vw, 1.08rem);
+            font-weight: 500;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .specialty-current {
+                transition: none;
+            }
         }
         
         .hero-cta {
@@ -1137,7 +1189,17 @@
                 padding: 120px 20px 80px;
                 min-height: auto;
             }
-            
+
+            .hero h1 {
+                font-size: clamp(2.45rem, 12vw, 4rem);
+                letter-spacing: -0.02em;
+            }
+
+            .specialty-sizer,
+            .specialty-current {
+                white-space: normal;
+            }
+
             .hero-cta {
                 flex-direction: column;
                 gap: 12px;
@@ -1245,7 +1307,7 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "MedSwipe",
-      "description": "Gamified ENT board review and case prep platform for medical professionals",
+      "description": "Gamified ENT and Neurosurgery board review and case prep platform for medical professionals",
       "url": "https://medswipeapp.com",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Web, iOS, Android",
@@ -1257,7 +1319,7 @@
           "priceCurrency": "USD",
           "priceValidUntil": "2025-12-31",
           "availability": "https://schema.org/InStock"
-        },
+        }
       ],
       "aggregateRating": {
         "@type": "AggregateRating",
@@ -1302,10 +1364,16 @@
         <div class="hero-inner">
             <h1>
                 Swipe. Learn.<br>
-                <span>Master ENT.</span>
+                Master
+                <span class="specialty-rotator" aria-hidden="true">
+                    <span class="specialty-sizer">Otolaryngology.</span>
+                    <span class="specialty-current" data-specialty="Otolaryngology">Otolaryngology.</span>
+                </span>
+                <span class="sr-only">Otolaryngology and Neurosurgery.</span>
             </h1>
             <p>
-                Swipe-based ENT learning, board review, and case prep that fits into your busy day.
+                Board review and case prep for Otolaryngology and Neurosurgery, built for fast study between cases.
+                <span class="hero-support">Mobile-first study for high-yield specialty review.</span>
             </p>
             <div class="hero-cta" id="appstore-download">
                 <a href="https://apps.apple.com/us/app/medswipe/id6753632306" class="app-store-badge" target="_blank" rel="noopener" aria-label="Download MedSwipe on the App Store">
@@ -1346,7 +1414,7 @@
                         <i class="fas fa-question-circle"></i>
                     </div>
                     <h3>800+ Board Questions</h3>
-                    <p>High-yield board review and in-service prep questions crafted by ENT experts</p>
+                    <p>High-yield board review and in-service prep questions across supported specialties</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -1422,7 +1490,7 @@
                     <div class="features-list">
                         <div class="feature-item">
                             <i class="fas fa-check feature-icon"></i>
-                            <span>Access to foundational ENT questions</span>
+                            <span>Access to foundational specialty questions</span>
                         </div>
                         <div class="feature-item">
                             <i class="fas fa-check feature-icon"></i>
@@ -1463,7 +1531,7 @@
                     <div class="features-list">
                         <div class="feature-item">
                             <i class="fas fa-check feature-icon"></i>
-                            <span><strong>800+ high-yield</strong> board-style questions and access to our curated Case Prep mode</span>
+                            <span><strong>800+ high-yield</strong> board-style questions across ENT and Neurosurgery, plus access to our curated Case Prep mode</span>
                         </div>
                         <div class="feature-item">
                             <i class="fas fa-check feature-icon"></i>
@@ -1509,7 +1577,7 @@
         <div class="container">
             <div class="section-header">
                 <h2>Trusted by medical professionals</h2>
-                <p>Join hundreds of doctors who've transformed their learning with MedSwipe</p>
+                <p>Join residents and clinicians using MedSwipe for high-yield specialty review</p>
             </div> 
             <div class="testimonials-grid">
                 <div class="testimonial">
@@ -1611,6 +1679,36 @@
                     });
                 });
             });
+
+            const specialtyCurrent = document.querySelector('.specialty-current');
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const specialties = [
+                { name: 'Otolaryngology', label: 'Otolaryngology.' },
+                { name: 'Neurosurgery', label: 'Neurosurgery.' }
+            ];
+            let activeSpecialtyIndex = 0;
+
+            function setActiveSpecialty(index) {
+                const activeSpecialty = specialties[index];
+                if (!activeSpecialty || !specialtyCurrent) return;
+
+                specialtyCurrent.textContent = activeSpecialty.label;
+                specialtyCurrent.dataset.specialty = activeSpecialty.name;
+
+                specialtyCurrent.classList.remove('is-changing');
+            }
+
+            setActiveSpecialty(activeSpecialtyIndex);
+
+            if (!reduceMotion && specialtyCurrent && specialties.length > 1) {
+                window.setInterval(() => {
+                    activeSpecialtyIndex = (activeSpecialtyIndex + 1) % specialties.length;
+                    specialtyCurrent.classList.add('is-changing');
+                    window.setTimeout(() => {
+                        setActiveSpecialty(activeSpecialtyIndex);
+                    }, 180);
+                }, 2600);
+            }
         });
     </script>
 
