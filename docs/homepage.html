@@ -248,10 +248,12 @@
         }
         
         .hero h1 .specialty-rotator {
-            display: inline-grid;
+            display: grid;
+            width: max-content;
             max-width: 100%;
+            margin: 0 auto;
             line-height: 1.08;
-            text-align: left;
+            text-align: center;
             vertical-align: top;
         }
 
@@ -270,6 +272,7 @@
         .specialty-sizer,
         .specialty-current {
             grid-area: 1 / 1;
+            text-align: center;
             white-space: nowrap;
         }
 
@@ -1197,7 +1200,11 @@
 
             .specialty-sizer,
             .specialty-current {
-                white-space: normal;
+                white-space: nowrap;
+            }
+
+            .hero h1 .specialty-rotator {
+                font-size: 0.86em;
             }
 
             .hero-cta {
@@ -1364,7 +1371,7 @@
         <div class="hero-inner">
             <h1>
                 Swipe. Learn.<br>
-                Master
+                Master<br>
                 <span class="specialty-rotator" aria-hidden="true">
                     <span class="specialty-sizer">Otolaryngology.</span>
                     <span class="specialty-current" data-specialty="Otolaryngology">Otolaryngology.</span>
