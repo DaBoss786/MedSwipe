@@ -7646,6 +7646,11 @@ function hideForgotPasswordModal() {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.showForgotPasswordModal = showForgotPasswordModal;
+  window.hideForgotPasswordModal = hideForgotPasswordModal;
+}
+
 // Handle password reset form submission
 async function handlePasswordReset(e) {
   e.preventDefault();

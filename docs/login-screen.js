@@ -381,8 +381,9 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     
     // Use the existing password reset functionality
-    if (typeof showForgotPasswordModal === 'function') {
-      showForgotPasswordModal();
+    if (typeof window.showForgotPasswordModal === 'function') {
+      e.stopPropagation();
+      window.showForgotPasswordModal();
     } else {
       // Fallback if function not available yet
       console.error("showForgotPasswordModal function not found");

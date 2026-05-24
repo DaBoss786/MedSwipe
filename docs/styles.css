@@ -4017,6 +4017,10 @@ button:not(:disabled):active {
 }
 
 /* Forgot Password Modal Styling */
+#forgotPasswordModal {
+  z-index: 12100;
+}
+
 .form-buttons {
   display: flex;
   flex-direction: column;
