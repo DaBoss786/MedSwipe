@@ -1,0 +1,54 @@
+{
+  "mode": "AUA",
+  "batch_id": "urology-aua-hourly-2026-05-19-01",
+  "status": "failed_before_sheet_write",
+  "failed_at": "2026-05-19 22:18 PDT",
+  "rows_written": null,
+  "source_pool_used": [
+    "Early Detection of Prostate Cancer: AUA/SUO Guideline",
+    "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+    "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+    "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+    "Medical Management of Kidney Stones: AUA Guideline",
+    "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Microhematuria: AUA/SUFU Guideline",
+    "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+    "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline"
+  ],
+  "validated_batch_path": "build/automation/urology_aua_guidelines_batches/urology-aua-hourly-2026-05-19-01.json",
+  "validation_summary": {
+    "total_questions": 10,
+    "category_distribution": {
+      "Oncology": 3,
+      "Stones": 2,
+      "Urogynecology": 2,
+      "General Urology": 2,
+      "Infections": 1
+    },
+    "answer_distribution": {
+      "A": 3,
+      "B": 2,
+      "C": 1,
+      "D": 3,
+      "E": 1
+    },
+    "generator_validation_errors": [],
+    "generator_validation_warnings": [],
+    "deterministic_verifier_lint_flags": []
+  },
+  "google_connector_error": {
+    "code": "token_expired",
+    "message": "Provided authentication token is expired. Please try signing in again."
+  },
+  "state_flipped": false,
+  "next_mode_preserved": "AUA",
+  "claude_review_status": "not_created_sheet_write_failed",
+  "manual_claude_prompt_path": null,
+  "final_readback_status": "failed_google_token_expired",
+  "unresolved_rows": [
+    {
+      "row": null,
+      "reason": "Live Google Sheets write/readback failed because the Google Drive connector authentication token expired."
+    }
+  ]
+}

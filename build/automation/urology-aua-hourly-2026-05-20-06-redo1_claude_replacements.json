@@ -1,0 +1,37 @@
+{
+  "batch_id": "urology-aua-hourly-2026-05-20-06-redo1",
+  "mode": "AUA",
+  "manual_followup": "Claude duplicate/saturation replacements for rows 393, 395, and 400",
+  "concepts": [
+    {
+      "target_row": 393,
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Low-risk NMIBC patient remains recurrence-free for five years of surveillance",
+      "decision_point": "Whether surveillance must continue indefinitely on a fixed schedule",
+      "correct_answer_concept": "Continue surveillance after five years only through shared decision-making",
+      "teaching_point": "Low-risk NMIBC surveillance can be de-intensified after prolonged recurrence-free follow-up through shared decision-making.",
+      "source_section": "low-risk surveillance after five years"
+    },
+    {
+      "target_row": 395,
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "clinical_trigger": "Recurrent calcium oxalate stone former has low urinary citrate but cannot tolerate potassium citrate tablets",
+      "decision_point": "How to address persistent hypocitraturia when standard formulation is not tolerated",
+      "correct_answer_concept": "Use citrate therapy or alternative alkali strategy tailored to tolerability",
+      "teaching_point": "Hypocitraturia treatment is a urine-chemistry target, and formulation or alkali strategy may need adjustment for adherence.",
+      "source_section": "citrate therapy for hypocitraturia"
+    },
+    {
+      "target_row": 400,
+      "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "category": "Infections",
+      "clinical_trigger": "Woman with recurrent UTI has dysuria but culture is negative and symptoms do not respond to antibiotics",
+      "decision_point": "How to manage possible alternative diagnosis",
+      "correct_answer_concept": "Evaluate for alternative causes rather than escalating antibiotics",
+      "teaching_point": "Recurrent UTI requires symptom-microbiology correlation; culture-negative nonresponse should trigger diagnostic reconsideration.",
+      "source_section": "culture documentation and alternative diagnoses"
+    }
+  ]
+}

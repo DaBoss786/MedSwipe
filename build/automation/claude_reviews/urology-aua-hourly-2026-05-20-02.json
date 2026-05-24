@@ -1,0 +1,225 @@
+{
+  "status": "completed_manual_followup",
+  "batch_id": "urology-aua-hourly-2026-05-20-02",
+  "mode": "AUA",
+  "row_range": "321:330",
+  "prompt_path": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-aua-hourly-2026-05-20-02_prompt.txt",
+  "compact_payload_path": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-aua-hourly-2026-05-20-02.json",
+  "unresolved_pre_claude_verifier_notes": [],
+  "compact_payload": [
+    {
+      "row_number": 321,
+      "Source/Guideline": "Early Detection of Prostate Cancer: AUA/SUO Guideline",
+      "Category": "Oncology",
+      "Question": "A healthy 76-year-old man in a PSA-screening program has PSA 2.1 ng/mL and no strong family history or germline mutation. What screening plan is most appropriate?",
+      "Option A": "Continue annual PSA indefinitely",
+      "Option B": "Start empiric antibiotics before repeating PSA",
+      "Option C": "Proceed directly to prostate MRI",
+      "Option D": "Discontinue or substantially lengthen the interval after shared decision-making",
+      "Option E": "Switch to DRE alone as the screening test",
+      "Correct Answer": "D",
+      "Explanation": "Option D is correct. In patients 75 years or older with PSA below 3 ng/mL, screening can be discontinued or the interval substantially lengthened after shared decision-making that accounts for health, age, PSA, and preferences. Option A is incorrect because indefinite annual screening increases overdiagnosis and biopsy harms when expected benefit is low. Option B is incorrect because MRI is not a screening substitute for a low PSA in this setting. Option C is incorrect because immediate biopsy is not appropriate for this low-PSA screening decision. Option E is incorrect because DRE alone does not replace PSA-based screening. Teaching point: Stopping or spacing screening is a risk-adapted decision, not an automatic age cutoff.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/early-detection-of-prostate-cancer-guidelines' target='_blank'>American Urological Association. Early Detection of Prostate Cancer: AUA/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 322,
+      "Source/Guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+      "Category": "Oncology",
+      "Question": "A 64-year-old man has biochemical recurrence after prostatectomy. PSA is 0.9 ng/mL, Grade Group 5, PSADT 5 months, and salvage RT is planned. What should be added?",
+      "Option A": "Observation until PSA exceeds 10 ng/mL",
+      "Option B": "Intravesical BCG induction",
+      "Option C": "ADT with salvage radiation",
+      "Option D": "Prostate biopsy before any radiation",
+      "Option E": "D-mannose prophylaxis",
+      "Correct Answer": "C",
+      "Explanation": "Option C is correct. Salvage radiation for post-prostatectomy biochemical recurrence should include ADT when high-risk features are present, such as Grade Group 4 to 5, PSA doubling time 6 months or less, or higher post-prostatectomy PSA. Option A is incorrect because delaying until a much higher PSA may reduce salvage effectiveness. Option B is incorrect because BCG treats selected bladder cancer settings. Option D is incorrect because prostatectomy has removed the gland, and recurrent disease decisions rely on PSA kinetics, pathology, and imaging. Option E is incorrect because D-mannose has no role in prostate cancer salvage therapy. Teaching point: High-risk biochemical recurrence changes salvage treatment intensity, not just imaging strategy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 323,
+      "Source/Guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "Category": "Oncology",
+      "Question": "A TURBT specimen is read as high-grade urothelial carcinoma with suspected micropapillary features and possible lymphovascular invasion. What is the best next quality step?",
+      "Option A": "Treat as low-risk disease without further review",
+      "Option B": "Ask an experienced genitourinary pathologist to review the slides",
+      "Option C": "Skip risk stratification until recurrence",
+      "Option D": "Use urine cytology to replace histology",
+      "Option E": "Start stone metabolic evaluation",
+      "Correct Answer": "B",
+      "Explanation": "Option B is correct. Suspected variant histology, extensive squamous or glandular differentiation, or uncertain lymphovascular invasion should prompt review by an experienced genitourinary pathologist because these features can change risk assessment and management. Option A is incorrect because variant histology is not handled as uncomplicated low-risk NMIBC. Option C is incorrect because risk stratification is assigned at each occurrence or recurrence. Option D is incorrect because cytology cannot replace pathologic interpretation of TURBT tissue. Option E is incorrect because stone prevention has no role in bladder tumor pathology review. Teaching point: Pathology uncertainty in NMIBC is a management issue, not a clerical detail.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 324,
+      "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "Category": "Stones",
+      "Question": "A 58-year-old man has residual recurrent struvite stones despite repeated procedures, and further surgical clearance is no longer feasible. Which medical option may be considered?",
+      "Option A": "Chronic culture-directed antibiotics as definitive stone therapy",
+      "Option B": "Observation until another febrile episode occurs",
+      "Option C": "Potassium citrate as the primary urease inhibitor",
+      "Option D": "Thiazide therapy directed at urine calcium",
+      "Option E": "Acetohydroxamic acid",
+      "Correct Answer": "E",
+      "Explanation": "Option E is correct. Acetohydroxamic acid may be offered for residual or recurrent struvite stones when surgical options have been exhausted. Option A is incorrect because antibiotics may suppress infection but do not replace stone-directed management when residual urease-producing stone remains. Option B is incorrect because waiting for another febrile episode ignores ongoing recurrence and progression risk. Option C is incorrect because potassium citrate alkalinizes urine for selected non-struvite stone contexts but is not a urease inhibitor. Option D is incorrect because thiazides target calcium stone hypercalciuria, not urease-driven struvite stones. Teaching point: A urease inhibitor is a fallback for selected struvite stone patients after surgical options are no longer viable.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 325,
+      "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "Category": "Stones",
+      "Question": "A 46-year-old woman has recurrent calcium stones and high urinary calcium despite dietary counseling. Which medication class is most guideline-aligned?",
+      "Option A": "Acetohydroxamic acid",
+      "Option B": "Potassium citrate for isolated hypocitraturia",
+      "Option C": "Continuous fluoroquinolone prophylaxis",
+      "Option D": "Thiazide diuretic",
+      "Option E": "Alpha blocker as lifelong prevention",
+      "Correct Answer": "D",
+      "Explanation": "Option D is correct. Thiazide diuretics are used for patients with recurrent calcium stones and high or relatively high urinary calcium to reduce calcium stone recurrence. Option A is incorrect because acetohydroxamic acid is reserved for selected residual or recurrent struvite stones after surgical options are exhausted. Option B is incorrect because potassium citrate targets hypocitraturia and urine pH rather than isolated hypercalciuria. Option C is incorrect because chronic fluoroquinolone prophylaxis is not calcium stone prevention. Option E is incorrect because alpha blockers may assist ureteral stone passage in selected settings but do not correct hypercalciuric recurrence risk. Teaching point: Pharmacologic stone prevention should match the measured urine abnormality and stone type.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 326,
+      "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "Category": "Urogynecology",
+      "Question": "A woman labeled as OAB has urgency, mixed incontinence, elevated PVR, and poor response to initial therapy. What is the best role for advanced testing?",
+      "Option A": "Use urine cytology as first-line OAB therapy",
+      "Option B": "Use urodynamics or cystoscopy when diagnostic uncertainty persists",
+      "Option C": "Use CT urogram for routine initial OAB evaluation",
+      "Option D": "Use cystoscopy to prove idiopathic detrusor overactivity",
+      "Option E": "Use cystoscopy as the routine diagnostic test for uncomplicated OAB",
+      "Correct Answer": "B",
+      "Explanation": "Option B is correct. Advanced testing such as urodynamics, cystoscopy, or imaging can be used when OAB symptoms coexist with diagnostic uncertainty, abnormal findings, elevated PVR, obstructive symptoms, or unexpected treatment response. Option A is incorrect because urine cytology evaluates selected malignancy or hematuria contexts and does not treat OAB or serve as first-line OAB therapy. Option C is incorrect because routine CT urography is not part of uncomplicated initial OAB evaluation. Option D is incorrect because cystoscopy does not diagnose or confirm idiopathic detrusor overactivity; it evaluates structural abnormalities. Option E is incorrect because cystoscopy is not a routine diagnostic test for uncomplicated idiopathic OAB, though it may be used when diagnostic uncertainty persists. Teaching point: The senior-level distinction is routine testing versus targeted testing when the OAB label may be incomplete.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 327,
+      "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "Category": "Urogynecology",
+      "Question": "A patient with idiopathic OAB had 100U intradetrusor botulinum toxin with partial benefit and minimal side effects. What counseling is required before considering 200U?",
+      "Option A": "Higher dose has no effect on UTI risk",
+      "Option B": "Higher dose avoids symptom monitoring",
+      "Option C": "Higher dose replaces follow-up PVR assessment when symptoms change",
+      "Option D": "Higher dose is required before any 100U trial",
+      "Option E": "Higher dose may increase incomplete emptying and UTI risk",
+      "Correct Answer": "E",
+      "Explanation": "Option E is correct. Patients with inadequate response to 100U botulinum toxin and minimal side effects may be offered 200U, but they should be monitored and counseled about increased risks such as incomplete bladder emptying requiring catheterization and UTI. Option A is incorrect because infection risk may increase with dose escalation. Option B is incorrect because post-procedure symptoms and emptying still require monitoring. Option C is incorrect because dose escalation does not remove the need for follow-up when symptoms suggest incomplete emptying. Option D is incorrect because 100U is the usual starting dose for idiopathic OAB. Teaching point: Botulinum toxin dose escalation is an efficacy-to-adverse-effect tradeoff, especially around retention and UTI.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 328,
+      "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+      "Category": "General Urology",
+      "Question": "A 52-year-old man has confirmed microhematuria plus proteinuria, dysmorphic RBCs, and reduced eGFR. What referral plan is most appropriate?",
+      "Option A": "Nephrology referral replaces urologic evaluation",
+      "Option B": "Repeat dipstick alone in 2 years",
+      "Option C": "Immediate intravesical chemotherapy",
+      "Option D": "Nephrology referral and risk-based urologic evaluation",
+      "Option E": "Treat presumed cystitis without microscopy",
+      "Correct Answer": "D",
+      "Explanation": "Option D is correct. Findings suggesting medical renal disease should prompt nephrology referral, but risk-based urologic evaluation should still be performed for confirmed microhematuria. Option A is incorrect because nephrology evaluation does not exclude concurrent urologic malignancy or structural disease. Option B is incorrect because repeat dipstick alone is not adequate follow-up for confirmed microhematuria with concerning renal features. Option C is incorrect because intravesical chemotherapy requires a bladder cancer indication. Option E is incorrect because presumed cystitis does not explain dysmorphic RBCs, proteinuria, and reduced eGFR. Teaching point: Glomerular clues change referral needs but do not cancel risk-based urologic evaluation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+    },
+    {
+      "row_number": 329,
+      "Source/Guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+      "Category": "General Urology",
+      "Question": "A 43-year-old man has CP/CPPS with persistent pain despite alpha blocker and NSAID trials. He asks about non-drug procedural options. Which should be discussed?",
+      "Option A": "Low-intensity extracorporeal shockwave therapy",
+      "Option B": "Outlet surgery when no obstruction is present",
+      "Option C": "Long-term systemic glucocorticoids for pain control",
+      "Option D": "Cystoscopy as a therapeutic pain procedure",
+      "Option E": "Chronic opioids as first-line monotherapy",
+      "Correct Answer": "A",
+      "Explanation": "Option A is correct. Low-intensity extracorporeal shockwave therapy should be discussed as an option for CP/CPPS. Option B is incorrect because outlet surgery should not be performed solely to relieve pelvic pain when obstruction is not the treatment target. Option C is incorrect because long-term systemic glucocorticoids are not recommended for chronic pelvic pain. Option D is incorrect because cystoscopy can clarify diagnosis in selected patients but is not a therapeutic pain procedure. Option E is incorrect because opioid-centered monotherapy is not an appropriate first-line chronic pelvic pain strategy. Teaching point: CP/CPPS treatment can include selected non-drug modalities, but destructive or unrelated procedures are not pain therapy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 330,
+      "Source/Guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "Category": "Infections",
+      "Question": "A woman with recurrent uncomplicated cystitis still has dysuria 8 days after culture-directed nitrofurantoin. She is afebrile with no flank pain. What is the next step?",
+      "Option A": "Post-treatment culture is routine in asymptomatic patients",
+      "Option B": "Screening culture after clinical cure",
+      "Option C": "Repeat urine culture before further management",
+      "Option D": "Start intravesical chemotherapy",
+      "Option E": "Diagnose OAB without reassessing infection",
+      "Correct Answer": "C",
+      "Explanation": "Option C is correct. Persistent UTI symptoms after antimicrobial therapy should prompt repeat urine culture to guide further management before reflexively changing antibiotics. Option A is incorrect because test-of-cure urinalysis or culture is not recommended for asymptomatic patients. Option B is incorrect because symptom resolution is sufficient in an asymptomatic patient. Option D is incorrect because intravesical chemotherapy treats selected bladder cancer contexts. Option E is incorrect because persistent symptoms require reassessment for persistent infection and, if cultures clear, alternative diagnoses. Teaching point: Recurrent UTI follow-up separates asymptomatic cure from persistent symptoms that need repeat microbiology.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+    }
+  ],
+  "manual_followup_applied_at": "2026-05-20 12:13 PDT",
+  "claude_rows_flagged": [
+    {
+      "row": 321,
+      "disposition": "Needs Revision",
+      "issue_type": "duplicate/saturation risk",
+      "severity": "moderate",
+      "reason": "Claude flagged near-duplicate of row 261; preserve for curator decision on whether PSA <3 age 75+ specificity justifies retention."
+    },
+    {
+      "row": 323,
+      "disposition": "Reject",
+      "issue_type": "duplicate/saturation risk",
+      "severity": "high",
+      "reason": "Claude flagged near-direct duplicate of row 272: suspected micropapillary variant histology with same GU pathology review answer and teaching point."
+    },
+    {
+      "row": 328,
+      "disposition": "Reject",
+      "issue_type": "duplicate/saturation risk",
+      "severity": "high",
+      "reason": "Claude flagged direct duplicate of row 278: microhematuria with proteinuria/dysmorphic RBCs/reduced eGFR and same nephrology plus risk-based urologic evaluation answer."
+    },
+    {
+      "row": 329,
+      "disposition": "Pass with curator note",
+      "issue_type": "factual uncertainty resolved by live source check",
+      "severity": "moderate",
+      "reason": "Claude requested curator verification; live AUA 2025 guideline confirms clinicians should discuss low-intensity ESWT for CP/CPPS as Moderate Recommendation, Evidence Level Grade A."
+    }
+  ],
+  "claude_rows_auto_fixed": [
+    {
+      "row": 326,
+      "fields": [
+        "Explanation"
+      ],
+      "reason": "Safe Claude explanation-quality edit applied; corrected option attribution for urine cytology and cystoscopy distractors."
+    }
+  ],
+  "claude_unapplied_suggestions": [
+    {
+      "row": 321,
+      "disposition": "Needs Revision",
+      "issue_type": "duplicate/saturation risk",
+      "severity": "moderate",
+      "reason": "Claude flagged near-duplicate of row 261; preserve for curator decision on whether PSA <3 age 75+ specificity justifies retention."
+    },
+    {
+      "row": 323,
+      "disposition": "Reject",
+      "issue_type": "duplicate/saturation risk",
+      "severity": "high",
+      "reason": "Claude flagged near-direct duplicate of row 272: suspected micropapillary variant histology with same GU pathology review answer and teaching point."
+    },
+    {
+      "row": 328,
+      "disposition": "Reject",
+      "issue_type": "duplicate/saturation risk",
+      "severity": "high",
+      "reason": "Claude flagged direct duplicate of row 278: microhematuria with proteinuria/dysmorphic RBCs/reduced eGFR and same nephrology plus risk-based urologic evaluation answer."
+    },
+    {
+      "row": 329,
+      "disposition": "Pass with curator note",
+      "issue_type": "factual uncertainty resolved by live source check",
+      "severity": "moderate",
+      "reason": "Claude requested curator verification; live AUA 2025 guideline confirms clinicians should discuss low-intensity ESWT for CP/CPPS as Moderate Recommendation, Evidence Level Grade A."
+    }
+  ],
+  "post_claude_readback_status": "succeeded",
+  "final_verifier_counts_after_claude": {
+    "Pass": 7,
+    "Needs Revision": 1,
+    "Reject": 2
+  },
+  "live_source_verification": [
+    {
+      "row": 329,
+      "source": "https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain",
+      "finding": "AUA 2025 Guideline Statement 26 says clinicians should discuss low-intensity extracorporeal shockwave therapy for CP/CPPS; Moderate Recommendation, Evidence Level Grade A."
+    }
+  ],
+  "post_claude_readback_at": "2026-05-20 12:15 PDT"
+}

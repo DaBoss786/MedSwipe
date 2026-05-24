@@ -1,0 +1,194 @@
+{
+  "status": "manual_claude_followup_completed",
+  "mode": "SASP",
+  "batch_id": "urology-sasp-aua-hourly-2026-05-20-04",
+  "row_range": "AI_Drafts!351:360",
+  "prompt_path": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-sasp-aua-hourly-2026-05-20-04_prompt.txt",
+  "compact_payload": [
+    {
+      "row_number": 351,
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "question": "A fit woman has completely resected multifocal high-risk high-grade Ta bladder tumors, muscle present, no perforation, and BCG supply is available. Which intravesical plan is most appropriate?",
+      "option_a": "Six-week induction BCG",
+      "option_b": "Observation without induction therapy",
+      "option_c": "Immediate radical cystectomy",
+      "option_d": "Nadofaragene before any BCG exposure",
+      "option_e": "Annual cystoscopy without intravesical treatment",
+      "correct_answer": "A",
+      "explanation": "Option A is correct. High-risk Ta urothelial carcinoma is an indication for a six-week induction course of BCG when BCG is available and the patient can receive it. Option B is incorrect because high-grade Ta disease has enough recurrence and progression risk to warrant induction intravesical therapy. Option C is incorrect because immediate radical cystectomy is not routine for a completely resected treatment-naive Ta tumor. Option D is incorrect because nadofaragene is used in selected BCG-unresponsive settings rather than before BCG exposure. Option E is incorrect because surveillance alone undertreats high-grade Ta risk. Teaching point: The key branch is BCG availability and risk group, not the noninvasive Ta label alone.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 352,
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "question": "A patient has high-risk BCG-unresponsive NMIBC with persistent carcinoma in situ after adequate BCG. He is unwilling to undergo cystectomy. Which bladder-sparing option is guideline-concordant to discuss?",
+      "option_a": "Repeat indefinite BCG maintenance alone",
+      "option_b": "Observation until muscle invasion develops",
+      "option_c": "Single postoperative gemcitabine instillation",
+      "option_d": "Nadofaragene firadenovec or another alternative intravesical therapy",
+      "option_e": "Pelvic radiation as routine NMIBC salvage",
+      "correct_answer": "D",
+      "explanation": "Option D is correct. For a patient with high-risk BCG-unresponsive NMIBC who is unwilling or unfit for cystectomy, the AUA/SUO guideline supports discussing bladder-sparing options such as clinical trial enrollment, alternative intravesical therapy including nadofaragene firadenovec or gemcitabine-docetaxel, and pembrolizumab for carcinoma in situ. Option A is incorrect because persistent BCG-unresponsive disease is not managed by simply extending BCG alone. Option B is incorrect because high-risk persistent CIS should not be observed until progression. Option C is incorrect because a single postoperative instillation is a perioperative recurrence-reduction step, not salvage for BCG-unresponsive CIS. Option E is incorrect because routine pelvic radiation is not the guideline bladder-sparing salvage pathway for NMIBC. Teaching point: BCG-unresponsive high-risk NMIBC forces a cystectomy discussion, but cystectomy-ineligible or refusing patients still have defined bladder-sparing salvage options.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 353,
+      "source_guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+      "category": "Oncology",
+      "question": "A man has pelvic nodal recurrence after prostatectomy, no distant disease, and salvage treatment is planned. Which approach should be offered?",
+      "option_a": "Pelvic lymphadenectomy as a proven curative substitute",
+      "option_b": "ADT plus salvage RT to the prostate bed and pelvic nodes",
+      "option_c": "Docetaxel with salvage RT and ADT",
+      "option_d": "Ignore nodal disease during radiation planning",
+      "option_e": "Intravesical BCG",
+      "correct_answer": "B",
+      "explanation": "Option B is correct. Pelvic nodal recurrence after radical prostatectomy should prompt an offer of ADT plus salvage radiation to the prostate bed and pelvic lymph nodes. Option A is incorrect because salvage pelvic lymphadenectomy has uncertain oncologic benefit and is not the standard substitute in this setting. Option C is incorrect because docetaxel should not be added to salvage RT and ADT for this indication. Option D is incorrect because visible pelvic nodal disease should be incorporated into treatment planning. Option E is incorrect because BCG is bladder-directed therapy. Teaching point: Regional recurrence after prostatectomy is a combined local-regional radiation and systemic-hormonal decision.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 354,
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "question": "A first-time calcium stone former has a solitary kidney and wants prevention beyond general advice. Which evaluation is most guideline-concordant?",
+      "option_a": "No testing unless a second stone forms",
+      "option_b": "One or two 24-hour urine collections on a random diet",
+      "option_c": "Cystoscopy to measure urinary calcium",
+      "option_d": "Bone scan to classify stone composition",
+      "option_e": "Empiric antibiotics before metabolic testing",
+      "correct_answer": "B",
+      "explanation": "Option B is correct. Additional metabolic testing is appropriate for high-risk first-time stone formers and recurrent stone formers, and it consists of one or two 24-hour urine collections on a random diet with core lithogenic measurements. Option A is incorrect because solitary kidney status makes recurrence prevention more consequential. Option C is incorrect because cystoscopy does not measure stone-risk chemistry. Option D is incorrect because bone scan does not classify urinary stone composition. Option E is incorrect because antibiotics do not replace metabolic evaluation. Teaching point: A first stone can still deserve full metabolic evaluation when the recurrence consequence is high.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 355,
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "question": "A recurrent stone former starts a prevention plan and has small nonobstructing renal stones under surveillance. What follow-up best assesses stone activity?",
+      "option_a": "No imaging if flank pain is absent",
+      "option_b": "Monthly cystoscopy",
+      "option_c": "Periodic imaging with KUB, renal ultrasound, or low-dose CT",
+      "option_d": "Urine cytology as the primary growth test",
+      "option_e": "Scheduled bone scan surveillance",
+      "correct_answer": "C",
+      "explanation": "Option C is correct. Follow-up of medical stone prevention should include periodic imaging based on stone activity to assess growth or new stone formation, using modalities such as plain abdominal imaging, renal ultrasonography, or low-dose CT. Option A is incorrect because asymptomatic stones can grow or recur. Option B is incorrect because cystoscopy does not monitor renal stone burden. Option D is incorrect because cytology evaluates urothelial malignancy risk, not stone activity. Option E is incorrect because bone scan is not a renal stone surveillance tool. Teaching point: Stone prevention is judged by both urine chemistry and actual stone burden over time.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 356,
+      "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "category": "Urogynecology",
+      "question": "An older man with a working AUS has urgency incontinence despite mirabegron, PVR 0 mL, no erosion, and urodynamic detrusor overactivity. What is a reasonable next OAB therapy?",
+      "option_a": "Add a tandem AUS cuff",
+      "option_b": "Increase pressure-balloon volume",
+      "option_c": "Chronic urethral Foley",
+      "option_d": "OnabotulinumtoxinA injection",
+      "option_e": "Radical cystectomy",
+      "correct_answer": "D",
+      "explanation": "Option D is correct. For idiopathic OAB symptoms that persist despite medication, minimally invasive therapies such as intradetrusor botulinum toxin can be offered after appropriate evaluation and counseling. Option A is incorrect because the stem supports urgency incontinence rather than recurrent stress incontinence from AUS failure. Option B is incorrect because the device is functioning and overfilling the balloon risks urethral harm. Option C is incorrect because chronic urethral catheterization is not routine OAB escalation. Option E is incorrect because cystectomy is not an OAB treatment. Teaching point: Incontinence after AUS requires separating device failure from detrusor-driven urgency before escalating therapy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 357,
+      "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "category": "Urogynecology",
+      "question": "A woman with bothersome idiopathic OAB wants a non-drug option, wants to avoid retention risk, and can attend repeated office visits. Which option best fits?",
+      "option_a": "Immediate augmentation cystoplasty",
+      "option_b": "Chronic urethral catheterization",
+      "option_c": "OnabotulinumtoxinA injection to avoid retention risk",
+      "option_d": "Urine cytology-guided drug selection",
+      "option_e": "Percutaneous tibial nerve stimulation",
+      "correct_answer": "E",
+      "explanation": "Option E is correct. Percutaneous tibial nerve stimulation is a minimally invasive OAB therapy that can fit a patient prioritizing reversibility and avoiding retention risk while accepting repeated visits. Option A is incorrect because augmentation cystoplasty is a rare last-resort option for severe refractory disease. Option B is incorrect because chronic catheterization is not routine treatment for idiopathic OAB. Option C is incorrect because intradetrusor botulinum toxin can be effective but carries urinary retention and PVR-monitoring considerations, which conflicts with her priority to avoid retention risk. Option D is incorrect because cytology does not select OAB therapy. Teaching point: OAB procedural counseling should match therapy burden and adverse-effect profile to patient priorities.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 358,
+      "source_guideline": "Microhematuria: AUA/SUFU Guideline",
+      "category": "General Urology",
+      "question": "A high-risk microhematuria patient needs upper-tract evaluation but has an iodinated contrast allergy. What is the preferred imaging substitute if feasible?",
+      "option_a": "MR urography",
+      "option_b": "Urine cytology alone",
+      "option_c": "Cystoscopy without upper-tract imaging",
+      "option_d": "Bone scan",
+      "option_e": "Empiric intravesical chemotherapy",
+      "correct_answer": "A",
+      "explanation": "Option A is correct. High-risk microhematuria requires cystoscopy plus axial upper-tract imaging; when multiphasic CT urography is contraindicated, MR urography may be used if feasible. Option B is incorrect because cytology alone does not evaluate the renal cortex or urothelium. Option C is incorrect because cystoscopy evaluates the bladder but not the upper tracts. Option D is incorrect because bone scan does not evaluate hematuria sources. Option E is incorrect because chemotherapy is not a diagnostic test. Teaching point: The high-risk hematuria imaging pathway has a hierarchy: CT urography, then MR urography, then retrograde pyelography with noncontrast imaging or ultrasound when both are contraindicated.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+    },
+    {
+      "row_number": 359,
+      "source_guideline": "Microhematuria: AUA/SUFU Guideline",
+      "category": "General Urology",
+      "question": "A patient had a negative risk-based microhematuria evaluation. Repeat urinalysis one year later is negative, and no new symptoms are present. What is reasonable?",
+      "option_a": "Annual CT urography indefinitely",
+      "option_b": "Immediate repeat cystoscopy",
+      "option_c": "Discontinue further microhematuria evaluation",
+      "option_d": "Serial urine marker surveillance",
+      "option_e": "Intravesical BCG prophylaxis",
+      "correct_answer": "C",
+      "explanation": "Option C is correct. After a prior negative hematuria evaluation, a subsequent negative urinalysis allows clinicians to discontinue further microhematuria evaluation. Option A is incorrect because indefinite CT urography creates harm without guideline support. Option B is incorrect because repeat cystoscopy is not required when the repeat urinalysis is negative and symptoms have not changed. Option D is incorrect because serial urine markers do not replace risk-based follow-up. Option E is incorrect because BCG is bladder cancer therapy, not hematuria prophylaxis. Teaching point: Hematuria follow-up is not endless when the risk-based workup and repeat urinalysis are both negative.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+    },
+    {
+      "row_number": 360,
+      "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "category": "Infections",
+      "question": "A premenopausal woman has culture-proven recurrent cystitis episodes clustered after intercourse. She wants prevention and accepts limited antibiotic exposure. What strategy best fits?",
+      "option_a": "Routine cystoscopy before each intercourse-associated episode",
+      "option_b": "Daily fluoroquinolone prophylaxis as the default",
+      "option_c": "Post-coital antibiotic prophylaxis after shared decision-making",
+      "option_d": "Treat asymptomatic bacteriuria between episodes",
+      "option_e": "Upper-tract imaging before any prevention plan",
+      "correct_answer": "C",
+      "explanation": "Option C is correct. For women with recurrent uncomplicated UTIs temporally related to intercourse, post-coital antibiotic prophylaxis can reduce recurrence while limiting antibiotic exposure compared with continuous daily prophylaxis. Option A is incorrect because cystoscopy is not repeated around each uncomplicated episode. Option B is incorrect because broad daily fluoroquinolone prophylaxis is poor stewardship when a narrower timed strategy fits the trigger. Option D is incorrect because asymptomatic bacteriuria should not drive treatment. Option E is incorrect because routine upper-tract imaging is not required for the index recurrent uncomplicated UTI pattern. Teaching point: Recurrent UTI prevention should match the recurrence phenotype; sex-associated episodes can be managed with targeted post-coital prophylaxis rather than default continuous therapy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+    }
+  ],
+  "unresolved_pre_claude_verifier_notes": [],
+  "initial_verifier_counts": {
+    "Pass": 7,
+    "Needs Revision": 1,
+    "Reject": 2,
+    "Source Needed": 0
+  },
+  "rows_auto_fixed_before_manual_claude_handoff": [
+    {
+      "row_number": 351,
+      "reason": "Safe pre-Claude source-fidelity/stem clarity fix: clarified induction BCG when BCG is available."
+    },
+    {
+      "row_number": 352,
+      "reason": "Regenerated before Claude handoff because the original post-radiation prostate salvage-biopsy concept duplicated prior rows."
+    },
+    {
+      "row_number": 360,
+      "reason": "Regenerated before Claude handoff because the original recurrent UTI concept duplicated saturated vaginal-estrogen prophylaxis."
+    }
+  ],
+  "final_verifier_counts": {
+    "Pass": 10,
+    "Needs Revision": 0,
+    "Reject": 0,
+    "Source Needed": 0
+  },
+  "created_at": "2026-05-20 14:42 PDT",
+  "claude_rows_flagged": [
+    {
+      "row_number": 353,
+      "issue_type": "factual uncertainty",
+      "severity": "low",
+      "resolution": "Resolved by public AUA Salvage Therapy Guideline Statement 26; no sheet edit applied."
+    },
+    {
+      "row_number": 357,
+      "issue_type": "distractor quality",
+      "severity": "low",
+      "resolution": "Safe edit applied to Option C and explanation."
+    }
+  ],
+  "claude_rows_auto_fixed": [
+    357
+  ],
+  "claude_unapplied_suggestions": [],
+  "post_claude_readback_status": "succeeded",
+  "claude_review_status": "completed_manual_followup",
+  "post_claude_verified_at": "2026-05-20 20:50 PDT",
+  "post_claude_final_counts": {
+    "Pass": 10,
+    "Needs Revision": 0,
+    "Reject": 0,
+    "Source Needed": 0
+  }
+}

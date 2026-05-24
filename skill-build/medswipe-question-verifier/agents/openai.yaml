@@ -1,0 +1,7 @@
+interface:
+  display_name: "MedSwipe Question Verifier"
+  short_description: "Verify MedSwipe draft questions"
+  default_prompt: "Use $medswipe-question-verifier to verify AI_Drafts rows 2-5 using the source material I provide."
+
+policy:
+  allow_implicit_invocation: true

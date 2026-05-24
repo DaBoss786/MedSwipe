@@ -1,0 +1,25 @@
+{
+  "batch_id": "urology-aua-hourly-2026-05-20-06",
+  "status": "manual_handoff_pending",
+  "row_range": "AI_Drafts!391:400",
+  "source_mode": "AUA",
+  "prompt_path": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-aua-hourly-2026-05-20-06_prompt.txt",
+  "compact_payload_path": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-aua-hourly-2026-05-20-06_prompt.txt",
+  "compact_payload_rows": [
+    {"row_number": 391, "source_guideline": "Early Detection of Prostate Cancer: AUA/SUO Guideline", "category": "Oncology", "correct_answer": "B", "question": "A biopsy-naive man has elevated GG2+ risk and a technically adequate prostate MRI read as PI-RADS 2. Which biopsy plan best fits the risk-based pathway?"},
+    {"row_number": 392, "source_guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline", "category": "Oncology", "correct_answer": "C", "question": "A man on active surveillance for low-risk prostate cancer wants to use annual MRI alone and avoid future surveillance biopsies. What counseling is most appropriate?"},
+    {"row_number": 393, "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline", "category": "Oncology", "correct_answer": "D", "question": "During TURBT, a bladder tumor is sessile and visually concerning for high-grade or invasive disease. What specimen goal is most important for staging quality?"},
+    {"row_number": 394, "source_guideline": "Medical Management of Kidney Stones: AUA Guideline", "category": "Stones", "correct_answer": "A", "question": "A first-time calcium oxalate stone former has a solitary kidney and strong family history of stones. He wants prevention beyond general advice. What evaluation is appropriate?"},
+    {"row_number": 395, "source_guideline": "Medical Management of Kidney Stones: AUA Guideline", "category": "Stones", "correct_answer": "E", "question": "A patient has recurrent struvite stones with urease-producing infection and a surgically removable residual staghorn fragment. What prevention principle is most important?"},
+    {"row_number": 396, "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder", "category": "Urogynecology", "correct_answer": "D", "question": "A patient with urgency incontinence has OAB symptoms and an elevated postvoid residual from suspected incomplete emptying. What should guide therapy selection?"},
+    {"row_number": 397, "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder", "category": "Urogynecology", "correct_answer": "B", "question": "Two weeks after intradetrusor botulinum toxin for OAB, a patient has weak stream and worse urgency. Which assessment best addresses a treatment-related complication?"},
+    {"row_number": 398, "source_guideline": "Microhematuria: AUA/SUFU Guideline", "category": "General Urology", "correct_answer": "D", "question": "A woman has microhematuria on a specimen collected during visible vaginal bleeding. After the gynecologic bleeding resolves, what should determine urologic evaluation?"},
+    {"row_number": 399, "source_guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline", "category": "General Urology", "correct_answer": "C", "question": "A man with chronic pelvic pain has marked pain catastrophizing, sleep disruption, and anxiety despite negative infection evaluation. Which adjunct is appropriate?"},
+    {"row_number": 400, "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline", "category": "Infections", "correct_answer": "E", "question": "A woman with suspected recurrent uncomplicated UTI has repeated mixed-flora cultures despite classic cystitis symptoms. What diagnostic step is reasonable?"}
+  ],
+  "unresolved_pre_claude_verifier_notes": [],
+  "initial_verifier_counts": {"Pass": 4, "Needs Revision": 4, "Reject": 2, "Source Needed": 0},
+  "rows_auto_fixed_before_claude": [392, 393, 394, 395, 397, 398],
+  "final_verifier_counts": {"Pass": 10, "Needs Revision": 0, "Reject": 0, "Source Needed": 0},
+  "final_readback_status": "succeeded"
+}

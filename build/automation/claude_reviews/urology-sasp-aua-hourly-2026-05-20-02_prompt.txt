@@ -1,0 +1,135 @@
+Critically analyze only the 10 pasted MedSwipe AI_Drafts rows below. Do not ask for spreadsheet access and do not edit any sheet. Return one entry per row with row_number, overall_disposition, issue_type, severity, affected_field, exact_replacement_text, rationale, and do_not_change when no edit is needed. Focus on senior-resident difficulty, clinical accuracy, distractor quality, explanation quality, source fidelity, and duplicate/saturation risk. For factual uncertainty, answer-key changes, duplicate/saturation concern, or major clinical rewrite, mark flag_only rather than providing an auto-edit. If you cannot review the pasted rows, say CLAUDE_REVIEW_FAILED and explain why.
+
+COMPACT ROW PAYLOAD
+[
+  {
+    "row_number": 311,
+    "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+    "Category": "Oncology",
+    "Question": "A 62-year-old man has newly diagnosed high-risk localized prostate cancer and asks for focal HIFU instead of surgery or radiation. What counseling best matches guideline-based management?",
+    "Option A": "Offer focal ablation as standard first-line therapy",
+    "Option B": "Pair focal ablation with concurrent BCG",
+    "Option C": "Do not recommend focal or whole-gland ablation outside a trial",
+    "Option D": "Replace staging with genomic testing",
+    "Option E": "Use surveillance alone because disease is localized",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. High-risk localized prostate cancer should be managed with definitive local therapy pathways, and focal or whole-gland ablation should not be recommended outside a clinical trial. Option A is incorrect because ablation is not the standard first-line option for high-risk disease. Option B is incorrect because BCG treats bladder cancer, not localized prostate cancer. Option D is incorrect because tissue biomarkers do not replace staging and risk-based treatment selection. Option E is incorrect because surveillance alone undertreats high-risk disease in a fit patient. Teaching point: High-risk prostate cancer is not the setting to convert an unproven focal therapy into standard curative treatment.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+  },
+  {
+    "row_number": 312,
+    "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+    "Category": "Oncology",
+    "Question": "An 86-year-old man has high-risk localized prostate cancer, obstructive local symptoms, severe frailty, and limited life expectancy. Which plan may be reasonable?",
+    "Option A": "No symptom-directed cancer treatment can be offered",
+    "Option B": "Mandatory prostatectomy with pelvic lymphadenectomy",
+    "Option C": "Focal ablation as curative standard therapy",
+    "Option D": "Palliative ADT alone after goals-of-care discussion",
+    "Option E": "Cystectomy because the symptoms are obstructive",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. For selected high-risk localized prostate cancer patients with local symptoms and limited life expectancy, palliative ADT alone may be appropriate after shared decision-making. Option A is incorrect because palliation can be appropriate when cure-directed therapy is not. Option B is incorrect because major surgery is not mandatory in a severely frail patient with limited life expectancy. Option C is incorrect because focal ablation is not guideline-standard high-risk treatment. Option E is incorrect because cystectomy is not treatment for localized prostate cancer obstruction. Teaching point: Localized prostate cancer management still accounts for frailty, symptoms, and life expectancy, not risk group alone.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+  },
+  {
+    "row_number": 313,
+    "Source/Guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "A 71-year-old woman has a new papillary bladder tumor resected at TURBT. No upper-tract imaging has been performed. What belongs in the initial evaluation?",
+    "Option A": "Upper urinary tract imaging",
+    "Option B": "No imaging unless flank pain occurs",
+    "Option C": "Prostate MRI",
+    "Option D": "Bone scan before pathology returns",
+    "Option E": "Annual urine cytology alone",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. Initial evaluation of a patient with bladder cancer includes upper urinary tract imaging to assess for synchronous upper-tract disease and complete staging context. Option B is incorrect because imaging is part of initial evaluation rather than only symptom-triggered. Option C is incorrect because prostate MRI does not evaluate the upper urinary tract. Option D is incorrect because bone scan is not routine initial evaluation for an apparent non-muscle invasive bladder tumor. Option E is incorrect because cytology alone cannot replace anatomic upper-tract assessment. Teaching point: Bladder cancer evaluation is not limited to the visible bladder tumor; the upper tracts must be considered at diagnosis.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 314,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A 44-year-old man passes his first kidney stone and brings the fragment to clinic. Before deciding whether metabolic prevention is needed, what should be done?",
+    "Option A": "Discard the stone if symptoms resolved",
+    "Option B": "Send the stone for composition analysis",
+    "Option C": "Start acetohydroxamic acid empirically",
+    "Option D": "Treat first stones as cystine stones by default",
+    "Option E": "Use urine dipstick pH as the sole classifier",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. When a stone is available, stone analysis should be obtained at least once because composition changes prevention counseling and medication choices. Option A is incorrect because symptom resolution does not remove the value of composition data. Option C is incorrect because acetohydroxamic acid is reserved for selected infection-stone situations, not empiric first-stone prevention. Option D is incorrect because cystine stones are uncommon and require confirmation. Option E is incorrect because urine pH alone cannot determine stone composition. Teaching point: Stone analysis is a low-burden step that prevents guessing at the metabolic pathway.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 315,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A 52-year-old woman with recurrent stones transfers care. She has scattered outside reports but no clear current burden. What review should guide prevention planning?",
+    "Option A": "Delay imaging until another surgery",
+    "Option B": "Use serum creatinine as the stone-burden estimate",
+    "Option C": "Assume no stones if pain is absent",
+    "Option D": "Use urine culture colony count as stone size",
+    "Option E": "Assess or obtain imaging to quantify stone burden",
+    "Correct Answer": "E",
+    "Explanation": "Option E is correct. AUA medical management emphasizes reviewing available imaging or obtaining imaging to quantify stone burden, because prevention intensity and follow-up depend on whether stones are present and progressing. Option A is incorrect because waiting for surgery misses the chance to plan prevention and surveillance. Option B is incorrect because kidney function does not measure stone number or size. Option C is incorrect because asymptomatic stones can still be present. Option D is incorrect because culture results do not quantify stone burden. Teaching point: Medical stone prevention starts with knowing both composition and current burden, not symptoms alone.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 316,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A 78-year-old woman with severe OAB asks for a chronic urethral Foley solely for incontinence after medications and procedures were intolerable. What counseling is required?",
+    "Option A": "Recommend catheterization routinely before behavioral therapy",
+    "Option B": "Use a larger balloon if leakage occurs",
+    "Option C": "Discuss chronic catheter as a last-resort option with harm counseling",
+    "Option D": "Promise it prevents urinary tract infection",
+    "Option E": "Use urethral catheterization to preserve the urethra",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. Chronic indwelling urethral or suprapubic catheters for OAB should be considered only when other therapies are contraindicated, ineffective, or no longer desired, and only with shared decision-making about harms. Option A is incorrect because catheterization is not routine early OAB therapy. Option B is incorrect because increasing catheter size or balloon volume can worsen urethral injury. Option D is incorrect because chronic catheters increase infectious and other complications. Option E is incorrect because urethral catheters can cause urethral trauma and erosion. Teaching point: A chronic catheter is an incontinence-management fallback, not a benign OAB treatment.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 317,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A 59-year-old woman with idiopathic OAB wants to choose between behavioral therapy, medication, and PTNS based on goals and adverse effects. How should options be framed?",
+    "Option A": "Require failure of multiple behavioral therapies before discussing medication",
+    "Option B": "Use shared decision-making without a rigid step-therapy sequence",
+    "Option C": "Offer surgery before noninvasive options",
+    "Option D": "Delay treatment until urodynamics is abnormal",
+    "Option E": "Avoid combining categories of therapy",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. The OAB guideline frames treatment as shared decision-making across therapy categories rather than a mandatory rigid step-therapy ladder. Option A is incorrect because patients do not have to exhaust every behavioral option before medication discussion. Option C is incorrect because invasive therapy is not the default starting point. Option D is incorrect because urodynamic abnormality is not required before treatment in uncomplicated idiopathic OAB. Option E is incorrect because patients may use options from more than one category when appropriate. Teaching point: Modern OAB management is preference-sensitive and category-based, not a forced linear checklist.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 318,
+    "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+    "Category": "General Urology",
+    "Question": "A 46-year-old woman has trace blood on dipstick at a work screening but no microscopic urinalysis yet. What should happen before labeling microhematuria?",
+    "Option A": "Proceed directly to cystoscopy and CT urography",
+    "Option B": "Define microhematuria from dipstick alone",
+    "Option C": "Obtain formal microscopic evaluation of the urine",
+    "Option D": "Start intravesical chemotherapy",
+    "Option E": "Ignore the finding permanently",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. Positive dipstick blood should prompt microscopic urinalysis, and microhematuria should not be defined by dipstick alone. Option A is incorrect because full urologic evaluation depends on confirmed microscopic RBCs and risk stratification. Option B is incorrect because dipstick alone is insufficient. Option D is incorrect because intravesical therapy treats bladder cancer contexts, not an unconfirmed screening dipstick. Option E is incorrect because a positive dipstick merits confirmation rather than dismissal. Teaching point: The first hematuria decision is diagnostic confirmation, then risk-based evaluation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+  },
+  {
+    "row_number": 319,
+    "Source/Guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+    "Category": "General Urology",
+    "Question": "A 39-year-old man has pelvic pain for 4 months with dysuria-like flares. Before diagnosing CP/CPPS, which basic evaluation element is expected?",
+    "Option A": "Diagnose infection without urine testing",
+    "Option B": "Empiric prostatectomy for pain control",
+    "Option C": "Skip physical examination if PSA is normal",
+    "Option D": "Midstream urine culture with assessment for confusable disorders",
+    "Option E": "Use cystectomy as the diagnostic test",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. Initial male chronic pelvic pain evaluation includes history, examination, laboratory assessment such as urinalysis and midstream urine culture, and exclusion of confusable disorders. Option A is incorrect because infection should not be assumed without appropriate testing. Option B is incorrect because prostatectomy is not a diagnostic or therapeutic step for CP/CPPS. Option C is incorrect because physical examination remains part of evaluation. Option E is incorrect because cystectomy has no role in diagnosing chronic pelvic pain. Teaching point: CP/CPPS is a diagnosis made after structured evaluation, not after reflex labeling of pain as infection.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 320,
+    "Source/Guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+    "Category": "Infections",
+    "Question": "A 41-year-old woman with recurrent uncomplicated UTIs wants prophylaxis but strongly prefers to avoid continuous antibiotics. Which option may be offered?",
+    "Option A": "Monthly upper-tract imaging",
+    "Option B": "Daily fluoroquinolone as the default option",
+    "Option C": "Cystoscopy before each preventive dose",
+    "Option D": "Treat asymptomatic cultures indefinitely",
+    "Option E": "Methenamine hippurate prophylaxis",
+    "Correct Answer": "E",
+    "Explanation": "Option E is correct. Methenamine hippurate may be offered for prophylaxis in women with recurrent uncomplicated UTIs and can serve as an antibiotic-sparing prevention option. Option A is incorrect because routine monthly upper-tract imaging is not part of recurrent uncomplicated UTI prophylaxis. Option B is incorrect because continuous fluoroquinolone prophylaxis is not the default preventive pathway and carries avoidable harms. Option C is incorrect because cystoscopy is not required before each prophylactic dose. Option D is incorrect because asymptomatic bacteriuria should not drive indefinite treatment. Teaching point: Recurrent UTI prevention includes antibiotic-sparing options when they fit patient goals and evidence.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+  }
+]

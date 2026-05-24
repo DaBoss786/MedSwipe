@@ -1,0 +1,266 @@
+{
+  "batch_id": "urology-aua-hourly-2026-05-20-01",
+  "mode": "AUA",
+  "status": "completed_manual_followup",
+  "row_range": "301:310",
+  "prompt_path": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-aua-hourly-2026-05-20-01_prompt.txt",
+  "compact_payload": [
+    {
+      "row_number": 301,
+      "source_guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+      "category": "Oncology",
+      "question": "A 61-year-old man has newly diagnosed favorable intermediate-risk prostate cancer. Surgery, radiation, and surveillance are all being discussed. When is tissue genomic testing most appropriate?",
+      "option_a": "Routinely for most localized prostate cancer diagnoses",
+      "option_b": "Selectively when the result could change management",
+      "option_c": "As a replacement for clinical stage and Grade Group",
+      "option_d": "To avoid shared decision-making about treatment harms",
+      "option_e": "After metastatic disease appears on bone scan",
+      "correct_answer": "B",
+      "explanation": "Option B is correct. Tissue genomic biomarkers may be used selectively when added risk stratification could change a localized prostate cancer management decision. Option A is incorrect because routine use for all patients is not recommended. Option C is incorrect because clinical T stage, PSA, Grade Group, and tumor volume remain core risk-stratification inputs. Option D is incorrect because biomarker testing does not replace counseling about urinary, sexual, bowel, and cancer risks. Option E is incorrect because the question concerns clinically localized disease before metastatic progression. Teaching point: Genomic testing is most useful when the result is likely to move a real treatment decision, not as automatic ordering.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+    },
+    {
+      "row_number": 302,
+      "source_guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+      "category": "Oncology",
+      "question": "A 68-year-old man has biochemical recurrence after prostatectomy. PSA is 0.28 ng/mL, salvage prostate-bed radiation is planned, and PSMA PET/CT is negative. What is the best next step?",
+      "option_a": "Cancel salvage radiation because PET is negative",
+      "option_b": "Wait until PET shows nodal disease",
+      "option_c": "Perform cystoscopy to replace salvage imaging",
+      "option_d": "Proceed with salvage prostate-bed radiation",
+      "option_e": "Use intravesical chemotherapy first",
+      "correct_answer": "D",
+      "explanation": "Option D is correct. A negative PET/CT should not withhold salvage prostate-bed radiation in a patient with biochemical recurrence after prostatectomy because microscopic disease may be below imaging detection. Option A is incorrect because PET sensitivity at low PSA is not enough to rule out benefit from local salvage. Option B is incorrect because waiting for macroscopic PET-positive disease may miss a curative window. Option C is incorrect because cystoscopy does not evaluate prostate-bed recurrence. Option E is incorrect because intravesical chemotherapy treats selected bladder cancer contexts, not prostate-bed recurrence. Teaching point: Molecular imaging refines salvage planning, but a negative scan does not erase a PSA-defined salvage opportunity.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 303,
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "question": "A 72-year-old man has suspected NMIBC. At TURBT, bleeding and poor visualization leave visible papillary tumor behind. What should be done if technically feasible?",
+      "option_a": "Assign high-risk surveillance without further resection",
+      "option_b": "Give one chemotherapy instillation and leave residual tumor",
+      "option_c": "Begin induction BCG before completing visual resection",
+      "option_d": "Use office fulguration despite residual bulky tumor",
+      "option_e": "Repeat TURBT or endoscopically treat remaining tumor",
+      "correct_answer": "E",
+      "explanation": "Option E is correct. Incomplete initial resection of non-muscle invasive disease should be followed by repeat transurethral resection or endoscopic treatment of the remaining visible tumor when technically feasible. Option A is incorrect because risk assignment and surveillance do not substitute for clearing known residual tumor. Option B is incorrect because a single instillation does not complete an incomplete visual resection. Option C is incorrect because intravesical induction therapy should not be used to bypass technically feasible completion resection. Option D is incorrect because office fulguration is reserved for selected small low-grade recurrences, not bulky residual tumor left at TURBT. Teaching point: A complete visual TURBT matters for staging, risk assignment, and reducing early residual disease.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 304,
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "question": "A 49-year-old man forms recurrent pure uric acid stones. Twenty-four-hour urine shows persistently acidic urine despite improved fluid intake. Which medication best targets the key abnormality?",
+      "option_a": "Allopurinol as sole urine pH therapy",
+      "option_b": "Thiazide diuretic to lower urinary calcium",
+      "option_c": "Potassium citrate to raise urine pH",
+      "option_d": "Acetohydroxamic acid for urease inhibition",
+      "option_e": "Cystine-binding thiol therapy",
+      "correct_answer": "C",
+      "explanation": "Option C is correct. Uric acid stone prevention hinges on raising urine pH, and potassium citrate is used to alkalinize urine when acidic urine persists. Option A is incorrect because allopurinol can reduce uric acid production but does not replace urine alkalinization as the key pH-directed therapy. Option B is incorrect because thiazides target hypercalciuria, not acidic urine driving uric acid stones. Option D is incorrect because acetohydroxamic acid targets urease-producing infection stones. Option E is incorrect because thiol drugs target cystinuria rather than uric acid supersaturation. Teaching point: Uric acid stones are often treated by changing urine chemistry rather than by removing a calcium or cystine-specific driver.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 305,
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "question": "A 57-year-old woman starts dietary changes and pharmacologic prevention for recurrent calcium stones. When should metabolic response usually be checked after starting therapy?",
+      "option_a": "A 24-hour urine study within about 6 months",
+      "option_b": "Annual imaging alone without repeat urine chemistry",
+      "option_c": "Serum calcium and uric acid after 2 years",
+      "option_d": "Repeat 24-hour urine after another stone surgery",
+      "option_e": "Dipstick urinalysis at symptom-free visits",
+      "correct_answer": "A",
+      "explanation": "Option A is correct. Follow-up 24-hour urine testing after initiating dietary or medical stone prevention assesses adherence and metabolic response, with longer-term testing adjusted to stone activity. Option B is incorrect because imaging can show stone burden but not whether urine chemistry changed. Option C is incorrect because delayed serum-only testing misses the urine risk profile being treated. Option D is incorrect because waiting for another surgery forfeits the chance to adjust prevention earlier. Option E is incorrect because dipstick testing does not measure urine volume, calcium, citrate, oxalate, sodium, or pH with enough detail for metabolic management. Teaching point: Stone prevention is a feedback loop; follow-up urine chemistry determines whether the prevention plan actually changed risk.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 306,
+      "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "category": "Urogynecology",
+      "question": "A 66-year-old woman has urgency incontinence plus weak stream and a sensation of incomplete emptying. Urinalysis is negative. What additional office test is most useful before labeling uncomplicated idiopathic OAB?",
+      "option_a": "Cystoscopy to diagnose idiopathic OAB",
+      "option_b": "Routine urodynamics for a new OAB patient",
+      "option_c": "Bladder diary without emptying assessment",
+      "option_d": "Post-void residual measurement",
+      "option_e": "CT urogram as routine screening",
+      "correct_answer": "D",
+      "explanation": "Option D is correct. In a patient with OAB symptoms plus voiding or emptying symptoms, post-void residual measurement can help exclude incomplete emptying or urinary retention. Option A is incorrect because cystoscopy is not routinely needed to diagnose uncomplicated idiopathic OAB. Option B is incorrect because urodynamics is not required for every new OAB patient. Option C is incorrect because a bladder diary can characterize symptoms but does not measure retention. Option E is incorrect because routine urinary tract imaging is not part of uncomplicated initial OAB evaluation. Teaching point: Storage symptoms plus emptying symptoms should trigger an emptying check before assuming straightforward idiopathic OAB.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 307,
+      "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "category": "Urogynecology",
+      "question": "A 63-year-old woman with idiopathic OAB asks whether an over-the-counter herbal bladder supplement should replace proven therapy. How should she be counseled?",
+      "option_a": "Replace behavioral therapy with the supplement",
+      "option_b": "Evidence is insufficient to support supplements as OAB treatment",
+      "option_c": "Use supplements to skip urinalysis",
+      "option_d": "Require supplement failure before medications",
+      "option_e": "Use supplements as proof symptoms are not infection",
+      "correct_answer": "B",
+      "explanation": "Option B is correct. Patients should be counseled that evidence is insufficient to support nutraceuticals, vitamins, supplements, or herbal remedies as treatment for idiopathic OAB. Option A is incorrect because supplements should not replace behavioral therapy. Option C is incorrect because urinalysis remains part of initial evaluation to exclude infection and microhematuria. Option D is incorrect because supplement failure is not a required step before medication. Option E is incorrect because supplement use does not prove symptoms are noninfectious. Teaching point: Shared decision-making includes identifying therapies with inadequate evidence, especially when patients want to substitute them for effective options.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 308,
+      "source_guideline": "Microhematuria: AUA/SUFU Guideline",
+      "category": "General Urology",
+      "question": "A 37-year-old woman has 4 RBC/HPF on microscopy, no smoking history, no gross hematuria, and no risk factors after gynecologic causes are excluded. What is the preferred initial approach?",
+      "option_a": "Immediate cystoscopy plus CT urography",
+      "option_b": "Cystoscopy plus renal ultrasound",
+      "option_c": "Urine marker testing to avoid future follow-up",
+      "option_d": "Nephrology referral without repeat urine testing",
+      "option_e": "Repeat urinalysis within 6 months",
+      "correct_answer": "E",
+      "explanation": "Option E is correct. Low/negligible-risk microhematuria is initially managed with repeat urinalysis within 6 months rather than immediate cystoscopy or imaging. Option A is incorrect because cystoscopy plus CT urography is high-intensity evaluation for higher-risk patients. Option B is incorrect because cystoscopy plus renal ultrasound is more consistent with intermediate-risk evaluation, not low/negligible-risk initial management. Option C is incorrect because urine marker testing does not eliminate the need for risk-based follow-up. Option D is incorrect because nephrology referral does not replace urologic risk stratification and repeat urinalysis when glomerular findings are not the driver. Teaching point: Microhematuria workup is risk-stratified; low/negligible-risk patients are not managed like high-risk patients.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+    },
+    {
+      "row_number": 309,
+      "source_guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+      "category": "General Urology",
+      "question": "A 44-year-old man with CP/CPPS has tried an alpha blocker and anti-inflammatory therapy without meaningful improvement. What follow-up principle should guide the next visit?",
+      "option_a": "Continue ineffective therapies indefinitely",
+      "option_b": "Treat with long-term systemic glucocorticoids",
+      "option_c": "Stop ineffective treatments and reconsider the diagnosis",
+      "option_d": "Proceed directly to radical prostatectomy",
+      "option_e": "Ignore nonurologic pain contributors",
+      "correct_answer": "C",
+      "explanation": "Option C is correct. Chronic pelvic pain treatment should be periodically reassessed, ineffective therapies should be discontinued, and the diagnosis should be reconsidered when multiple approaches fail. Option A is incorrect because continuing ineffective therapy adds burden without benefit. Option B is incorrect because long-term systemic glucocorticoids should not be used to treat pelvic pain. Option D is incorrect because radical prostatectomy is not a treatment for CP/CPPS. Option E is incorrect because confusable disorders and nonurologic contributors must remain part of reassessment. Teaching point: CP/CPPS care is iterative; failure of reasonable therapies should prompt diagnostic humility rather than indefinite medication stacking.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 310,
+      "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "category": "Infections",
+      "question": "A 42-year-old woman with recurrent uncomplicated cystitis wants D-mannose alone for prophylaxis because she read it prevents most recurrences. What counseling best matches current guidance?",
+      "option_a": "D-mannose alone may not be effective for prevention",
+      "option_b": "D-mannose replaces urine cultures during episodes",
+      "option_c": "D-mannose requires cystoscopy before each dose",
+      "option_d": "D-mannose is preferred over antibiotic strategies",
+      "option_e": "D-mannose mandates upper-tract imaging",
+      "correct_answer": "A",
+      "explanation": "Option A is correct. Patients with recurrent uncomplicated UTI should be informed that D-mannose alone may not be effective for prevention. Option B is incorrect because prophylaxis counseling does not remove the role of culture documentation when evaluating symptomatic episodes. Option C is incorrect because cystoscopy is not required before each prophylactic dose. Option D is incorrect because D-mannose is not preferred over all antibiotic or non-antibiotic strategies. Option E is incorrect because upper-tract imaging is not mandated by choosing or discussing D-mannose. Teaching point: Non-antibiotic prevention counseling should separate plausible supplements from interventions with reliable evidence.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+    }
+  ],
+  "unresolved_pre_claude_verifier_notes": [],
+  "initial_verifier_counts": {
+    "Pass": 4,
+    "Needs Revision": 6
+  },
+  "rows_auto_fixed": [
+    {
+      "row": 303,
+      "reason": "Safe pre-Claude fix: strengthened NMIBC completion-resection distractors and matching explanation rebuttals."
+    },
+    {
+      "row": 304,
+      "reason": "Safe pre-Claude fix: replaced off-domain uric acid stone distractors with metabolic stone alternatives and matching rebuttals."
+    },
+    {
+      "row": 305,
+      "reason": "Safe pre-Claude fix: replaced weak stone follow-up distractors with closer monitoring alternatives and matching rebuttals."
+    },
+    {
+      "row": 306,
+      "reason": "Safe pre-Claude fix: replaced off-domain OAB evaluation distractors with urodynamics, cystoscopy, diary, and imaging alternatives."
+    },
+    {
+      "row": 307,
+      "reason": "Safe pre-Claude fix: strengthened OAB supplement counseling distractors and matching explanation rebuttals."
+    },
+    {
+      "row": 308,
+      "reason": "Safe pre-Claude fix: replaced extreme microhematuria distractors with closer risk-stratified alternatives."
+    }
+  ],
+  "final_verifier_counts": {
+    "Pass": 10
+  },
+  "final_readback_status": "succeeded",
+  "created_at": "2026-05-20 08:28 PDT",
+  "claude_review_status": "completed_manual_followup",
+  "claude_rows_flagged": [
+    {
+      "row": 302,
+      "disposition": "Needs Revision",
+      "reason": "High-severity near-duplicate of row 292: negative PET/CT or negative imaging should not withhold salvage prostate-bed radiation."
+    },
+    {
+      "row": 304,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 264: uric acid stones with persistently acidic urine -> potassium citrate/alkalinization."
+    },
+    {
+      "row": 305,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 265: repeat 24-hour urine within about 6 months after starting stone prevention."
+    },
+    {
+      "row": 310,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 270: D-mannose alone may not be effective for recurrent UTI prevention."
+    }
+  ],
+  "claude_rows_auto_fixed": [
+    {
+      "row": 307,
+      "fields": [
+        "Option C",
+        "Option E",
+        "Explanation"
+      ],
+      "reason": "Safe Claude minor distractor-quality edit applied; made distractors more clinically plausible and updated matching rebuttals."
+    }
+  ],
+  "claude_unapplied_suggestions": [
+    {
+      "row": 302,
+      "disposition": "Needs Revision",
+      "reason": "High-severity near-duplicate of row 292: negative PET/CT or negative imaging should not withhold salvage prostate-bed radiation."
+    },
+    {
+      "row": 304,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 264: uric acid stones with persistently acidic urine -> potassium citrate/alkalinization."
+    },
+    {
+      "row": 305,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 265: repeat 24-hour urine within about 6 months after starting stone prevention."
+    },
+    {
+      "row": 310,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 270: D-mannose alone may not be effective for recurrent UTI prevention."
+    }
+  ],
+  "claude_resolved_flags": [
+    {
+      "row": 308,
+      "reason": "Claude factual-uncertainty flag resolved by checking current AUA/SUFU Microhematuria Guideline (2025): women under 60 without other risk factors and 3-10 RBC/HPF are low/negligible risk; repeat urinalysis within six months is correct."
+    }
+  ],
+  "final_verifier_counts_after_claude": {
+    "Pass": 6,
+    "Needs Revision": 1,
+    "Reject": 3
+  },
+  "post_claude_readback_status": "succeeded",
+  "claude_followup_applied_at": "2026-05-20 08:33 PDT",
+  "unresolved_rows": [
+    {
+      "row": 302,
+      "disposition": "Needs Revision",
+      "reason": "High-severity near-duplicate of row 292: negative PET/CT or negative imaging should not withhold salvage prostate-bed radiation."
+    },
+    {
+      "row": 304,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 264: uric acid stones with persistently acidic urine -> potassium citrate/alkalinization."
+    },
+    {
+      "row": 305,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 265: repeat 24-hour urine within about 6 months after starting stone prevention."
+    },
+    {
+      "row": 310,
+      "disposition": "Reject",
+      "reason": "Near-exact duplicate of row 270: D-mannose alone may not be effective for recurrent UTI prevention."
+    }
+  ]
+}

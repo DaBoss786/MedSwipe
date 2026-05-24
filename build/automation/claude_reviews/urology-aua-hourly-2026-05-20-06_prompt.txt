@@ -1,0 +1,135 @@
+Critically analyze only the 10 pasted MedSwipe AI_Drafts rows below. Do not ask for spreadsheet access and do not edit any sheet. Return one entry per row with row_number, overall_disposition, issue_type, severity, affected_field, exact_replacement_text, rationale, and do_not_change when no edit is needed. Focus on senior-resident difficulty, clinical accuracy, distractor quality, explanation quality, source fidelity, and duplicate/saturation risk. For factual uncertainty, answer-key changes, duplicate/saturation concern, or major clinical rewrite, mark flag_only rather than providing an auto-edit. If you cannot review the pasted rows, say CLAUDE_REVIEW_FAILED and explain why.
+
+Rows:
+[
+  {
+    "row_number": 391,
+    "Source/Guideline": "Early Detection of Prostate Cancer: AUA/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "A biopsy-naive man has elevated GG2+ risk and a technically adequate prostate MRI read as PI-RADS 2. Which biopsy plan best fits the risk-based pathway?",
+    "Option A": "Skip biopsy because MRI is negative",
+    "Option B": "Systematic biopsy after shared decision-making",
+    "Option C": "Transurethral resection of the MRI-negative area",
+    "Option D": "Intravesical BCG before tissue diagnosis",
+    "Option E": "Stop PSA follow-up permanently",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. A negative MRI does not rule out clinically significant prostate cancer when the overall GG2+ risk remains elevated, so systematic biopsy should be discussed rather than relying on MRI alone. Option A is incorrect because MRI has a false-negative rate for clinically significant disease. Option C is incorrect because TURP is not the diagnostic approach for elevated prostate cancer risk. Option D is incorrect because BCG treats selected bladder cancer settings. Option E is incorrect because elevated risk still requires follow-up even if biopsy is deferred. Teaching point: MRI modifies biopsy planning, but it does not replace risk-based decision-making when clinical risk remains high.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/early-detection-of-prostate-cancer-guidelines' target='_blank'>American Urological Association. Early Detection of Prostate Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 392,
+    "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+    "Category": "Oncology",
+    "Question": "A man on active surveillance for low-risk prostate cancer wants to use annual MRI alone and avoid future surveillance biopsies. What counseling is most appropriate?",
+    "Option A": "MRI alone permanently replaces biopsy",
+    "Option B": "Stop PSA testing if MRI is stable",
+    "Option C": "Use MRI to augment risk stratification, not replace biopsy",
+    "Option D": "Start long-course ADT for stable MRI findings",
+    "Option E": "Perform intravesical chemotherapy before MRI",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. In active surveillance, multiparametric MRI can improve risk stratification and help target concerning areas, but it should not be used as the sole substitute for periodic surveillance biopsy. Option A is incorrect because MRI can miss clinically significant upgrading. Option B is incorrect because PSA surveillance remains part of monitoring. Option D is incorrect because stable low-risk surveillance findings do not justify long-course ADT. Option E is incorrect because intravesical chemotherapy treats selected bladder cancer settings. Teaching point: Active surveillance is not passive imaging follow-up; it combines PSA, clinical reassessment, MRI when useful, and repeat biopsy to detect reclassification.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+  },
+  {
+    "row_number": 393,
+    "Source/Guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "During TURBT, a bladder tumor is sessile and visually concerning for high-grade or invasive disease. What specimen goal is most important for staging quality?",
+    "Option A": "Submit cytology alone",
+    "Option B": "Avoid sampling the tumor base",
+    "Option C": "Use postoperative antibiotics as staging",
+    "Option D": "Include muscularis propria when feasible",
+    "Option E": "Defer pathology until surveillance cystoscopy",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. When bladder tumor features raise concern for high-grade or invasive disease, TURBT should obtain adequate tissue including muscularis propria when feasible so pathologic staging is reliable. Option A is incorrect because cytology cannot stage tumor depth. Option B is incorrect because avoiding the base risks understaging. Option C is incorrect because antibiotics do not provide cancer staging. Option E is incorrect because surveillance without adequate pathology can miss muscle-invasive disease. Teaching point: TURBT is both therapeutic and diagnostic; inadequate depth in a concerning tumor can misclassify risk and treatment intensity.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 394,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A first-time calcium oxalate stone former has a solitary kidney and strong family history of stones. He wants prevention beyond general advice. What evaluation is appropriate?",
+    "Option A": "One or two 24-hour urine collections",
+    "Option B": "Urine cytology instead of metabolic testing",
+    "Option C": "No testing because this is a first stone",
+    "Option D": "Immediate BCG maintenance",
+    "Option E": "Bone scan to classify stone chemistry",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. High-risk or interested first-time stone formers, as well as recurrent stone formers, may undergo metabolic testing with one or two 24-hour urine collections to guide prevention. Option B is incorrect because cytology does not measure lithogenic urine chemistry. Option C is incorrect because solitary kidney and strong family history raise the value of metabolic evaluation despite a first event. Option D is incorrect because BCG treats selected bladder cancer settings. Option E is incorrect because bone scan does not classify kidney stone chemistry. Teaching point: The first-stone label does not end evaluation when recurrence risk or consequences are high.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 395,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A patient has recurrent struvite stones with urease-producing infection and a surgically removable residual staghorn fragment. What prevention principle is most important?",
+    "Option A": "Use acetohydroxamic acid instead of surgery",
+    "Option B": "Classify the stone with urine cytology",
+    "Option C": "Suppress infection and ignore residual fragments",
+    "Option D": "Treat with potassium citrate alone",
+    "Option E": "Pursue complete stone removal when feasible",
+    "Correct Answer": "E",
+    "Explanation": "Option E is correct. Struvite stone prevention depends on complete stone removal when feasible because residual infected fragments can maintain recurrent infection and stone growth. Option A is incorrect because urease inhibition is an adjunct when surgical options are exhausted, not a replacement for feasible clearance. Option B is incorrect because urine cytology does not classify infection stones. Option C is incorrect because antibiotics alone often fail when infected stone material remains. Option D is incorrect because potassium citrate is not monotherapy for infection-stone clearance. Teaching point: Infection stones are a source-control problem first; medication is adjunctive when clearance cannot be achieved.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 396,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A patient with urgency incontinence has OAB symptoms and an elevated postvoid residual from suspected incomplete emptying. What should guide therapy selection?",
+    "Option A": "Ignore emptying because urgency defines OAB",
+    "Option B": "Give intravesical chemotherapy",
+    "Option C": "Use urine cytology as the treatment",
+    "Option D": "Assess emptying risk before antimuscarinic therapy",
+    "Option E": "Schedule cystectomy for retention risk",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. In OAB patients with incomplete emptying or retention risk, postvoid residual information should shape counseling and medication selection, especially before antimuscarinic therapy that may worsen emptying. Option A is incorrect because urgency symptoms can coexist with retention risk. Option B is incorrect because intravesical chemotherapy treats selected bladder cancer settings. Option C is incorrect because urine cytology does not treat urgency incontinence or retention. Option E is incorrect because cystectomy is not an OAB retention-risk intervention. Teaching point: OAB prescribing should account for storage symptoms and emptying safety rather than treating urgency in isolation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 397,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "Two weeks after intradetrusor botulinum toxin for OAB, a patient has weak stream and worse urgency. Which assessment best addresses a treatment-related complication?",
+    "Option A": "Urine cytology as first-line treatment",
+    "Option B": "Postvoid residual measurement",
+    "Option C": "Pelvic lymphadenectomy",
+    "Option D": "Long-course ADT",
+    "Option E": "Routine induction BCG",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. After intradetrusor botulinum toxin, new weak stream or worsening urgency should prompt assessment for incomplete emptying with postvoid residual measurement and consideration of catheterization if clinically needed. Option A is incorrect because cytology does not assess retention. Option C is incorrect because lymphadenectomy has no role in OAB complications. Option D is incorrect because ADT treats selected prostate cancer settings. Option E is incorrect because BCG treats selected NMIBC settings. Teaching point: Botulinum toxin follow-up must distinguish persistent storage symptoms from treatment-related incomplete emptying.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 398,
+    "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+    "Category": "General Urology",
+    "Question": "A woman has microhematuria on a specimen collected during visible vaginal bleeding. After the gynecologic bleeding resolves, what should determine urologic evaluation?",
+    "Option A": "Ignore future urinalysis because a gynecologic source existed",
+    "Option B": "Start induction BCG before repeat testing",
+    "Option C": "Proceed directly to cystectomy",
+    "Option D": "Repeat urinalysis and risk-stratify if hematuria persists",
+    "Option E": "Use bone scan as the confirmatory test",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. When a gynecologic source may explain microhematuria, urinalysis should be repeated after that source resolves; persistent microhematuria then enters risk-based urologic evaluation. Option A is incorrect because an apparent benign source does not excuse persistent hematuria. Option B is incorrect because BCG is treatment for selected bladder cancer, not hematuria confirmation. Option C is incorrect because cystectomy requires a cancer diagnosis and indication. Option E is incorrect because bone scan does not evaluate urinary RBCs or urothelial sources. Teaching point: Transient benign explanations should be verified with repeat microscopy before either dismissing hematuria or escalating to invasive evaluation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+  },
+  {
+    "row_number": 399,
+    "Source/Guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+    "Category": "General Urology",
+    "Question": "A man with chronic pelvic pain has marked pain catastrophizing, sleep disruption, and anxiety despite negative infection evaluation. Which adjunct is appropriate?",
+    "Option A": "Repeated antibiotics without infection evidence",
+    "Option B": "Radical prostatectomy for pain alone",
+    "Option C": "Cognitive behavioral therapy referral",
+    "Option D": "Intravesical chemotherapy",
+    "Option E": "Urine cytology as pain treatment",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. Chronic pelvic pain care can include cognitive behavioral therapy or other psychosocial support when pain coping, catastrophizing, mood, or sleep factors contribute to disability. Option A is incorrect because repeated antibiotics are inappropriate without infection evidence. Option B is incorrect because prostatectomy should not be used as pain treatment alone. Option D is incorrect because intravesical chemotherapy treats selected bladder cancer settings. Option E is incorrect because urine cytology is diagnostic for selected malignancy evaluation, not a pain therapy. Teaching point: CP/CPPS management is phenotype-directed and should address central pain and psychosocial drivers when they are clinically prominent.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 400,
+    "Source/Guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+    "Category": "Infections",
+    "Question": "A woman with suspected recurrent uncomplicated UTI has repeated mixed-flora cultures despite classic cystitis symptoms. What diagnostic step is reasonable?",
+    "Option A": "Treat mixed flora as definitive infection at each visit",
+    "Option B": "Begin daily fluoroquinolone suppression",
+    "Option C": "Skip cultures for future episodes",
+    "Option D": "Use urine cytology to identify bacteria",
+    "Option E": "Repeat urine studies, considering catheterized specimen",
+    "Correct Answer": "E",
+    "Explanation": "Option E is correct. When specimen contamination is suspected, repeat urine studies and a catheterized specimen can help document a true uropathogen before recurrent UTI treatment decisions. Option A is incorrect because mixed flora often reflects contamination rather than a reliable target. Option B is incorrect because suppressive antibiotics should not be started from unreliable culture data. Option C is incorrect because culture documentation is important in recurrent UTI care. Option D is incorrect because cytology does not identify bacterial susceptibility or establish cystitis. Teaching point: Recurrent UTI diagnosis requires linking symptoms to reliable microbiology, especially when contamination obscures culture interpretation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+  }
+]

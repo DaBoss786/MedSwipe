@@ -1,0 +1,169 @@
+{
+  "batch_id": "urology-aua-hourly-2026-05-20-06-redo1",
+  "mode": "AUA",
+  "manual_redo_of": "urology-aua-hourly-2026-05-20-06",
+  "concepts": [
+    {
+      "source_guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Post-prostatectomy patient at high risk for recurrence but PSA is undetectable on standard assay",
+      "decision_point": "Whether ultrasensitive PSA can be used for monitoring",
+      "correct_answer_concept": "Use ultrasensitive PSA selectively when it will clarify high-risk recurrence monitoring",
+      "teaching_point": "Post-prostatectomy surveillance can use ultrasensitive PSA selectively, but assay sensitivity should not create automatic treatment without clinical context.",
+      "source_section": "post-prostatectomy PSA surveillance and biochemical recurrence monitoring"
+    },
+    {
+      "source_guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Localized prostate cancer patient undergoing prostatectomy wants preservation of erectile function",
+      "decision_point": "How to decide on nerve-sparing",
+      "correct_answer_concept": "Perform nerve-sparing when oncologically appropriate based on risk, tumor location, and function goals",
+      "teaching_point": "Nerve-sparing is a risk-adapted surgical planning decision, not a universal step or a contraindication to cancer control.",
+      "source_section": "radical prostatectomy principles"
+    },
+    {
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Initial TURBT intentionally leaves visible bladder tumor because complete resection was not technically achieved",
+      "decision_point": "Next endoscopic management after incomplete initial resection",
+      "correct_answer_concept": "Repeat transurethral resection or endoscopic treatment of remaining tumor if technically feasible",
+      "teaching_point": "Incomplete TURBT is a staging and treatment-quality problem; visible residual tumor should be addressed rather than treated as routine surveillance.",
+      "source_section": "incomplete initial resection"
+    },
+    {
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Low-risk NMIBC patient remains recurrence-free for five years of surveillance",
+      "decision_point": "Whether surveillance must continue indefinitely on a fixed schedule",
+      "correct_answer_concept": "Continue surveillance after five years only through shared decision-making",
+      "teaching_point": "Low-risk NMIBC surveillance can be de-intensified after prolonged recurrence-free follow-up through shared decision-making.",
+      "source_section": "low-risk surveillance after five years"
+    },
+    {
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "clinical_trigger": "Recurrent calcium stone former has persistently high urinary calcium after diet counseling",
+      "decision_point": "Medication choice for hypercalciuria-driven recurrent calcium stones",
+      "correct_answer_concept": "Offer thiazide diuretic therapy",
+      "teaching_point": "Medication prevention should match the persistent urine abnormality after diet measures; hypercalciuria points to thiazide therapy.",
+      "source_section": "pharmacologic therapies for recurrent calcium stones"
+    },
+    {
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "clinical_trigger": "Patient on stone-prevention therapy needs longitudinal surveillance for new stones or growth",
+      "decision_point": "How to follow stone activity over time",
+      "correct_answer_concept": "Use periodic imaging based on stone activity",
+      "teaching_point": "Stone prevention follow-up includes imaging for stone activity, not only symptom checks or medication refills.",
+      "source_section": "follow-up imaging for stone activity"
+    },
+    {
+      "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "category": "Urogynecology",
+      "clinical_trigger": "Patient starts an oral OAB medication and returns with uncertain benefit and dry mouth",
+      "decision_point": "How to assess ongoing oral therapy",
+      "correct_answer_concept": "Assess efficacy and side effects after starting pharmacotherapy and adjust treatment through shared decision-making",
+      "teaching_point": "OAB medication follow-up should evaluate both symptom benefit and adverse effects rather than continuing ineffective therapy by default.",
+      "source_section": "pharmacotherapy follow-up"
+    },
+    {
+      "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "category": "Urogynecology",
+      "clinical_trigger": "Patient has bothersome OAB symptoms and wants to compare antimuscarinic and beta-3 agonist treatment",
+      "decision_point": "Initial oral pharmacotherapy class selection",
+      "correct_answer_concept": "Offer antimuscarinic medications or beta-3 agonists after discussing side-effect profiles",
+      "teaching_point": "Oral OAB therapy is preference- and risk-sensitive; class choice should account for adverse-effect profiles and patient priorities.",
+      "source_section": "oral pharmacotherapy options"
+    },
+    {
+      "source_guideline": "Microhematuria: AUA/SUFU Guideline",
+      "category": "General Urology",
+      "clinical_trigger": "High-risk patient has persistent microhematuria and irritative voiding symptoms after a negative risk-based workup",
+      "decision_point": "Whether urine cytology has a role after negative evaluation",
+      "correct_answer_concept": "May obtain urine cytology when concern for carcinoma in situ remains",
+      "teaching_point": "Urine cytology is not a routine replacement for cystoscopy, but persistent symptoms after negative workup can create a CIS-focused role.",
+      "source_section": "urine cytology after negative microhematuria evaluation"
+    },
+    {
+      "source_guideline": "Microhematuria: AUA/SUFU Guideline",
+      "category": "General Urology",
+      "clinical_trigger": "Persistent microhematuria after prior evaluation that used renal ultrasound for upper tract imaging",
+      "decision_point": "Whether additional upper tract imaging can be considered",
+      "correct_answer_concept": "Consider additional imaging of the urinary tract when persistent or recurrent microhematuria follows ultrasound-based evaluation",
+      "teaching_point": "Ultrasound-based hematuria evaluation may need escalation when microhematuria persists or recurs and clinical concern remains.",
+      "source_section": "persistent microhematuria after renal ultrasound"
+    },
+    {
+      "source_guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+      "category": "General Urology",
+      "clinical_trigger": "Male chronic pelvic pain patient has neuropathic burning pain without infection or obstructive voiding phenotype",
+      "decision_point": "Medication class for neuropathic pain phenotype",
+      "correct_answer_concept": "Consider neuropathic pain medications as part of multimodal management",
+      "teaching_point": "CP/CPPS treatment should be phenotype-directed; neuropathic pain features point away from antibiotics and toward pain-modulating therapy.",
+      "source_section": "neuropathic pain phenotype management"
+    },
+    {
+      "source_guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+      "category": "General Urology",
+      "clinical_trigger": "Chronic scrotal content pain persists after conservative measures but pain is diffuse and not localized to epididymis or spermatic cord",
+      "decision_point": "Whether to proceed directly to focal scrotal surgery",
+      "correct_answer_concept": "Avoid focal surgery when pain localization does not support the target",
+      "teaching_point": "Chronic scrotal content pain surgery depends on localization; diffuse pain should not be treated as a focal anatomic lesion.",
+      "source_section": "chronic scrotal content pain surgical selection"
+    },
+    {
+      "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "category": "Infections",
+      "clinical_trigger": "Recurrent uncomplicated UTI patient asks about methenamine hippurate to reduce antibiotic exposure",
+      "decision_point": "Non-antibiotic prophylaxis option",
+      "correct_answer_concept": "Methenamine hippurate may be offered as an antibiotic-sparing prophylaxis option",
+      "teaching_point": "Recurrent UTI prevention can include selected antibiotic-sparing strategies when they match patient goals and evidence.",
+      "source_section": "non-antibiotic prophylaxis"
+    },
+    {
+      "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "category": "Infections",
+      "clinical_trigger": "Woman with recurrent UTI has dysuria but culture is negative and symptoms do not respond to antibiotics",
+      "decision_point": "How to manage possible alternative diagnosis",
+      "correct_answer_concept": "Evaluate for alternative causes rather than escalating antibiotics",
+      "teaching_point": "Recurrent UTI requires symptom-microbiology correlation; culture-negative nonresponse should trigger diagnostic reconsideration.",
+      "source_section": "culture documentation and alternative diagnoses"
+    },
+    {
+      "source_guideline": "Early Detection of Prostate Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Patient asks whether prostate cancer screening should continue at age 76 with excellent health and strong preference for screening",
+      "decision_point": "Personalized screening beyond standard age ranges",
+      "correct_answer_concept": "Individualize screening based on health, life expectancy, risk, and preference",
+      "teaching_point": "Screening decisions in older patients should be individualized rather than using age alone as the only variable.",
+      "source_section": "personalized screening intervals and discontinuation"
+    },
+    {
+      "source_guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "Localized prostate cancer patient asks whether urinary and sexual function should be documented before treatment choice",
+      "decision_point": "Pre-treatment functional assessment",
+      "correct_answer_concept": "Assess baseline urinary, sexual, and bowel function before treatment counseling",
+      "teaching_point": "Baseline function changes how prostate cancer treatment harms are weighed and communicated.",
+      "source_section": "pretreatment counseling and functional assessment"
+    },
+    {
+      "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+      "category": "Oncology",
+      "clinical_trigger": "NMIBC patient has variant histology identified on TURBT",
+      "decision_point": "How pathology features affect risk assessment and management discussion",
+      "correct_answer_concept": "Recognize variant histology as a high-risk feature requiring expert pathology review and management escalation discussion",
+      "teaching_point": "NMIBC risk is not stage alone; variant histology changes counseling and may justify early aggressive management discussion.",
+      "source_section": "variant histology and risk stratification"
+    },
+    {
+      "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "category": "Stones",
+      "clinical_trigger": "Recurrent calcium oxalate stone former has low urinary citrate but cannot tolerate potassium citrate tablets",
+      "decision_point": "How to address persistent hypocitraturia when standard formulation is not tolerated",
+      "correct_answer_concept": "Use citrate therapy or alternative alkali strategy tailored to tolerability",
+      "teaching_point": "Hypocitraturia treatment is a urine-chemistry target, and formulation or alkali strategy may need adjustment for adherence.",
+      "source_section": "citrate therapy for hypocitraturia"
+    }
+  ]
+}

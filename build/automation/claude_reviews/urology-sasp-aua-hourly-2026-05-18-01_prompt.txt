@@ -1,0 +1,143 @@
+Critically analyze only the 10 pasted MedSwipe AI_Drafts rows below. Do not ask for spreadsheet access and do not edit any sheet. Return one entry per row with row_number, overall_disposition, issue_type, severity, affected_field, exact_replacement_text, rationale, and do_not_change when no edit is needed. Focus on senior-resident difficulty, clinical accuracy, distractor quality, explanation quality, source fidelity, and duplicate/saturation risk. For factual uncertainty, answer-key changes, duplicate/saturation concern, or major clinical rewrite, mark flag_only rather than providing an auto-edit. If you cannot review the pasted rows, say CLAUDE_REVIEW_FAILED and explain why.
+
+Rows:
+
+row_number: 271
+Source/Guideline: Clinically Localized Prostate Cancer: AUA/ASTRO Guideline
+Category: Oncology
+Question: A man with low-risk prostate cancer chooses active surveillance. PSA is stable and mpMRI is unchanged at follow-up. Which monitoring principle remains guideline-concordant?
+Option A: Replace scheduled repeat biopsy with serial MRI alone
+Option B: Stop PSA testing once MRI is stable
+Option C: Monitor with serial PSA values and repeat prostate biopsy
+Option D: Convert to watchful waiting because risk is low
+Option E: Use urine cytology for surveillance
+Correct Answer: C
+Explanation: Option C is correct. Active surveillance includes continued cancer testing with serial PSA values and repeat prostate biopsy, with MRI used to augment risk assessment rather than replace biopsy. Option A is incorrect because MRI alone is not a stand-alone substitute for periodic repeat biopsy. Option B is incorrect because PSA remains part of surveillance. Option D is incorrect because watchful waiting is a less intensive, noncurative monitoring strategy. Option E is incorrect because urine cytology does not monitor prostate cancer risk. Teaching point: Active surveillance is structured follow-up, not passive observation based on stable imaging.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>
+
+row_number: 272
+Source/Guideline: Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline
+Category: Oncology
+Question: A TURBT specimen from apparent NMIBC is reported as possible micropapillary variant histology. The patient asks about bladder-sparing treatment. What should happen before relying on that plan?
+Option A: Treat as routine low-risk Ta disease
+Option B: Have GU pathology review and restage with TURBT if bladder sparing is considered
+Option C: Use urinary biomarkers instead of cystoscopy
+Option D: Start surveillance without confirming histology
+Option E: Give single-dose chemotherapy as definitive staging
+Correct Answer: B
+Explanation: Option B is correct. Suspected variant histology should be reviewed by an experienced genitourinary pathologist, and restaging TURBT is recommended if a bladder-sparing approach is being considered. Option A is incorrect because variant histology can carry higher upstaging risk. Option C is incorrect because biomarkers do not replace cystoscopic and pathologic assessment. Option D is incorrect because uncertain variant histology should not be ignored. Option E is incorrect because postoperative chemotherapy does not establish depth or variant-risk accuracy. Teaching point: Variant NMIBC is a staging-quality problem before it is a routine intravesical-treatment problem.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>
+
+row_number: 273
+Source/Guideline: Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline
+Category: Oncology
+Question: An asymptomatic patient with prior low-risk NMIBC has negative cystoscopic surveillance and no upper-tract symptoms. Which imaging plan is most appropriate?
+Option A: Routine annual CT urography
+Option B: Routine MR urography at surveillance cystoscopy
+Option C: No routine surveillance upper-tract imaging
+Option D: Scheduled retrograde pyelography at short intervals
+Option E: Bone scan surveillance
+Correct Answer: C
+Explanation: Option C is correct. In asymptomatic patients with a history of low-risk NMIBC, routine surveillance upper-tract imaging is not recommended because the yield is low and imaging adds contrast and radiation burden. Option A is incorrect because annual CT urography overuses imaging in this low-risk setting. Option B is incorrect because MR urography is not required at each cystoscopy. Option D is incorrect because scheduled retrograde pyelography is excessive without symptoms or higher-risk features. Option E is incorrect because bone scan does not surveil upper-tract urothelial recurrence. Teaching point: NMIBC surveillance intensity should track recurrence and upper-tract risk, not the mere existence of a remote low-risk tumor.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>
+
+row_number: 274
+Source/Guideline: Medical Management of Kidney Stones: AUA Guideline
+Category: Stones
+Question: A recurrent calcium stone former has serum calcium at the high end of normal during metabolic screening. Which additional test best evaluates a systemic stone driver?
+Option A: Urine cytology
+Option B: Bone scan
+Option C: Retrograde pyelography
+Option D: Serum intact parathyroid hormone
+Option E: Cystoscopy
+Correct Answer: D
+Explanation: Option D is correct. Serum intact parathyroid hormone should be obtained when primary hyperparathyroidism is suspected, including when serum calcium is high or high-normal in a stone former. Option A is incorrect because cytology evaluates urothelial malignancy risk, not parathyroid-driven stones. Option B is incorrect because bone scan does not diagnose primary hyperparathyroidism in stone evaluation. Option C is incorrect because retrograde pyelography images the collecting system and does not assess calcium physiology. Option E is incorrect because cystoscopy does not evaluate metabolic stone drivers. Teaching point: Stone screening should catch systemic causes; high-normal serum calcium is enough to justify checking PTH.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>
+
+row_number: 275
+Source/Guideline: Medical Management of Kidney Stones: AUA Guideline
+Category: Stones
+Question: A recurrent calcium oxalate stone former has high urinary oxalate on 24-hour urine. Which diet counseling best targets the abnormality?
+Option A: Eliminate dietary calcium
+Option B: Limit oxalate-rich foods while maintaining normal calcium intake
+Option C: Increase sodium to bind intestinal oxalate
+Option D: Use chronic fluoroquinolone prophylaxis
+Option E: Start cystine-binding thiol therapy
+Correct Answer: B
+Explanation: Option B is correct. Patients with calcium oxalate stones and high urinary oxalate should limit oxalate-rich foods while maintaining normal calcium intake, which helps bind oxalate in the gut. Option A is incorrect because low dietary calcium can increase intestinal oxalate absorption. Option C is incorrect because sodium restriction, not sodium loading, is generally favored in calcium stone prevention. Option D is incorrect because antibiotics do not correct hyperoxaluria. Option E is incorrect because thiol drugs treat cystinuria, not calcium oxalate hyperoxaluria. Teaching point: The senior-level diet point is not simply less calcium; calcium timing and oxalate restriction work together.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>
+
+row_number: 276
+Source/Guideline: The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder
+Category: Urogynecology
+Question: An older patient with urgency urinary incontinence has severe constipation and dry mouth. PVR is acceptable and urinalysis is negative. Which oral OAB option best avoids worsening those adverse effects?
+Option A: Oxybutynin immediate release
+Option B: Tolterodine dose escalation
+Option C: Beta-3 agonist therapy
+Option D: Chronic indwelling catheter
+Option E: Long-term antibiotics
+Correct Answer: C
+Explanation: Option C is correct. Beta-3 agonist therapy is an oral OAB option with lower rates of dry mouth and constipation than antimuscarinic therapy, making it a better fit when those adverse effects are already limiting. Option A is incorrect because oxybutynin can worsen anticholinergic adverse effects. Option B is incorrect because escalating an antimuscarinic worsens the same tolerability problem. Option D is incorrect because chronic catheterization is not oral OAB therapy and adds morbidity. Option E is incorrect because antibiotics do not treat idiopathic urgency incontinence without infection. Teaching point: Medication selection for OAB should account for adverse-effect phenotype, not just whether symptoms meet an OAB label.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>
+
+row_number: 277
+Source/Guideline: The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder
+Category: Urogynecology
+Question: A patient with idiopathic OAB has persistent urgency urinary incontinence despite behavioral therapy and oral medication trials. She wants a next non-oral option. What should be offered?
+Option A: Sacral neuromodulation, PTNS, or intradetrusor botulinum toxin
+Option B: Urine cytology as treatment
+Option C: Long-term suppressive antibiotics
+Option D: Annual bone scan
+Option E: Radical cystectomy as the routine next step
+Correct Answer: A
+Explanation: Option A is correct. Patients with OAB who have inadequate response to, or intolerable adverse effects from, behavioral or pharmacologic therapy should be offered minimally invasive options such as sacral neuromodulation, percutaneous tibial nerve stimulation, or intradetrusor botulinum toxin. Option B is incorrect because cytology does not treat urgency incontinence. Option C is incorrect because antibiotics do not treat idiopathic OAB without infection. Option D is incorrect because bone scan is unrelated to OAB management. Option E is incorrect because cystectomy is not routine escalation after oral medication failure. Teaching point: Third-line OAB care is a menu of minimally invasive choices before high-morbidity reconstruction is considered.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>
+
+row_number: 278
+Source/Guideline: Microhematuria: AUA/SUFU Guideline
+Category: General Urology
+Question: A patient has confirmed microhematuria plus proteinuria, dysmorphic RBCs, and elevated creatinine. What should happen to the hematuria workup?
+Option A: Nephrology referral and risk-based urologic evaluation
+Option B: Nephrology referral instead of any urologic evaluation
+Option C: Urine dipstick follow-up
+Option D: Empiric antibiotics without culture
+Option E: Cytology as the complete evaluation
+Correct Answer: A
+Explanation: Option A is correct. Findings suggesting medical renal disease warrant nephrology referral, but they do not eliminate the need for risk-based urologic evaluation of microhematuria. Option B is incorrect because possible glomerular disease does not exclude concurrent urologic malignancy risk. Option C is incorrect because dipstick alone is not adequate after confirmed microhematuria. Option D is incorrect because antibiotics require evidence of infection. Option E is incorrect because cytology alone is not a complete risk-based evaluation. Teaching point: Medical renal features change the referral pattern, not the obligation to risk-stratify hematuria urologically.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>
+
+row_number: 279
+Source/Guideline: Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline
+Category: General Urology
+Question: A man with chronic pelvic pain has negative cultures, urinary frequency, pain that worsens with bladder filling, and relief after voiding. What diagnostic frame should be considered?
+Option A: Male IC/BPS overlap rather than CP/CPPS alone
+Option B: Culture-negative bacterial prostatitis requiring repeated antibiotics
+Option C: Testicular torsion
+Option D: Asymptomatic bacteriuria
+Option E: Stress urinary incontinence
+Correct Answer: A
+Explanation: Option A is correct. Male chronic pelvic pain with bladder-filling pain and relief after voiding should prompt consideration of IC/BPS overlap rather than labeling the patient as CP/CPPS alone. Option B is incorrect because negative cultures and bladder pain features do not justify repeated antibiotics. Option C is incorrect because torsion is an acute scrotal emergency, not a chronic bladder-pain phenotype. Option D is incorrect because the patient is symptomatic and cultures are negative. Option E is incorrect because stress incontinence does not explain pain with bladder filling. Teaching point: In men, bladder-centric pain can be missed when all chronic pelvic pain is forced into a prostatitis frame.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>
+
+row_number: 280
+Source/Guideline: Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline
+Category: Infections
+Question: A woman with recurrent uncomplicated UTIs has a new culture-supported symptomatic cystitis episode. Local resistance permits several oral options. Which treatment approach best supports stewardship?
+Option A: Reflex fluoroquinolone selection for recurrence
+Option B: First-line nitrofurantoin, TMP-SMX, or fosfomycin guided by the antibiogram
+Option C: Treat until urine cultures are sterile for months
+Option D: Routine cystoscopy before each antibiotic course
+Option E: No treatment because recurrence makes symptoms unreliable
+Correct Answer: B
+Explanation: Option B is correct. Symptomatic recurrent uncomplicated cystitis should be treated with first-line agents such as nitrofurantoin, TMP-SMX, or fosfomycin, selected using local resistance patterns and patient factors. Option A is incorrect because routine fluoroquinolone use increases collateral damage when effective narrower options exist. Option C is incorrect because prolonged eradication of bacteriuria increases harm and resistance. Option D is incorrect because cystoscopy is not required before each uncomplicated episode. Option E is incorrect because symptomatic episodes still warrant appropriate treatment. Teaching point: Recurrent UTI stewardship means culture-aware narrow therapy for symptomatic episodes, not reflex broad-spectrum or prolonged suppression.
+
+Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>

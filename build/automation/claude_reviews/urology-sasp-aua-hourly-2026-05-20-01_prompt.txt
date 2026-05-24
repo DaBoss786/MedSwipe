@@ -1,0 +1,135 @@
+Critically analyze only the 10 pasted MedSwipe AI_Drafts rows below. Do not ask for spreadsheet access and do not edit any sheet. Return one entry per row with row_number, overall_disposition, issue_type, severity, affected_field, exact_replacement_text, rationale, and do_not_change when no edit is needed. Focus on senior-resident difficulty, clinical accuracy, distractor quality, explanation quality, source fidelity, and duplicate/saturation risk. For factual uncertainty, answer-key changes, duplicate/saturation concern, or major clinical rewrite, mark flag_only rather than providing an auto-edit. If you cannot review the pasted rows, say CLAUDE_REVIEW_FAILED and explain why.
+
+Rows:
+[
+  {
+    "row_number": 291,
+    "source_guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+    "category": "Oncology",
+    "question": "After prostatectomy, a man has his first detectable ultrasensitive PSA at 0.16 ng/mL. He feels well and has no imaging evidence of recurrence. What is the next best step before salvage treatment decisions?",
+    "option_a": "Repeat PSA to confirm a rising trend",
+    "option_b": "Start lifelong ADT immediately",
+    "option_c": "Order cystoscopy to localize recurrence",
+    "option_d": "Wait until bone pain develops",
+    "option_e": "Begin intravesical therapy",
+    "correct_answer": "A",
+    "explanation": "Option A is correct. A single detectable PSA after prostatectomy should be confirmed with repeat testing before committing the patient to salvage imaging or treatment, because biochemical recurrence is a longitudinal diagnosis. Option B is incorrect because lifelong ADT is not triggered by one low detectable value. Option C is incorrect because cystoscopy does not evaluate prostate bed or nodal recurrence. Option D is incorrect because symptomatic delay can miss a salvage window. Option E is incorrect because intravesical therapy treats bladder cancer, not post-prostatectomy PSA recurrence. Teaching point: Post-prostatectomy recurrence workup starts by confirming the PSA signal, then risk-stratifying the timing and intensity of salvage therapy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 292,
+    "source_guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+    "category": "Oncology",
+    "question": "A man with prior prostatectomy has confirmed biochemical recurrence. PSA is 0.32 ng/mL and rising, conventional imaging is negative, and salvage radiation is being considered. What counseling is most appropriate?",
+    "option_a": "Delay radiation until PSA exceeds 2.0 ng/mL",
+    "option_b": "Offer salvage radiation while PSA is still low",
+    "option_c": "Use intravesical chemotherapy first",
+    "option_d": "Repeat prostatectomy before radiation",
+    "option_e": "Treat if bone scan becomes positive",
+    "correct_answer": "B",
+    "explanation": "Option B is correct. Salvage radiation for post-prostatectomy biochemical recurrence is more effective when delivered at lower PSA levels, so a negative conventional imaging study should not force delay until macroscopic disease appears. Option A is incorrect because waiting for a high PSA reduces the chance of cure. Option C is incorrect because intravesical chemotherapy is unrelated to prostate bed recurrence. Option D is incorrect because the prostate has already been removed. Option E is incorrect because salvage radiation is not reserved for bone-scan-positive disease. Teaching point: The salvage window is PSA-sensitive; negative imaging does not mean there is no potentially curable microscopic recurrence.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 293,
+    "source_guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+    "category": "Oncology",
+    "question": "A patient treated for high-risk NMIBC has negative cystoscopy and cytology at follow-up. He asks whether upper-tract surveillance is ever appropriate despite a normal bladder exam. What is guideline-concordant?",
+    "option_a": "Avoid upper-tract imaging after any negative cystoscopy",
+    "option_b": "Use bone scan as the upper-tract study",
+    "option_c": "Consider upper-tract imaging at 1- to 2-year intervals",
+    "option_d": "Replace cystoscopy with urine dipstick",
+    "option_e": "Perform radical nephrectomy for surveillance",
+    "correct_answer": "C",
+    "explanation": "Option C is correct. In intermediate- or high-risk NMIBC, surveillance may include upper-tract imaging at 1- to 2-year intervals, even when bladder surveillance is otherwise negative. Option A is incorrect because high-risk urothelial cancer carries upper-tract recurrence risk. Option B is incorrect because bone scan does not evaluate the collecting systems. Option D is incorrect because dipstick testing cannot replace cystoscopic surveillance. Option E is incorrect because nephrectomy is not a surveillance maneuver. Teaching point: Upper-tract surveillance is risk-adapted in NMIBC; low-risk disease avoids routine imaging, while higher-risk disease can justify periodic imaging.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 294,
+    "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "category": "Stones",
+    "question": "A recurrent calcium stone former with persistent hypercalciuria starts chlorthalidone. Follow-up urine shows improved calcium but new hypocitraturia and borderline low potassium. What adjunct best fits prevention goals?",
+    "option_a": "Low-calcium diet",
+    "option_b": "Chronic nitrofurantoin",
+    "option_c": "Urine cytology surveillance",
+    "option_d": "Potassium citrate supplementation",
+    "option_e": "Cystine-binding thiol therapy",
+    "correct_answer": "D",
+    "explanation": "Option D is correct. Potassium citrate can support citrate repletion and potassium balance in a thiazide-treated recurrent calcium stone former, reducing calcium stone risk when hypocitraturia emerges. Option A is incorrect because low dietary calcium can increase oxalate absorption and stone risk. Option B is incorrect because antibiotics do not correct metabolic calcium stone risk. Option C is incorrect because cytology evaluates urothelial malignancy rather than stone chemistry. Option E is incorrect because thiol drugs are for cystinuria, not thiazide-associated hypocitraturia. Teaching point: Thiazides can reduce urinary calcium, but follow-up urine chemistry should guide potassium and citrate management rather than ending prevention planning.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 295,
+    "source_guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "category": "Stones",
+    "question": "After total colectomy, a recurrent stone former has low urine volume, low urinary citrate, and persistently acidic urine. Which prevention plan best addresses the dominant abnormalities?",
+    "option_a": "Restrict dietary calcium to very low levels",
+    "option_b": "Increase fluid intake and use potassium citrate",
+    "option_c": "Start thiol therapy for cystine binding",
+    "option_d": "Use surveillance cystoscopy alone",
+    "option_e": "Begin chronic fluoroquinolone prophylaxis",
+    "correct_answer": "B",
+    "explanation": "Option B is correct. Low urine volume and acidic, hypocitraturic urine increase stone risk, so prevention should prioritize higher urine volume and citrate alkalinization when clinically tolerated. Option A is incorrect because calcium restriction can worsen oxalate handling and is not the main correction here. Option C is incorrect because thiol therapy targets cystinuria. Option D is incorrect because cystoscopy does not prevent metabolic stones. Option E is incorrect because antibiotics do not correct low volume, low citrate, or low pH. Teaching point: Bowel anatomy can shift the metabolic stone phenotype; the 24-hour urine profile should drive fluid and alkali therapy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 296,
+    "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "category": "Urogynecology",
+    "question": "A patient with idiopathic OAB develops weak stream and recurrent UTIs after intradetrusor botulinum toxin. PVR is now 310 mL. What management issue should be addressed first?",
+    "option_a": "Increase the botulinum toxin dose",
+    "option_b": "Start BCG maintenance",
+    "option_c": "Incomplete emptying with retention-risk counseling",
+    "option_d": "Repeat urine cytology as treatment",
+    "option_e": "Ignore PVR if urgency improved",
+    "correct_answer": "C",
+    "explanation": "Option C is correct. After intradetrusor botulinum toxin, new voiding symptoms, recurrent UTIs, and a high PVR should prompt management of incomplete emptying and counseling about retention risk, including catheterization when clinically needed. Option A is incorrect because dose escalation can worsen retention. Option B is incorrect because BCG treats selected NMIBC, not OAB retention. Option D is incorrect because cytology does not treat incomplete emptying. Option E is incorrect because PVR matters when symptoms or UTIs suggest retention. Teaching point: Botulinum toxin can improve urgency while creating a separate safety problem; post-treatment voiding symptoms require PVR-directed management.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 297,
+    "source_guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "category": "Urogynecology",
+    "question": "A patient with severe idiopathic OAB remains profoundly impaired after behavioral therapy, oral medications, neuromodulation, tibial nerve stimulation, and botulinum toxin. What option may be discussed at this refractory stage?",
+    "option_a": "Annual urine cytology",
+    "option_b": "Chronic antibiotics",
+    "option_c": "Repeat dipstick monitoring",
+    "option_d": "Augmentation cystoplasty or urinary diversion",
+    "option_e": "BCG induction",
+    "correct_answer": "D",
+    "explanation": "Option D is correct. In carefully selected patients with severe, refractory OAB who have failed less invasive therapies, augmentation cystoplasty or urinary diversion may be discussed after shared decision-making about morbidity. Option A is incorrect because cytology does not treat OAB. Option B is incorrect because antibiotics do not treat idiopathic urgency without infection. Option C is incorrect because dipstick testing cannot manage end-stage symptoms. Option E is incorrect because BCG treats selected bladder cancer, not idiopathic OAB. Teaching point: Major reconstructive options sit at the far end of the OAB pathway and require failure of conservative, pharmacologic, and minimally invasive choices.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 298,
+    "source_guideline": "Microhematuria: AUA/SUFU Guideline",
+    "category": "General Urology",
+    "question": "A patient on apixaban has persistent microscopic hematuria confirmed on microscopy. There is no infection, menstruation, or recent instrumentation. How should anticoagulation affect evaluation?",
+    "option_a": "Stop evaluation because anticoagulation explains it",
+    "option_b": "Use dipstick alone for surveillance",
+    "option_c": "Treat empirically with antibiotics",
+    "option_d": "Order bone scan as the first test",
+    "option_e": "Perform the same risk-based hematuria evaluation",
+    "correct_answer": "E",
+    "explanation": "Option E is correct. Patients taking antiplatelet or anticoagulant therapy should undergo the same risk-based microhematuria evaluation as patients not taking these agents. Option A is incorrect because anticoagulation can unmask bleeding from malignancy or other pathology. Option B is incorrect because dipstick alone does not complete evaluation of confirmed microhematuria. Option C is incorrect without evidence of infection. Option D is incorrect because bone scan does not evaluate the urinary tract. Teaching point: Do not attribute persistent microhematuria to anticoagulation without applying the usual risk-based urologic algorithm.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+  },
+  {
+    "row_number": 299,
+    "source_guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+    "category": "General Urology",
+    "question": "A man with CP/CPPS has pelvic pain plus erectile dysfunction. Cultures are negative, pelvic floor tenderness is absent, and he wants a medication that may address both domains. What option is reasonable?",
+    "option_a": "Chronic fluoroquinolone suppression",
+    "option_b": "Androgen deprivation therapy",
+    "option_c": "Daily tadalafil",
+    "option_d": "Intravesical BCG",
+    "option_e": "Urgent radical prostatectomy",
+    "correct_answer": "C",
+    "explanation": "Option C is correct. Daily tadalafil may be prescribed for CP/CPPS patients, including those with concomitant erectile dysfunction, as part of phenotype-directed management. Option A is incorrect because negative cultures argue against chronic antibiotic suppression. Option B is incorrect because ADT treats selected prostate cancer contexts and can worsen sexual function. Option D is incorrect because BCG treats selected NMIBC, not pelvic pain. Option E is incorrect because prostatectomy is not treatment for CP/CPPS. Teaching point: Male chronic pelvic pain management should match the phenotype; sexual dysfunction can make a PDE5 inhibitor a rational component of multimodal care.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 300,
+    "source_guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+    "category": "Infections",
+    "question": "A woman with recurrent uncomplicated cystitis has dysuria and frequency. She is stable, has no flank pain, and prior cultures show susceptible E coli. Which treatment approach best fits stewardship guidance?",
+    "option_a": "Use a short-course first-line agent such as nitrofurantoin",
+    "option_b": "Use fluoroquinolone therapy as the default first choice",
+    "option_c": "Treat until follow-up cultures are sterile",
+    "option_d": "Perform cystoscopy before treating this episode",
+    "option_e": "Withhold antibiotics because recurrence makes symptoms unreliable",
+    "correct_answer": "A",
+    "explanation": "Option A is correct. Symptomatic acute episodes in recurrent uncomplicated UTI should be treated with short-course first-line agents such as nitrofurantoin, TMP-SMX, or fosfomycin when susceptibility and local resistance patterns support them. Option B is incorrect because fluoroquinolones should not be the default when narrower effective agents are available. Option C is incorrect because sterile follow-up cultures are not the endpoint for an uncomplicated symptomatic episode. Option D is incorrect because cystoscopy is not required before each uncomplicated episode. Option E is incorrect because symptomatic recurrence still warrants treatment. Teaching point: Recurrent UTI stewardship means short, culture-aware treatment of symptomatic episodes, not reflex broad-spectrum therapy or culture eradication.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+  }
+]

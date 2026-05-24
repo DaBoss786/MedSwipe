@@ -1,0 +1,7 @@
+interface:
+  display_name: "MedSwipe Question Generator"
+  short_description: "Generate MedSwipe review questions"
+  default_prompt: "Use $medswipe-question-generator to generate a 10-question MedSwipe board-review batch from my source material and append it to AI_Drafts."
+
+policy:
+  allow_implicit_invocation: true

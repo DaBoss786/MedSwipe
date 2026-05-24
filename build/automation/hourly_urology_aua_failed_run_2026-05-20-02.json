@@ -1,0 +1,25 @@
+{
+  "mode": "AUA",
+  "batch_id": "urology-aua-hourly-2026-05-20-02",
+  "attempted_at": "2026-05-20 10:23 PDT",
+  "status": "failed_before_generation",
+  "failure_stage": "live_sheet_read",
+  "failure_reason": "Google Drive/Sheets connector failed during MCP startup before AI_Drafts headers or existing rows could be read.",
+  "connector_error": "MCP startup failed: handshaking with MCP server failed: Unexpected content type: Some(\"missing-content-type; body: \") when sending initialize request.",
+  "rows_written": null,
+  "row_range": null,
+  "initial_verifier_counts": null,
+  "rows_auto_fixed": [],
+  "final_verifier_counts": null,
+  "unresolved_rows": [
+    {
+      "row": null,
+      "reason": "No rows were generated or written because live AI_Drafts access was unavailable."
+    }
+  ],
+  "manual_claude_prompt_path": null,
+  "claude_artifact_path": null,
+  "final_readback_status": "not_attempted_connector_unavailable",
+  "source_mode_state_updated": false,
+  "next_mode_preserved": "AUA"
+}

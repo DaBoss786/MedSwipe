@@ -1,0 +1,135 @@
+Critically analyze only the 10 pasted MedSwipe AI_Drafts rows below. Do not ask for spreadsheet access and do not edit any sheet. Return one entry per row with row_number, overall_disposition, issue_type, severity, affected_field, exact_replacement_text, rationale, and do_not_change when no edit is needed. Focus on senior-resident difficulty, clinical accuracy, distractor quality, explanation quality, source fidelity, and duplicate/saturation risk. For factual uncertainty, answer-key changes, duplicate/saturation concern, or major clinical rewrite, mark flag_only rather than providing an auto-edit. If you cannot review the pasted rows, say CLAUDE_REVIEW_FAILED and explain why.
+
+Rows to review:
+[
+  {
+    "row_number": 331,
+    "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+    "Category": "Oncology",
+    "Question": "A 63-year-old man has favorable intermediate-risk localized prostate cancer, minimal pattern 4 disease, low PSA density, and strong preference to defer treatment toxicity. What initial management discussion is most appropriate?",
+    "Option A": "Watchful waiting because any intermediate-risk disease is incurable",
+    "Option B": "Active surveillance, radiation therapy, and radical prostatectomy",
+    "Option C": "ADT monotherapy as definitive treatment",
+    "Option D": "Whole-gland ablation as the proven superior standard",
+    "Option E": "Immediate pelvic nodal radiation without prostate treatment",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. Favorable intermediate-risk localized prostate cancer can be managed with a discussion of active surveillance, radiation therapy, and radical prostatectomy when tumor features and patient priorities fit. Option A is incorrect because watchful waiting is mainly for limited life expectancy rather than a blanket intermediate-risk rule. Option C is incorrect because ADT alone is not definitive curative treatment for this scenario. Option D is incorrect because ablation lacks high-quality comparative outcome data against established options. Option E is incorrect because elective nodal radiation alone does not treat the prostate cancer. Teaching point: Favorable intermediate-risk disease is preference-sensitive, but the choice set still has to match oncologic risk.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+  },
+  {
+    "row_number": 332,
+    "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+    "Category": "Oncology",
+    "Question": "A man elects radical prostatectomy for unfavorable intermediate-risk prostate cancer. Estimated lymph node risk is high enough to justify node staging. What pelvic lymphadenectomy counseling is most accurate?",
+    "Option A": "It consistently improves metastasis-free and overall survival",
+    "Option B": "It should be omitted because imaging was negative",
+    "Option C": "A limited dissection is preferred for staging accuracy",
+    "Option D": "It provides staging information, and nomograms should guide selection",
+    "Option E": "It replaces postoperative PSA surveillance",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. Pelvic lymphadenectomy provides staging information that can guide later management, and nomograms should be used to select patients by balancing nodal-yield benefit against complications. Option A is incorrect because consistent survival improvement has not been documented. Option B is incorrect because negative imaging does not by itself eliminate the value of surgical staging in selected patients. Option C is incorrect because an extended dissection improves staging accuracy compared with limited dissection when lymphadenectomy is performed. Option E is incorrect because pathologic staging does not replace PSA follow-up. Teaching point: Pelvic lymphadenectomy is a staging tool selected by risk, not a default therapeutic guarantee.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+  },
+  {
+    "row_number": 333,
+    "Source/Guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "A complete TURBT shows a 3 cm high-risk high-grade Ta urothelial carcinoma with muscle present and no perforation. Which next resection step should be considered?",
+    "Option A": "Office fulguration instead of restaging",
+    "Option B": "Radical cystectomy as routine immediate treatment",
+    "Option C": "No cystoscopic reassessment until one year",
+    "Option D": "Repeat TURBT of the primary tumor site within six weeks",
+    "Option E": "Upper-tract ureteroscopy as the next bladder staging step",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. For high-risk, high-grade Ta tumors, repeat transurethral resection of the primary tumor site within six weeks should be considered because residual tumor and staging uncertainty can change management. Option A is incorrect because office fulguration is not adequate restaging for high-grade Ta disease. Option B is incorrect because cystectomy is not routine immediate treatment for a completely resected high-grade Ta tumor. Option C is incorrect because waiting one year ignores early residual disease risk. Option E is incorrect because upper-tract ureteroscopy does not restage the bladder tumor bed. Teaching point: High-grade Ta is noninvasive, but it is not low-stakes Ta.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 334,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A recurrent calcium stone former continues to form stones despite diet changes, but repeat 24-hour urine testing shows no persistent hypercalciuria, hypocitraturia, or hyperuricosuria. What medication strategy is guideline-aligned?",
+    "Option A": "No medication can be used without a urine abnormality",
+    "Option B": "Acetohydroxamic acid as empiric calcium stone prevention",
+    "Option C": "Chronic suppressive fluoroquinolone therapy",
+    "Option D": "Empiric alpha blocker therapy for prevention",
+    "Option E": "Thiazide diuretic or potassium citrate therapy",
+    "Correct Answer": "E",
+    "Explanation": "Option E is correct. Thiazide diuretics and/or potassium citrate may be offered to recurrent calcium stone formers when other metabolic abnormalities are absent or have been addressed but stone formation persists. Option A is incorrect because empiric directed prevention can still be appropriate after recurrent events. Option B is incorrect because acetohydroxamic acid is for selected struvite stones after surgical options are exhausted. Option C is incorrect because antibiotics do not prevent metabolic calcium stones. Option D is incorrect because alpha blockers may help selected ureteral stone passage but do not prevent recurrent renal calcium stones. Teaching point: Recurrent calcium stone prevention can be phenotype-driven even when the 24-hour urine is not diagnostic.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 335,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A recurrent calcium stone former starts chlorthalidone for high urinary calcium. Which follow-up plan best addresses medication safety?",
+    "Option A": "No laboratory monitoring is needed after thiazide initiation",
+    "Option B": "Urine cytology twice per year",
+    "Option C": "Periodic blood testing for drug adverse effects",
+    "Option D": "Stop imaging surveillance permanently",
+    "Option E": "Cystoscopy before each refill",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. Pharmacologic stone prevention requires follow-up that includes periodic blood testing to detect adverse effects such as thiazide-associated electrolyte changes. Option A is incorrect because thiazides can cause clinically relevant metabolic adverse effects. Option B is incorrect because urine cytology is unrelated to calcium stone medication monitoring. Option D is incorrect because imaging may still be needed to follow stone activity. Option E is incorrect because cystoscopy is not part of thiazide safety monitoring. Teaching point: Preventive stone medication is not a one-time prescription; response and toxicity both need follow-up.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 336,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A 69-year-old woman with idiopathic OAB and blood pressure 186/112 mm Hg asks to start mirabegron today. Which counseling point is most appropriate?",
+    "Option A": "Mirabegron is preferred because hypertension does not affect selection",
+    "Option B": "Mirabegron should be avoided until severe uncontrolled hypertension is addressed",
+    "Option C": "Urodynamics is required to prove detrusor overactivity before medication",
+    "Option D": "Chronic urethral catheterization is first-line therapy",
+    "Option E": "Urine cytology determines beta-3 agonist eligibility",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. Mirabegron is not recommended in patients with severe uncontrolled hypertension, so blood pressure control and an alternative OAB plan should be addressed before prescribing it. Option A is incorrect because severe uncontrolled hypertension directly affects mirabegron selection. Option C is incorrect because urodynamic confirmation is not required before medication in uncomplicated idiopathic OAB. Option D is incorrect because chronic urethral catheterization is not first-line OAB therapy. Option E is incorrect because urine cytology has no role in beta-3 agonist eligibility. Teaching point: Beta-3 agonists are useful OAB medications, but drug-specific safety constraints still matter.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 337,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A woman with idiopathic OAB had inadequate durable response to intradetrusor botulinum toxin and wants another minimally invasive option rather than a chronic catheter. Which option is supported?",
+    "Option A": "Sacral neuromodulation",
+    "Option B": "Long-term urethral Foley as routine next therapy",
+    "Option C": "Cystoscopy as definitive symptom treatment",
+    "Option D": "Annual CT urograms for urgency control",
+    "Option E": "Pelvic lymphadenectomy",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. Sacral neuromodulation can be used for patients with inadequately controlled OAB symptoms, including after inadequate response to or intolerance of botulinum toxin. Option B is incorrect because chronic catheterization is a last-resort incontinence-management option and should not be routine next therapy. Option C is incorrect because cystoscopy may evaluate selected diagnostic uncertainty but does not treat idiopathic OAB symptoms. Option D is incorrect because CT urography is not OAB therapy. Option E is incorrect because pelvic lymphadenectomy has no role in OAB management. Teaching point: Minimally invasive OAB options can be sequenced by response and patient preference without defaulting to chronic catheterization.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 338,
+    "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+    "Category": "General Urology",
+    "Question": "A 34-year-old patient with no smoking history has confirmed microhematuria with 4 RBC/hpf, no gross hematuria, and no additional urothelial cancer risk factors. What is the next step?",
+    "Option A": "Repeat urinalysis within six months",
+    "Option B": "Immediate cystoscopy and CT urography",
+    "Option C": "Urine cytology as the required first test",
+    "Option D": "Empiric intravesical chemotherapy",
+    "Option E": "Ignore confirmed microscopic hematuria indefinitely",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. Low/negligible-risk microhematuria should be followed with repeat urinalysis within six months rather than immediate cystoscopy or imaging. Option B is incorrect because CT urography and cystoscopy are not the initial pathway for low/negligible-risk patients. Option C is incorrect because cytology is not required as the first test in this risk group. Option D is incorrect because intravesical chemotherapy requires a bladder cancer indication. Option E is incorrect because confirmed microhematuria still needs guideline-directed follow-up. Teaching point: Risk stratification prevents both missed evaluation and reflex over-testing.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+  },
+  {
+    "row_number": 339,
+    "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+    "Category": "General Urology",
+    "Question": "A 58-year-old man with a 12 pack-year smoking history has confirmed microhematuria with 18 RBC/hpf and no renal insufficiency. He is categorized as intermediate risk. What evaluation is recommended?",
+    "Option A": "Repeat dipstick alone in one year",
+    "Option B": "Urine cytology without imaging or cystoscopy",
+    "Option C": "Cystoscopy and renal ultrasound",
+    "Option D": "CT urography without cystoscopy",
+    "Option E": "No evaluation if culture is negative",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. Intermediate-risk microhematuria should be evaluated with cystoscopy and renal ultrasound. Option A is incorrect because repeat dipstick alone is inadequate after confirmed intermediate-risk microhematuria. Option B is incorrect because cytology alone cannot evaluate the bladder and upper tracts. Option D is incorrect because upper-tract imaging without cystoscopy misses the recommended bladder evaluation. Option E is incorrect because a negative culture does not eliminate the need for risk-based hematuria evaluation. Teaching point: Intermediate-risk microhematuria uses ultrasound rather than automatically escalating every patient to CT urography.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+  },
+  {
+    "row_number": 340,
+    "Source/Guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+    "Category": "Infections",
+    "Question": "A woman with recurrent cystitis symptoms has a voided culture reported as mixed vaginal flora with many epithelial cells. What is the best next diagnostic step before changing prophylaxis?",
+    "Option A": "Treat the mixed-flora result as definitive infection",
+    "Option B": "Repeat urine studies, considering a catheterized specimen",
+    "Option C": "Start lifelong fluoroquinolone suppression",
+    "Option D": "Perform monthly CT urograms for culture clarification",
+    "Option E": "Ignore future symptoms because the culture was contaminated",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. When an initial urine specimen is suspicious for contamination, repeat urine studies should be obtained and a catheterized specimen can be considered to clarify culture results. Option A is incorrect because mixed vaginal flora and epithelial cells can reflect contamination rather than true infection. Option C is incorrect because lifelong fluoroquinolone suppression is excessive and unsafe without reliable microbiologic confirmation. Option D is incorrect because routine monthly CT urography is not part of recurrent uncomplicated UTI diagnosis. Option E is incorrect because symptoms still require accurate evaluation. Teaching point: Recurrent UTI management depends on linking symptoms to credible microbiology, not treating contaminated cultures.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+  }
+]

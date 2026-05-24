@@ -1,0 +1,44 @@
+[
+  {
+    "_Sheet Row": "38",
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Specialty": "Urology",
+    "Category": "Nephrolithiasis",
+    "Question": "A 45-year-old male with recurrent calcium oxalate stones seeks advice on dietary prevention. Metabolic testing shows low urine volume. According to AUA guidelines, what is the target urine volume to reduce the risk of stone recurrence?",
+    "Option A": "1.0 L daily",
+    "Option B": "1.5 L daily",
+    "Option C": "2.0 L daily",
+    "Option D": "2.5 L daily",
+    "Option E": "3.5 L daily",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. Statement 8 of the medical management of kidney stones guideline recommends a fluid intake that will achieve a urine volume of at least 2.5 liters daily. Option A is incorrect because low fluid intake is a major risk factor for stone formation. Option B is incorrect because 1.5 L daily remains below the guideline target and may not adequately dilute lithogenic factors. Option C is incorrect because 2.0 L daily is also below the recommended minimum urine output. Option E is incorrect because while higher volumes may be beneficial, the established guideline standard is 2.5 L. Source: <a href='https://pubmed.ncbi.nlm.nih.gov/24857648/' target='_blank'>Pearle MS, Goldfarb DS, Assimos DG, et al. Medical management of kidney stones: AUA guideline. J Urol 2014</a>."
+  },
+  {
+    "_Sheet Row": "39",
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder (2024)",
+    "Specialty": "Urology",
+    "Category": "Voiding Dysfunction",
+    "Question": "A 58-year-old female presents with bothersome urinary urgency and frequency. In light of the 2024 AUA/SUFU Idiopathic Overactive Bladder Guideline, how should therapy be initiated?",
+    "Option A": "Progress linearly through first- then second- then third-line therapies.",
+    "Option B": "Require a trial of behavioral therapy before offering oral medications.",
+    "Option C": "Select treatments from a menu based on invasiveness via shared decision-making.",
+    "Option D": "Mandate 6 months of pharmacotherapy before considering neuromodulation.",
+    "Option E": "Perform urodynamics routinely to confirm detrusor overactivity before treatment.",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. The 2024 guideline departs from the conventional step therapy model, instead suggesting an individualized selection of therapeutic options classified by invasiveness. Option A is incorrect because the terms first-, second-, or third-line therapy were eliminated to avoid a hierarchical sequence. Option B is incorrect because clinicians do not need to require a behavioral-therapy trial before offering oral medications in every case. Option D is incorrect because the guideline does not mandate a fixed pharmacotherapy duration before considering neuromodulation or other minimally invasive options. Option E is incorrect because urodynamics should not be performed routinely in the initial evaluation. Source: <a href='https://pubmed.ncbi.nlm.nih.gov/39010271/' target='_blank'>Cameron AP, Rodriguez GM, Schomer KG, et al. The AUA/SUFU guideline on the diagnosis and treatment of idiopathic overactive bladder. J Urol 2024</a>."
+  },
+  {
+    "_Sheet Row": "40",
+    "Source/Guideline": "Early Detection of Prostate Cancer: AUA/SUO Guideline (2023, amended 2026)",
+    "Specialty": "Urology",
+    "Category": "Oncology",
+    "Question": "A 62-year-old biopsy-naive male has a PSA of 6.0 ng/mL. He elects to undergo an MRI prior to biopsy. A PI-RADS 4 lesion is identified. According to 2026 AUA/SUO guidelines, what is the recommended next step?",
+    "Option A": "Repeat MRI in 6 months to assess for lesion stability.",
+    "Option B": "Perform targeted biopsy of the suspicious lesion, with systematic template biopsy also considered",
+    "Option C": "Perform a standard 12-core systematic biopsy without targeting the MRI lesion",
+    "Option D": "Perform bone scan and CT abdomen/pelvis for staging.",
+    "Option E": "Start a 5-alpha reductase inhibitor and recheck PSA in 3 months.",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. Guideline statement 15 recommends that for biopsy-naive patients with a suspicious lesion on MRI, clinicians should perform targeted biopsies of that lesion, and they may also perform a systematic template biopsy. Option A is incorrect because a PI-RADS 4 lesion indicates a substantial risk of clinically significant cancer and warrants tissue diagnosis rather than interval imaging alone. Option C is incorrect because ignoring the MRI target and relying on systematic biopsy alone can miss the lesion identified on MRI. Option D is incorrect because staging imaging is not the recommended next step in this biopsy-naive screening scenario. Option E is incorrect because 5-alpha reductase inhibitor therapy does not replace biopsy evaluation of a suspicious MRI lesion and can complicate PSA interpretation. Source: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/early-detection-of-prostate-cancer-guidelines' target='_blank'>American Urological Association. Early Detection of Prostate Cancer: AUA/SUO Guideline (2023, amended 2026)</a>."
+  }
+]

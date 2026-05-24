@@ -1,0 +1,241 @@
+{
+  "updated_at": "2026-05-20 22:05 PDT",
+  "purpose": "Hard exclusion registry for recurring hourly Urology question generation and verification. A future row is blocked when it tests the same clinical decision, correct answer, and teaching point, even if surface numbers or wording differ.",
+  "blocked_concepts": [
+    {
+      "label": "AS suspicious MRI lesion to targeted biopsy",
+      "rows": [
+        191,
+        231
+      ],
+      "block_rule": "Active surveillance prostate cancer with suspicious PI-RADS 4/5 MRI lesion after non-MRI-guided diagnostic biopsy -> targeted or confirmatory biopsy."
+    },
+    {
+      "label": "High-risk prostate cancer staging imaging",
+      "rows": [
+        182,
+        232
+      ],
+      "block_rule": "High-risk localized prostate cancer staging -> bone scan plus pelvic mpMRI or CT."
+    },
+    {
+      "label": "Pre-Botox OAB PVR assessment",
+      "rows": [
+        146,
+        236
+      ],
+      "block_rule": "Pre-botulinum toxin OAB safety assessment -> post-void residual measurement."
+    },
+    {
+      "label": "UTI-associated microhematuria repeat UA",
+      "rows": [
+        178,
+        238
+      ],
+      "block_rule": "Microhematuria attributed to UTI after treatment -> repeat urinalysis with microscopy."
+    },
+    {
+      "label": "CP/CPPS pelvic floor therapy",
+      "rows": [
+        169,
+        209,
+        239
+      ],
+      "block_rule": "CP/CPPS or male chronic pelvic pain with pelvic floor tenderness/hypertonicity -> pelvic floor-directed physical therapy, myofascial release, or EMG biofeedback."
+    },
+    {
+      "label": "Hypercalciuria sodium and normal calcium",
+      "rows": [
+        131,
+        165,
+        235
+      ],
+      "block_rule": "Hypercalciuric calcium stone dietary counseling -> restrict sodium while maintaining normal dietary calcium."
+    },
+    {
+      "label": "Hyperuricosuric calcium oxalate allopurinol",
+      "rows": [
+        205,
+        244
+      ],
+      "block_rule": "Hyperuricosuric, normocalciuric recurrent calcium oxalate stones after diet changes -> allopurinol."
+    },
+    {
+      "label": "Antimuscarinic cognitive risk counseling",
+      "rows": [
+        176,
+        246
+      ],
+      "block_rule": "OAB antimuscarinic prescribing or counseling -> discuss dementia or cognitive impairment risk."
+    },
+    {
+      "label": "BPH with persistent OAB add-on medication",
+      "rows": [
+        186,
+        247
+      ],
+      "block_rule": "Male BPH on alpha blocker with persistent storage/OAB symptoms and acceptable PVR -> add antimuscarinic or beta-3 agonist."
+    },
+    {
+      "label": "Intermediate-risk hematuria marker-guided cystoscopy deferral",
+      "rows": [
+        179,
+        248
+      ],
+      "block_rule": "Intermediate-risk microhematuria patient declining cystoscopy -> urine cytology or validated urine marker while still performing renal/bladder ultrasound."
+    },
+    {
+      "label": "Recurrent UTI self-start therapy",
+      "rows": [
+        150,
+        250
+      ],
+      "block_rule": "Recurrent uncomplicated UTI with reliable symptom recognition and culture access -> patient-initiated or self-start therapy while awaiting culture."
+    },
+    {
+      "label": "Refractory OAB augmentation or diversion",
+      "rows": [
+        267,
+        297
+      ],
+      "block_rule": "Severe refractory idiopathic OAB after behavioral therapy, oral medication, neuromodulation/PTNS, and botulinum toxin -> augmentation cystoplasty or urinary diversion as last-resort option."
+    },
+    {
+      "label": "Anticoagulated microhematuria same evaluation",
+      "rows": [
+        268,
+        298
+      ],
+      "block_rule": "Patient taking anticoagulant or antiplatelet therapy with confirmed microhematuria -> same risk-based microhematuria evaluation as non-anticoagulated patients."
+    },
+    {
+      "label": "CP/CPPS tadalafil phenotype",
+      "rows": [
+        269,
+        299
+      ],
+      "block_rule": "Male chronic pelvic pain/CPPS with LUTS or erectile dysfunction -> daily tadalafil as phenotype-directed therapy."
+    },
+    {
+      "label": "Recurrent UTI first-line acute therapy",
+      "rows": [
+        280,
+        300
+      ],
+      "block_rule": "Symptomatic acute recurrent uncomplicated cystitis -> short-course first-line narrow agent such as nitrofurantoin, TMP-SMX, or fosfomycin rather than default fluoroquinolone."
+    },
+    {
+      "label": "Negative PET does not withhold salvage radiation",
+      "rows": [
+        292,
+        302
+      ],
+      "block_rule": "Post-prostatectomy biochemical recurrence with negative conventional imaging or PSMA PET/CT while salvage prostate-bed radiation is planned -> proceed with salvage radiation rather than canceling due to negative scan."
+    },
+    {
+      "label": "Uric acid stones potassium citrate alkalinization",
+      "rows": [
+        264,
+        304
+      ],
+      "block_rule": "Recurrent uric acid stones with persistently acidic urine -> potassium citrate or urine alkalinization as key prevention therapy."
+    },
+    {
+      "label": "Stone prevention follow-up 24-hour urine",
+      "rows": [
+        265,
+        305
+      ],
+      "block_rule": "After starting dietary or pharmacologic stone prevention -> repeat/follow-up 24-hour urine testing within about 6 months to assess metabolic response."
+    },
+    {
+      "label": "D-mannose alone rUTI prophylaxis counseling",
+      "rows": [
+        270,
+        310
+      ],
+      "block_rule": "Recurrent uncomplicated UTI patient wants D-mannose alone for prophylaxis -> counsel that D-mannose alone may not be effective for prevention."
+    },
+    {
+      "label": "Low/negligible-risk microhematuria repeat UA",
+      "rows": [
+        308,
+        338
+      ],
+      "block_rule": "Low/negligible-risk microhematuria with 3-10 RBC/HPF, no smoking/gross hematuria/additional urothelial risk factors -> repeat urinalysis within six months."
+    },
+    {
+      "label": "Intermediate-risk NMIBC one-year maintenance BCG",
+      "rows": [
+        263,
+        343
+      ],
+      "block_rule": "Intermediate-risk NMIBC patient with complete response after induction BCG and adequate BCG supply -> maintenance BCG for one year as tolerated."
+    },
+    {
+      "label": "OAB no rigid step therapy SDM",
+      "rows": [
+        317,
+        346,
+        347
+      ],
+      "block_rule": "Idiopathic OAB patient choosing or combining behavioral, pharmacologic, non-invasive, or minimally invasive therapies -> shared decision-making without a rigid mandatory step-therapy ladder."
+    },
+    {
+      "label": "High-risk prostate salvage RT plus ADT",
+      "rows": [
+        322,
+        361
+      ],
+      "block_rule": "Post-prostatectomy biochemical recurrence with high-risk features such as Grade Group 4-5, high PSA, or rapid PSA doubling time while receiving salvage prostate-bed radiation -> add ADT."
+    },
+    {
+      "label": "High-risk NMIBC three-year maintenance BCG",
+      "rows": [
+        362
+      ],
+      "block_rule": "High-risk NMIBC complete response after induction BCG with adequate supply -> maintenance BCG for three years as tolerated."
+    },
+    {
+      "label": "Residual struvite stones acetohydroxamic acid",
+      "rows": [
+        324,
+        364
+      ],
+      "block_rule": "Residual or recurrent struvite stones when surgical options are exhausted or not feasible -> acetohydroxamic acid or urease inhibition."
+    },
+    {
+      "label": "Stone pharmacotherapy safety blood testing",
+      "rows": [
+        335,
+        365
+      ],
+      "block_rule": "Recurrent stone former receiving pharmacologic prevention such as thiazide/chlorthalidone or potassium citrate -> periodic blood testing to monitor medication safety."
+    },
+    {
+      "label": "OAB chronic catheter fallback SDM",
+      "rows": [
+        316,
+        366
+      ],
+      "block_rule": "Severe or frail OAB patient after failed/contraindicated/no-longer-desired therapies requesting chronic catheter drainage -> shared decision-making with explicit harm counseling; not first-line or routine escalation."
+    },
+    {
+      "label": "Microhematuria renal disease nephrology plus urology",
+      "rows": [
+        278,
+        328,
+        368
+      ],
+      "block_rule": "Microhematuria with proteinuria, dysmorphic red cells, casts, or renal insufficiency -> nephrology referral while still completing risk-based urologic evaluation."
+    },
+    {
+      "label": "Persistent recurrent UTI symptoms repeat culture",
+      "rows": [
+        330,
+        370
+      ],
+      "block_rule": "Recurrent uncomplicated cystitis symptoms persist after antimicrobial therapy -> repeat urine culture to guide further management before changing prophylaxis."
+    }
+  ]
+}

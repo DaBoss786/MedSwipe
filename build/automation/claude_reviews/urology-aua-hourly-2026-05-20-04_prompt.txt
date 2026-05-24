@@ -1,0 +1,136 @@
+Critically analyze only the 10 pasted MedSwipe AI_Drafts rows below. Do not ask for spreadsheet access and do not edit any sheet. Return one entry per row with row_number, overall_disposition, issue_type, severity, affected_field, exact_replacement_text, rationale, and do_not_change when no edit is needed. Focus on senior-resident difficulty, clinical accuracy, distractor quality, explanation quality, source fidelity, and duplicate/saturation risk. For factual uncertainty, answer-key changes, duplicate/saturation concern, or major clinical rewrite, mark flag_only rather than providing an auto-edit. If you cannot review the pasted rows, say CLAUDE_REVIEW_FAILED and explain why.
+
+Rows:
+
+[
+  {
+    "row_number": 341,
+    "Source/Guideline": "Early Detection of Prostate Cancer: AUA/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "A 62-year-old man has PSA 4.6 ng/mL, normal DRE, large prostate, low PSA density, no family history, and negative MRI. Risk calculator shows low GG2+ probability. What is reasonable after SDM?",
+    "Option A": "Proceed to biopsy because PSA is above 4",
+    "Option B": "Start empiric antibiotics before deciding",
+    "Option C": "Forgo near-term biopsy with follow-up",
+    "Option D": "Use PSA velocity as the sole trigger for biopsy",
+    "Option E": "Stop future PSA surveillance permanently",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. When the risk of clinically significant prostate cancer is sufficiently low after clinical, laboratory, and imaging assessment, near-term biopsy may be deferred after shared decision-making with appropriate follow-up. Option A is incorrect because a fixed PSA cutoff should not override multivariable risk assessment. Option B is incorrect because empiric antibiotics are not appropriate for an asymptomatic PSA elevation decision. Option D is incorrect because PSA velocity should not be the sole indication for biopsy. Option E is incorrect because deferring biopsy is not the same as abandoning surveillance. Teaching point: The biopsy decision should target GG2+ risk, not a single PSA threshold.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/early-detection-of-prostate-cancer-guidelines' target='_blank'>American Urological Association. Early Detection of Prostate Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 342,
+    "Source/Guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "After prostatectomy, a man with BCR has PSMA PET-positive pelvic nodes and no distant disease. Salvage pelvic RT is planned. How should the PET findings be used?",
+    "Option A": "Ignore PET-positive nodes during planning",
+    "Option B": "Incorporate positive nodes in the radiation plan",
+    "Option C": "Cancel salvage RT because nodes are visible",
+    "Option D": "Treat with intravesical chemotherapy",
+    "Option E": "Delay until conventional CT becomes positive",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. In biochemical recurrence after prostatectomy with PET-positive pelvic nodal disease, the positive findings should be incorporated into the radiation treatment plan. Option A is incorrect because ignoring proven nodal disease misses a planning target. Option C is incorrect because pelvic nodal uptake can guide more tailored salvage radiation rather than automatically canceling it. Option D is incorrect because intravesical chemotherapy treats selected NMIBC contexts. Option E is incorrect because waiting for conventional imaging progression can lose a salvage window. Teaching point: Molecular imaging should refine salvage-field design when it identifies pelvic nodal recurrence.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 343,
+    "Source/Guideline": "Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline",
+    "Category": "Oncology",
+    "Question": "An intermediate-risk NMIBC patient has a complete response after six-week induction BCG. BCG supply is adequate. What maintenance plan should be considered?",
+    "Option A": "No surveillance or maintenance for two years",
+    "Option B": "Immediate radical cystectomy for each responder",
+    "Option C": "Three years of mandatory chemotherapy",
+    "Option D": "Maintenance BCG for one year as tolerated",
+    "Option E": "Upper tract imaging instead of cystoscopy",
+    "Correct Answer": "D",
+    "Explanation": "Option D is correct. For an intermediate-risk NMIBC patient who completely responds to induction BCG, maintenance BCG for one year should be considered as tolerated when supply is available. Option A is incorrect because response does not eliminate surveillance or recurrence risk. Option B is incorrect because cystectomy is not routine for each intermediate-risk responder. Option C is incorrect because three-year maintenance is the high-risk BCG framework, not mandatory chemotherapy for this patient. Option E is incorrect because imaging does not replace bladder surveillance or intravesical maintenance decisions. Teaching point: Maintenance intensity depends on NMIBC risk group and response, not just whether BCG was used.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/bladder-cancer-non-muscle-invasive-guideline' target='_blank'>American Urological Association. Diagnosis and Treatment of Non-Muscle Invasive Bladder Cancer: AUA/SUO Guideline.</a>"
+  },
+  {
+    "row_number": 344,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A recurrent calcium stone former is starting prevention. Which metabolic testing plan best supports targeted therapy?",
+    "Option A": "Defer 24-hour urine testing if serum calcium is normal",
+    "Option B": "Serum uric acid alone as complete testing",
+    "Option C": "Cystoscopy before dietary counseling",
+    "Option D": "Urine cytology to classify stone type",
+    "Option E": "One or two 24-hour urine collections on a random diet",
+    "Correct Answer": "E",
+    "Explanation": "Option E is correct. Recurrent stone formers should undergo metabolic testing with one or two 24-hour urine collections that assess key risk factors such as volume, pH, calcium, oxalate, uric acid, citrate, sodium, potassium, and creatinine. Option A is incorrect because normal serum calcium does not exclude urine abnormalities that guide prevention. Option B is incorrect because a serum value alone cannot characterize urinary risk factors. Option C is incorrect because cystoscopy does not provide metabolic stone risk data. Option D is incorrect because cytology evaluates urothelial malignancy, not stone composition. Teaching point: Targeted stone prevention starts with measured urine chemistry, not empiric assumptions.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 345,
+    "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+    "Category": "Stones",
+    "Question": "A man with recurrent calcium oxalate stones takes high-dose vitamin C supplements. His 24-hour urine shows hyperoxaluria. Which counseling is most appropriate?",
+    "Option A": "Continue vitamin C because oxalate is unaffected",
+    "Option B": "Restrict dietary calcium with meals",
+    "Option C": "Limit non-dietary vitamin C supplementation",
+    "Option D": "Use acetohydroxamic acid as first-line prevention",
+    "Option E": "Reduce fluids to concentrate urine",
+    "Correct Answer": "C",
+    "Explanation": "Option C is correct. High-dose vitamin C can increase urinary oxalate, so limiting non-dietary vitamin C supplementation is appropriate in a hyperoxaluric calcium oxalate stone former. Option A is incorrect because vitamin C may contribute to oxalate burden. Option B is incorrect because normal dietary calcium with meals can help bind enteric oxalate. Option D is incorrect because acetohydroxamic acid is reserved for selected residual or recurrent struvite stones. Option E is incorrect because low urine volume increases stone risk. Teaching point: Hyperoxaluria counseling should distinguish harmful supplements from meal-time dietary calcium strategy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 346,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A patient with OAB is improved but still bothered on behavioral therapy alone and wants to avoid dose escalation. What treatment strategy is guideline-consistent?",
+    "Option A": "Combine behavioral, non-invasive, medication, or minimally invasive therapies",
+    "Option B": "Stop behavioral therapy before adding another option",
+    "Option C": "Require cystoscopy before combining therapies",
+    "Option D": "Use chronic urethral catheterization as routine escalation",
+    "Option E": "Use urine cytology to select medication class",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. For OAB symptoms that do not adequately respond to monotherapy, clinicians may combine behavioral therapy, non-invasive therapy, pharmacotherapy, and/or minimally invasive therapies based on goals and tolerability. Option B is incorrect because combination care does not require abandoning an effective behavioral component. Option C is incorrect because routine cystoscopy is not required for uncomplicated OAB escalation. Option D is incorrect because chronic catheterization is not routine OAB escalation. Option E is incorrect because urine cytology does not select OAB medication class. Teaching point: Modern OAB care is preference-sensitive and can combine modalities rather than forcing linear step therapy.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 347,
+    "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+    "Category": "Urogynecology",
+    "Question": "A woman with urgency incontinence declines oral medication and asks whether procedural OAB therapy can be discussed now. What counseling fits current guidance?",
+    "Option A": "Minimally invasive options can be offered through shared decision-making",
+    "Option B": "Procedures are forbidden until two medications fail",
+    "Option C": "CT urography is required before any OAB therapy",
+    "Option D": "Pelvic lymphadenectomy is the preferred procedure",
+    "Option E": "Long-term Foley catheter is first-line treatment",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. The OAB framework emphasizes shared decision-making and allows discussion of minimally invasive options for patients unable or unwilling to pursue behavioral, non-invasive, or pharmacologic therapies. Option B is incorrect because current guidance moves away from rigid step therapy. Option C is incorrect because upper tract imaging is not required for uncomplicated OAB treatment selection. Option D is incorrect because pelvic lymphadenectomy has no role in OAB. Option E is incorrect because indwelling catheters are not first-line OAB treatment. Teaching point: OAB therapy selection should account for invasiveness, evidence, preferences, side effects, and adherence barriers.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+  },
+  {
+    "row_number": 348,
+    "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+    "Category": "General Urology",
+    "Question": "A 35-year-old with confirmed microhematuria has a father with renal cell carcinoma from a hereditary renal tumor syndrome. No smoking history is present. What evaluation is needed?",
+    "Option A": "Repeat dipstick because age is low",
+    "Option B": "Upper tract imaging regardless of risk category",
+    "Option C": "Urine cytology as the sole evaluation",
+    "Option D": "No evaluation unless gross hematuria develops",
+    "Option E": "Intravesical BCG before imaging",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. A family history of renal cell carcinoma, known genetic renal tumor syndrome, or Lynch syndrome history warrants upper tract imaging regardless of the usual microhematuria risk category. Option A is incorrect because young age and absent smoking do not cancel hereditary upper-tract risk. Option C is incorrect because cytology alone does not evaluate the kidneys or upper urinary tract. Option D is incorrect because confirmed microhematuria with hereditary risk should not be ignored. Option E is incorrect because BCG treats selected bladder cancer settings, not hematuria evaluation. Teaching point: Hereditary renal cancer risk is an exception to routine microhematuria risk-stratification shortcuts.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+  },
+  {
+    "row_number": 349,
+    "Source/Guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+    "Category": "General Urology",
+    "Question": "A man has chronic unilateral scrotal content pain for 8 months after negative evaluation and conservative therapy. A spermatic cord block gives marked temporary relief. What procedure may be discussed?",
+    "Option A": "Microsurgical denervation of the spermatic cord",
+    "Option B": "Radical prostatectomy for pain control",
+    "Option C": "BCG induction into the bladder",
+    "Option D": "Chronic fluoroquinolone therapy despite no infection",
+    "Option E": "CT urography as definitive treatment",
+    "Correct Answer": "A",
+    "Explanation": "Option A is correct. Microsurgical denervation of the spermatic cord may be recommended for chronic scrotal content pain, especially when a diagnostic spermatic cord block produced meaningful temporary relief. Option B is incorrect because prostate surgery should not be performed solely to relieve pelvic pain. Option C is incorrect because BCG treats selected bladder cancer settings. Option D is incorrect because chronic antibiotics are not appropriate when infection has been excluded. Option E is incorrect because imaging may help evaluation but does not treat neuropathic scrotal pain. Teaching point: A positive cord block can identify patients more likely to benefit from spermatic cord denervation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+  },
+  {
+    "row_number": 350,
+    "Source/Guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+    "Category": "Infections",
+    "Question": "A 49-year-old woman is considering rUTI prophylaxis. Cultures show separate E coli episodes that clear promptly, with no stones, Proteus, relapse, or persistent hematuria. What evaluation is needed first?",
+    "Option A": "Routine cystoscopy and CT urography before prophylaxis",
+    "Option B": "No routine cystoscopy or upper tract imaging in this index pattern",
+    "Option C": "CT urogram because prophylaxis is being considered",
+    "Option D": "Cystoscopy because cultures are documented",
+    "Option E": "Monthly cultures while asymptomatic to replace evaluation",
+    "Correct Answer": "B",
+    "Explanation": "Option B is correct. Cystoscopy and upper tract imaging should not be routinely obtained in the index patient with recurrent uncomplicated UTI when episodes are separate, culture-documented, and responsive without complicating features. Option A is incorrect because routine anatomic evaluation before prophylaxis is not required for this uncomplicated pattern. Option C is incorrect because considering prophylaxis does not by itself create an imaging indication. Option D is incorrect because documented cultures support the diagnosis rather than mandate cystoscopy. Option E is incorrect because asymptomatic surveillance cultures are not useful in routine uncomplicated rUTI care. Teaching point: rUTI imaging and cystoscopy should be driven by complicating features such as relapse, stones, persistent hematuria, or poor response, not by recurrence alone.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+  }
+]

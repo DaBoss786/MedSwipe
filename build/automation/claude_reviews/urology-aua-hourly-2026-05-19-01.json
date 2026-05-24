@@ -1,0 +1,163 @@
+{
+  "batch_id": "urology-aua-hourly-2026-05-19-01",
+  "mode": "AUA",
+  "status": "manual_handoff_pending",
+  "row_range": "281:290",
+  "prompt_path": "build/automation/claude_reviews/urology-aua-hourly-2026-05-19-01_prompt.txt",
+  "prompt_path_absolute": "/Users/abbasanwar/Desktop/Projects/MedSwipe/build/automation/claude_reviews/urology-aua-hourly-2026-05-19-01_prompt.txt",
+  "compact_payload": [
+    {
+      "row_number": 281,
+      "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+      "Category": "Oncology",
+      "Question": "A healthy man has favorable intermediate-risk localized prostate cancer and asks whether surgery is mandatory. Which counseling set is guideline-concordant?",
+      "Option A": "Active surveillance, radiation therapy, and radical prostatectomy discussion",
+      "Option B": "Immediate pelvic lymph node dissection without local therapy",
+      "Option C": "Palliative ADT alone as preferred curative therapy",
+      "Option D": "Whole-gland ablation presented as proven superior therapy",
+      "Option E": "Watchful waiting as the default regardless of life expectancy",
+      "Correct Answer": "A",
+      "Explanation": "Option A is correct. Favorable intermediate-risk localized prostate cancer requires shared discussion of active surveillance, radiation therapy, and radical prostatectomy rather than a single mandatory treatment path. Option B is incorrect because lymphadenectomy is a staging adjunct for selected surgical patients, not treatment by itself. Option C is incorrect because palliative ADT alone is reserved for limited-life-expectancy high-risk patients with local symptoms, not curative favorable intermediate-risk care. Option D is incorrect because patients considering ablation should be told high-quality comparative data are lacking. Option E is incorrect because watchful waiting is tied to limited life expectancy and goals of care. Teaching point: Favorable intermediate-risk disease is a counseling category where surveillance remains on the menu, but the discussion must include definitive treatment tradeoffs.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+    },
+    {
+      "row_number": 282,
+      "Source/Guideline": "Clinically Localized Prostate Cancer: AUA/ASTRO Guideline",
+      "Category": "Oncology",
+      "Question": "A man with favorable intermediate-risk prostate cancer elects definitive external-beam radiation. He asks whether ADT should be routinely added. What is the best answer?",
+      "Option A": "Use lifelong ADT with radiation",
+      "Option B": "Add short-course ADT for intermediate-risk disease without subclassification",
+      "Option C": "Substitute ADT for dose-escalated radiation",
+      "Option D": "Avoid routine ADT unless a separate individualized reason exists",
+      "Option E": "Reserve radiation until metastatic progression",
+      "Correct Answer": "D",
+      "Explanation": "Option D is correct. Low-risk and favorable intermediate-risk patients choosing radiation should not routinely receive ADT, although individualized circumstances can alter planning. Option A is incorrect because lifelong ADT is not a standard addition for favorable intermediate-risk localized disease. Option B is incorrect because short-course ADT is recommended for unfavorable intermediate-risk disease, not intermediate-risk disease without subclassification. Option C is incorrect because ADT is not a replacement for appropriately delivered definitive radiation. Option E is incorrect because radiation is a definitive localized-treatment option. Teaching point: The favorable versus unfavorable intermediate-risk distinction changes whether ADT is routinely paired with radiation.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/clinically-localized-prostate-cancer-aua/astro-guideline-2022' target='_blank'>American Urological Association. Clinically Localized Prostate Cancer: AUA/ASTRO Guideline.</a>"
+    },
+    {
+      "row_number": 283,
+      "Source/Guideline": "Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline",
+      "Category": "Oncology",
+      "Question": "After prostatectomy, a man develops biochemical recurrence. PSA is 0.8 ng/mL, Grade Group 4, and PSA doubling time is 5 months. Salvage radiation is planned. What should be offered?",
+      "Option A": "Observation until bone pain develops",
+      "Option B": "Salvage radiation plus ADT",
+      "Option C": "ADT alone instead of local salvage",
+      "Option D": "Repeat prostatectomy",
+      "Option E": "Cystoscopy-guided bladder biopsy",
+      "Correct Answer": "B",
+      "Explanation": "Option B is correct. Biochemical recurrence after prostatectomy with high-risk features such as PSA at least 0.7 ng/mL, Grade Group 4 to 5, and PSA doubling time 6 months or shorter supports adding ADT to salvage radiation. Option A is incorrect because waiting for symptoms misses the window where salvage radiation can be most useful. Option C is incorrect because ADT alone does not provide local salvage treatment. Option D is incorrect because the prostate has already been removed. Option E is incorrect because cystoscopy does not address post-prostatectomy biochemical recurrence. Teaching point: Salvage radiation decisions should incorporate adverse recurrence biology, not PSA recurrence alone.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/salvage-therapy-for-prostate-cancer' target='_blank'>American Urological Association. Salvage Therapy for Prostate Cancer: AUA/ASTRO/SUO Guideline.</a>"
+    },
+    {
+      "row_number": 284,
+      "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "Category": "Stones",
+      "Question": "A recurrent uric acid stone former has persistently acidic urine and no calcium stone risk factor. Which medical prevention plan best targets the dominant mechanism?",
+      "Option A": "Low-calcium diet with high sodium intake",
+      "Option B": "Allopurinol as first-line monotherapy",
+      "Option C": "Cystine-binding thiol therapy",
+      "Option D": "Potassium citrate to alkalinize urine",
+      "Option E": "Surveillance urine cytology",
+      "Correct Answer": "D",
+      "Explanation": "Option D is correct. Uric acid stone prevention primarily targets low urinary pH, so potassium citrate alkalinization is first-line therapy and aims for a urine pH near 6.0. Option A is incorrect because low calcium and high sodium counseling can worsen calcium stone risk and does not correct uric acid solubility. Option B is incorrect because allopurinol lowers uric acid production but does not correct the dominant acidic urine mechanism. Option C is incorrect because thiol drugs are used for cystine stones after conservative measures fail. Option E is incorrect because cytology evaluates urothelial malignancy, not uric acid stone chemistry. Teaching point: Uric acid stones are usually a urine-pH disease before they are a uric-acid-production disease.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 285,
+      "Source/Guideline": "Medical Management of Kidney Stones: AUA Guideline",
+      "Category": "Stones",
+      "Question": "A recurrent calcium stone former has completed dietary changes. Metabolic evaluation shows no persistent abnormality, yet new stones continue to form. Which prevention option is guideline-supported?",
+      "Option A": "Annual bladder biopsy",
+      "Option B": "Chronic ureteral stent exchange",
+      "Option C": "Empiric fluoroquinolone suppression",
+      "Option D": "Cystine-binding thiol therapy",
+      "Option E": "Thiazide diuretic or potassium citrate",
+      "Correct Answer": "E",
+      "Explanation": "Option E is correct. Recurrent calcium stone formers with persistent stone formation despite addressing other metabolic abnormalities may be offered thiazide diuretics and/or potassium citrate. Option A is incorrect because bladder biopsy is unrelated to calcium stone prevention. Option B is incorrect because chronic stenting adds device morbidity rather than metabolic prevention. Option C is incorrect because antibiotics do not prevent noninfectious calcium stone formation. Option D is incorrect because thiol therapy targets cystinuria, not recurrent calcium stones without cystine disease. Teaching point: Persistent recurrent calcium stones can justify directed pharmacologic prevention even when the 24-hour urine profile is not diagnostic.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/kidney-stones-medical-mangement-guideline' target='_blank'>American Urological Association. Medical Management of Kidney Stones: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 286,
+      "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "Category": "Urogynecology",
+      "Question": "A patient with idiopathic OAB has marked improvement after sacral neuromodulation while still taking an oral OAB medication. What medication plan is guideline-concordant?",
+      "Option A": "Continue oral medication indefinitely despite response",
+      "Option B": "Add chronic antibiotics to preserve response",
+      "Option C": "Discontinue oral medication, with restart if efficacy wanes",
+      "Option D": "Convert immediately to urinary diversion",
+      "Option E": "Perform annual cystoscopy as treatment maintenance",
+      "Correct Answer": "C",
+      "Explanation": "Option C is correct. Oral OAB medications should be discontinued after an appropriate response to a minimally invasive procedure, with pharmacotherapy restarted if efficacy is not maintained. Option A is incorrect because indefinite dual treatment adds medication burden after procedural success. Option B is incorrect because antibiotics do not maintain idiopathic OAB response. Option D is incorrect because urinary diversion is reserved for severely impacted patients after failure of other options. Option E is incorrect because cystoscopy is not a maintenance treatment for OAB response. Teaching point: Successful minimally invasive OAB therapy should trigger deprescribing rather than automatic long-term medication layering.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 287,
+      "Source/Guideline": "The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder",
+      "Category": "Urogynecology",
+      "Question": "A patient labeled as idiopathic OAB has persistent severe symptoms after oral therapy and tibial nerve stimulation, and the diagnosis is now uncertain. Which test can help clarify bladder function?",
+      "Option A": "Cystoscopy to assess for bladder outlet obstruction",
+      "Option B": "Urine cytology to phenotype detrusor overactivity",
+      "Option C": "Postvoid residual alone as definitive mechanism testing",
+      "Option D": "Urodynamics",
+      "Option E": "Long-term suppressive antibiotics",
+      "Correct Answer": "D",
+      "Explanation": "Option D is correct. Urodynamics may be performed when OAB symptoms do not respond adequately to pharmacotherapy or minimally invasive therapies, especially to evaluate bladder function and exclude other disorders. Option A is incorrect because cystoscopy can evaluate selected anatomic or mucosal concerns but does not physiologically phenotype detrusor function. Option B is incorrect because urine cytology evaluates selected malignancy concerns, not detrusor overactivity. Option C is incorrect because postvoid residual is useful safety information but does not replace pressure-flow and storage assessment when the mechanism is uncertain. Option E is incorrect because antibiotics do not evaluate idiopathic urgency symptoms without infection. Teaching point: Urodynamics is not a routine first test for straightforward OAB, but it becomes useful when refractory symptoms make the diagnosis or mechanism uncertain.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/idiopathic-overactive-bladder' target='_blank'>American Urological Association. The AUA/SUFU Guideline on the Diagnosis and Treatment of Idiopathic Overactive Bladder.</a>"
+    },
+    {
+      "row_number": 288,
+      "Source/Guideline": "Microhematuria: AUA/SUFU Guideline",
+      "Category": "General Urology",
+      "Question": "A patient with confirmed microhematuria has a strong family history suspicious for Lynch syndrome but is otherwise low risk by age and smoking history. What imaging principle applies?",
+      "Option A": "Dipstick follow-up as the complete evaluation",
+      "Option B": "Upper-tract imaging regardless of risk category",
+      "Option C": "Urine cytology replacing imaging",
+      "Option D": "Antibiotics before any evaluation",
+      "Option E": "Bone scan as the preferred upper-tract test",
+      "Correct Answer": "B",
+      "Explanation": "Option B is correct. A personal or family history suspicious for Lynch syndrome warrants upper-tract imaging regardless of the otherwise assigned microhematuria risk category. Option A is incorrect because confirmed microhematuria is not fully evaluated by dipstick follow-up alone in this setting. Option C is incorrect because cytology does not replace upper-tract imaging for Lynch-associated upper-tract risk. Option D is incorrect because antibiotics require evidence of infection. Option E is incorrect because bone scan does not evaluate the urothelial upper tract. Teaching point: Risk-category algorithms still have override features; hereditary upper-tract cancer risk changes the imaging threshold.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/microhematuria' target='_blank'>American Urological Association. Microhematuria: AUA/SUFU Guideline.</a>"
+    },
+    {
+      "row_number": 289,
+      "Source/Guideline": "Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline",
+      "Category": "General Urology",
+      "Question": "A man with CP/CPPS has chronic pelvic pain plus hesitancy and weak stream. Cultures are negative and PVR is acceptable. Which medication class should be offered for the voiding phenotype?",
+      "Option A": "Alpha-blocker",
+      "Option B": "5-alpha reductase inhibitor therapy for the voiding phenotype",
+      "Option C": "Daily tadalafil as first-line therapy for infection-negative pelvic pain",
+      "Option D": "Chronic fluoroquinolone suppression",
+      "Option E": "Androgen deprivation therapy",
+      "Correct Answer": "A",
+      "Explanation": "Option A is correct. Men with CP/CPPS and voiding symptoms should be offered an alpha-blocker, reflecting the dysfunctional-voiding phenotype within chronic pelvic pain. Option B is incorrect because 5-alpha reductase inhibitors target selected prostate-enlargement contexts rather than CP/CPPS voiding symptoms as framed here. Option C is incorrect because tadalafil may be considered in selected CP/CPPS contexts but does not replace alpha-blockade as the specific voiding-symptom medication choice here. Option D is incorrect because negative cultures argue against chronic antibiotic suppression. Option E is incorrect because ADT treats selected prostate cancer contexts, not benign pelvic pain with voiding symptoms. Teaching point: CP/CPPS management should be phenotype-directed; voiding symptoms point toward alpha-blockade, while infection-negative pain alone should not trigger repeated antibiotics.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/male-chronic-pelvic-pain' target='_blank'>American Urological Association. Diagnosis and Management of Male Chronic Pelvic Pain: AUA Guideline.</a>"
+    },
+    {
+      "row_number": 290,
+      "Source/Guideline": "Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline",
+      "Category": "Infections",
+      "Question": "A woman with recurrent uncomplicated UTIs feels well at follow-up. Urine testing would likely show bacteriuria, but she has no acute urinary symptoms. What is the best plan?",
+      "Option A": "Omit surveillance urine testing",
+      "Option B": "Treat bacteriuria until cultures stay sterile",
+      "Option C": "Start empiric fluoroquinolone prophylaxis",
+      "Option D": "Schedule cystoscopy before any future symptoms",
+      "Option E": "Use pyuria alone to diagnose cystitis",
+      "Correct Answer": "A",
+      "Explanation": "Option A is correct. Asymptomatic patients with recurrent UTIs should not undergo surveillance urine testing, including culture, because treating asymptomatic bacteriuria can increase symptomatic recurrence and resistance. Option B is incorrect because sterile-culture eradication is not the goal in an asymptomatic patient. Option C is incorrect because empiric fluoroquinolone prophylaxis adds collateral damage without a symptomatic episode. Option D is incorrect because cystoscopy is not routine before future uncomplicated symptoms. Option E is incorrect because pyuria without symptoms does not establish acute cystitis requiring treatment. Teaching point: Recurrent UTI care separates symptomatic episodes from asymptomatic bacteriuria; stewardship starts by avoiding cultures that invite unnecessary antibiotics.\n\nSource: <a href='https://www.auanet.org/guidelines-and-quality/guidelines/recurrent-uti' target='_blank'>American Urological Association. Recurrent Uncomplicated Urinary Tract Infections in Women: AUA/CUA/SUFU Guideline.</a>"
+    }
+  ],
+  "unresolved_pre_claude_verifier_notes": [],
+  "initial_verifier_counts": {
+    "Pass": 10
+  },
+  "rows_auto_fixed": [
+    {
+      "row": 283,
+      "reason": "Safe source-line formatting fix: normalized salvage guideline footer URL to allowed public AUA source path."
+    },
+    {
+      "row": 287,
+      "reason": "Safe weak-distractor/explanation fix: strengthened refractory OAB urodynamics distractors and matching rebuttals."
+    },
+    {
+      "row": 289,
+      "reason": "Safe weak-distractor/explanation fix: strengthened CP/CPPS alpha-blocker distractors without invoking saturated pelvic-floor concept."
+    }
+  ],
+  "final_verifier_counts": {
+    "Pass": 10
+  },
+  "final_readback_status": "success",
+  "created_at": "2026-05-19 22:58 PDT"
+}
