@@ -5415,6 +5415,17 @@ button:not(:disabled):active {
   margin: -5px 0 15px;
 }
 
+.paywall-reimbursement-note {
+  margin: -4px 0 16px;
+  padding: 9px 11px;
+  border: 1px solid rgba(12, 114, 211, 0.16);
+  border-radius: 8px;
+  background: rgba(12, 114, 211, 0.06);
+  color: #24506f;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 .paywall-option-card ul {
   list-style: none;
   padding: 0;
@@ -5789,6 +5800,16 @@ button:not(:disabled):active {
 .ios-feature-stack li:nth-child(5) { animation-delay: 0.25s; }
 .ios-feature-stack li:nth-child(6) { animation-delay: 0.3s; }
 
+.ios-reimbursement-note {
+  margin: -8px 0 18px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(12, 114, 211, 0.08);
+  color: #2f5f7e;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 @keyframes iosPaywallFeatureFade {
   from {
     opacity: 0;
@@ -6107,6 +6128,19 @@ button:not(:disabled):active {
   color: #28a745; /* Green for savings */
   margin-bottom: 20px;
   font-weight: 500;
+}
+
+.pricing-reimbursement-note {
+  display: inline-block;
+  max-width: 560px;
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  border: 1px solid rgba(12, 114, 211, 0.16);
+  border-radius: 8px;
+  background: rgba(12, 114, 211, 0.06);
+  color: #24506f;
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .feature-list-general {
