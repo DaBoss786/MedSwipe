@@ -1,6 +1,9 @@
 // app.js - TOP OF FILE
 import { shuffleArray, getCurrentQuestionId } from './utils.js';
-import { applyCategoryAndAnsweredFilters } from './quiz-filtering.js';
+import {
+  applyCategoryAndAnsweredFilters,
+  getEmptyQuestionMessage
+} from './quiz-filtering.js';
 import { auth, db, doc, getDoc, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
 import { logAnalyticsEvent } from './analytics.js';
 import {
@@ -18,7 +21,6 @@ import {
   applyQuestionAccessPolicy,
   specialtyMatchesQuestion,
   shouldLimitQuestionsToFree,
-  getPilotQuestionAccessConfig,
   userHasBoardReviewAccess as hasBoardReviewAccessByPolicy
 } from './specialty-policy.js';
 
@@ -200,12 +202,25 @@ async function loadQuestions(options = {}) {
 
   try {
     let filteredQuestions = []; // Initialize as empty
+    let answeredFilterApplied = false;
+    let accessibleQuestionCountBeforeAnsweredFilter = 0;
 
     // --- FIX: This is the corrected logic block ---
     if (options.prefilteredQuestions) {
       // SCENARIO 1: User used the search bar. Use the pre-filtered list.
       console.log("Using pre-filtered questions from modal search.");
-      filteredQuestions = options.prefilteredQuestions;
+      filteredQuestions = scopeQuestionsForCurrentUser(options.prefilteredQuestions);
+
+      if (options.quizType !== 'cme' && !options.bookmarksOnly && !options.includeAnswered) {
+        answeredFilterApplied = true;
+        accessibleQuestionCountBeforeAnsweredFilter = filteredQuestions.length;
+        const answeredIds = await fetchPersistentAnsweredIds();
+        filteredQuestions = applyCategoryAndAnsweredFilters({
+          questions: filteredQuestions,
+          includeAnswered: false,
+          answeredIds
+        });
+      }
 
     } else {
       // SCENARIO 2: User did NOT search. Perform all filtering now.
@@ -220,6 +235,8 @@ async function loadQuestions(options = {}) {
           q.Procedures && q.Procedures.trim().toLowerCase() === options.procedure.trim().toLowerCase()
         );
         if (!options.includeAnswered) {
+          answeredFilterApplied = true;
+          accessibleQuestionCountBeforeAnsweredFilter = procedureQuestions.length;
           const answeredIds = await fetchPersistentAnsweredIds();
           procedureQuestions = procedureQuestions.filter(q => !answeredIds.includes(q["Question"]?.trim()));
         }
@@ -249,9 +266,24 @@ async function loadQuestions(options = {}) {
           questions: filteredQuestions,
           category: options.category,
           bookmarksOnly: options.bookmarksOnly,
-          includeAnswered: options.includeAnswered,
-          answeredIds: relevantAnsweredIdsForCurrentYear
+          includeAnswered: true,
+          answeredIds: []
         });
+
+        if (
+          options.quizType !== 'cme' &&
+          !options.bookmarksOnly &&
+          !options.includeAnswered
+        ) {
+          answeredFilterApplied = true;
+          accessibleQuestionCountBeforeAnsweredFilter = filteredQuestions.length;
+          filteredQuestions = applyCategoryAndAnsweredFilters({
+            questions: filteredQuestions,
+            bookmarksOnly: false,
+            includeAnswered: false,
+            answeredIds: relevantAnsweredIdsForCurrentYear
+          });
+        }
       }
     }
     // --- END of corrected logic block ---
@@ -268,23 +300,22 @@ async function loadQuestions(options = {}) {
 
     // --- Common logic for ALL quiz types ---
     if (filteredQuestions.length === 0) {
-      let message = "No questions found matching your criteria.";
       const isFreeTierLimited = shouldLimitQuestionsToFree(effectiveAuthState);
-      const pilotQuestionConfig = getPilotQuestionAccessConfig(effectiveAuthState);
-      // This is the message that was showing incorrectly.
-      if (options.quizType === 'cme') {
-        message = "No CME-eligible questions found for your selection. Please adjust your filters.";
-      }
-      if (isFreeTierLimited && !options.category && !options.prefilteredQuestions) {
-        message = "You've completed all available free questions! Upgrade your account to access hundreds more questions and unlock premium features.";
-      } else if (
-        pilotQuestionConfig.enabled &&
-        pilotQuestionConfig.questionPilotFlagField &&
-        !options.category &&
-        !options.prefilteredQuestions
-      ) {
-        message = "No pilot questions are currently available. Please check back soon.";
-      }
+      const message = getEmptyQuestionMessage({
+        quizType: options.quizType || 'regular',
+        isFreeTierLimited,
+        includeAnswered: options.includeAnswered === true,
+        emptyStateContext: options.emptyStateContext || (
+          options.category ||
+          options.procedure ||
+          options.bookmarksOnly ||
+          options.prefilteredQuestions
+            ? 'filtered'
+            : 'all_questions'
+        ),
+        answeredFilterApplied,
+        accessibleQuestionCountBeforeAnsweredFilter
+      });
       alert(message);
 
       const mainOpts = document.getElementById("mainOptions");

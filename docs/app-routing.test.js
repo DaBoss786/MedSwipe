@@ -83,6 +83,8 @@ vi.mock('./platform.js', () => ({
 }));
 
 let handleUserRouting;
+let handleRegistrationSuccessFlow;
+let firebaseConfig;
 
 const setupDom = () => {
   document.body.innerHTML = `
@@ -90,8 +92,15 @@ const setupDom = () => {
     <div id="welcomeScreen" style="display:none"></div>
     <div id="loginScreen" style="display:none"></div>
     <div id="splashScreen" style="display:none"></div>
+    <div id="postRegistrationLoadingScreen" style="display:none"></div>
     <div id="newPaywallScreen" style="display:flex"></div>
     <div id="boardReviewPricingScreen" style="display:flex"></div>
+    <button id="brMonthlyBtn"></button>
+    <button id="br3MonthBtn"></button>
+    <button id="brAnnualBtn"></button>
+    <div id="brMonthlyContent" style="display:none"></div>
+    <div id="br3MonthContent" style="display:none"></div>
+    <div id="brAnnualContent" style="display:none"></div>
     <div id="cmePricingScreen" style="display:flex"></div>
   `;
 };
@@ -149,8 +158,13 @@ beforeEach(async () => {
       mainOptions.style.display = 'flex';
     }
   };
+  firebaseConfig = await import('./firebase-config.js');
+  firebaseConfig.auth.currentUser = null;
+  firebaseConfig.doc.mockReturnValue({ id: 'mock-ref' });
+  firebaseConfig.getDoc.mockReset();
   const module = await import('./app.js');
   handleUserRouting = module.handleUserRouting;
+  handleRegistrationSuccessFlow = module.handleRegistrationSuccessFlow;
   const userModule = await import('./user.v2.js');
   window.updateUserMenu = userModule.updateUserMenu;
   window.updateUserXP = userModule.updateUserXP;
@@ -169,6 +183,7 @@ afterEach(() => {
   delete globalThis.showDashboard;
   delete window.updateUserMenu;
   delete window.updateUserXP;
+  firebaseConfig = null;
 });
 
 describe('handleUserRouting routing decisions', () => {
@@ -281,5 +296,36 @@ describe('handleUserRouting dashboard initialization paths', () => {
 
     expect(window.updateUserMenu).toHaveBeenCalledTimes(1);
     expect(window.updateUserXP).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('handleRegistrationSuccessFlow pending redirects', () => {
+  it('shows board review pricing after registration started from board review access', async () => {
+    sessionStorage.setItem('pendingRedirectAfterRegistration', 'board_review_pricing');
+    firebaseConfig.auth.currentUser = { uid: 'user_123', isAnonymous: false };
+    firebaseConfig.getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        accessTier: 'free_guest',
+        boardReviewActive: false,
+        cmeSubscriptionActive: false,
+        specialty: ''
+      })
+    });
+
+    const flow = handleRegistrationSuccessFlow({
+      finalizeResult: {},
+      method: 'email_password'
+    });
+    await vi.advanceTimersByTimeAsync(1500);
+    await flow;
+
+    expect(sessionStorage.getItem('pendingRedirectAfterRegistration')).toBeNull();
+    expect(document.getElementById('boardReviewPricingScreen').style.display).toBe('flex');
+    expect(document.getElementById('newPaywallScreen').style.display).toBe('none');
+    expect(document.getElementById('mainOptions').style.display).toBe('none');
+    expect(document.getElementById('welcomeScreen').style.display).toBe('none');
+    expect(document.getElementById('brAnnualContent').style.display).toBe('block');
+    expect(document.getElementById('brAnnualBtn').classList.contains('active')).toBe(true);
   });
 });

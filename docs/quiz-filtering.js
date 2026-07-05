@@ -183,6 +183,33 @@ function normalizeProcedureKey(procedure) {
   return sanitized ? sanitized.toLowerCase() : null;
 }
 
+export const FREE_QUESTIONS_EXHAUSTED_MESSAGE =
+  "You've completed all available free questions! Upgrade your account to access hundreds more questions and unlock premium features.";
+
+export function getEmptyQuestionMessage({
+  quizType = 'regular',
+  isFreeTierLimited = false,
+  includeAnswered = false,
+  emptyStateContext = 'filtered',
+  answeredFilterApplied = false,
+  accessibleQuestionCountBeforeAnsweredFilter = 0
+} = {}) {
+  if (quizType === 'cme') {
+    return "No CME-eligible questions found for your selection. Please adjust your filters.";
+  }
+
+  const exhaustedEntireFreePool =
+    isFreeTierLimited &&
+    !includeAnswered &&
+    emptyStateContext === 'all_questions' &&
+    answeredFilterApplied &&
+    accessibleQuestionCountBeforeAnsweredFilter > 0;
+
+  return exhaustedEntireFreePool
+    ? FREE_QUESTIONS_EXHAUSTED_MESSAGE
+    : "No questions found matching your criteria.";
+}
+
 export function applyCategoryAndAnsweredFilters({
   questions,
   category,

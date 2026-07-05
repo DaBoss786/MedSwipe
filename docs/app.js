@@ -3739,6 +3739,47 @@ function consumeOAuthRedirectError(targetElement, expectedFlow) {
   window.__medswipeOAuthRedirectOutcome = null;
 }
 
+function consumePendingRegistrationRedirect() {
+  if (typeof sessionStorage === 'undefined') {
+    return null;
+  }
+
+  const pendingRedirect = sessionStorage.getItem('pendingRedirectAfterRegistration');
+  if (pendingRedirect) {
+    sessionStorage.removeItem('pendingRedirectAfterRegistration');
+  }
+  return pendingRedirect;
+}
+
+function showBoardReviewPricingAfterRegistration() {
+  const boardReviewPricingScreen = document.getElementById('boardReviewPricingScreen');
+  if (!boardReviewPricingScreen) {
+    console.error('Board Review Pricing Screen not found after registration.');
+    return false;
+  }
+
+  ensureAllScreensHidden();
+  const mainOptions = document.getElementById('mainOptions');
+  if (mainOptions) {
+    mainOptions.style.display = 'none';
+  }
+  hidePaywallScreens();
+
+  boardReviewPricingScreen.style.display = 'flex';
+  if (typeof updateBoardReviewPricingView === 'function') {
+    updateBoardReviewPricingView('annual');
+  }
+  return true;
+}
+
+function routePendingRegistrationRedirect() {
+  const pendingRedirect = consumePendingRegistrationRedirect();
+  if (pendingRedirect === 'board_review_pricing') {
+    return showBoardReviewPricingAfterRegistration();
+  }
+  return false;
+}
+
 async function handleRegistrationSuccessFlow({ finalizeResult, method }) {
   const postRegLoadingScreen = document.getElementById('postRegistrationLoadingScreen');
   if (postRegLoadingScreen) {
@@ -3787,7 +3828,9 @@ async function handleRegistrationSuccessFlow({ finalizeResult, method }) {
     };
 
     window.authState = freshAuthState;
-    handleUserRouting(freshAuthState);
+    if (!routePendingRegistrationRedirect()) {
+      handleUserRouting(freshAuthState);
+    }
 
     logAnalyticsEvent('sign_up', { method });
   } finally {
@@ -6228,33 +6271,24 @@ if (cmeModuleBtn) {
     const newModalStartQuiz = modalStartQuiz.cloneNode(true);
     modalStartQuiz.parentNode.replaceChild(newModalStartQuiz, modalStartQuiz);
 
-    newModalStartQuiz.addEventListener("click", async function() { // <-- Made this async
+    newModalStartQuiz.addEventListener("click", function() {
       const numQuestions = parseInt(document.getElementById("modalNumQuestions").value) || 10;
       const includeAnswered = document.getElementById("modalIncludeAnswered").checked;
       const useSpacedRepetition = document.getElementById("modalSpacedRepetition").checked;
+      const searchTerm = document.getElementById("modalSearchInput").value.trim();
+      const selectedCategory = document.getElementById("modalCategorySelect").value;
+      const boardReviewOnly = document.getElementById("modalBoardReviewOnly").checked;
       
       document.getElementById("quizSetupModal").style.display = "none";
-
-      // --- START: This is the new, crucial fix ---
-      let finalFilteredQuestions = modalFilteredQuestions; // Start with the list from the search/category filters
-
-      if (!includeAnswered) {
-        console.log("'Include Answered' is OFF. Filtering out answered questions now.");
-        const answeredIds = await fetchPersistentAnsweredIds();
-        if (answeredIds.length > 0) {
-          finalFilteredQuestions = modalFilteredQuestions.filter(q => 
-            !answeredIds.includes(q["Question"]?.trim())
-          );
-        }
-      }
-      // --- END: The new fix ---
       
       loadQuestions({
         num: numQuestions,
         includeAnswered: includeAnswered,
         spacedRepetition: useSpacedRepetition,
-        // Pass the FINAL, correctly filtered list to the quiz builder
-        prefilteredQuestions: finalFilteredQuestions 
+        prefilteredQuestions: modalFilteredQuestions,
+        emptyStateContext: searchTerm || selectedCategory || boardReviewOnly
+          ? 'filtered'
+          : 'all_questions'
       });
     });
   }
@@ -7836,6 +7870,7 @@ function handleUserRouting(authState) {
 }
 
 export {
+  handleRegistrationSuccessFlow,
   handleUserRouting,
   __setDeepLinkRoutingHandlers,
   __resetDeepLinkRoutingHandlers,

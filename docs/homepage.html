@@ -7,8 +7,8 @@
     <title>MedSwipe - Swipe. Learn. Master Your Specialty.</title>
     
 <!-- SEO Meta Tags -->
-<meta name="description" content="MedSwipe - Gamified ENT and Neurosurgery board review and case prep. 800+ questions, mobile-first study, and high-yield learning built for busy clinicians. Start your 7-day free trial today.">
-<meta name="keywords" content="ENT board review, neurosurgery board review, otolaryngology, neurosurgery, medical education, board exam prep, case prep, medical app">
+<meta name="description" content="MedSwipe - Gamified Otolaryngology, Neurosurgery, and Urology board review and case prep. 800+ questions, mobile-first study, and high-yield learning built for busy clinicians. Start your 7-day free trial today.">
+<meta name="keywords" content="ENT board review, otolaryngology board review, neurosurgery board review, urology board review, otolaryngology, neurosurgery, urology, medical education, board exam prep, case prep, medical app">
 <meta name="author" content="MedSwipe">
 <meta name="robots" content="index, follow">
 <meta name="language" content="English">
@@ -17,7 +17,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://medswipeapp.com/">
 <meta property="og:title" content="MedSwipe - Swipe. Learn. Master Your Specialty.">
-<meta property="og:description" content="ENT and Neurosurgery board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
+<meta property="og:description" content="Otolaryngology, Neurosurgery, and Urology board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
 <meta property="og:image" content="https://medswipeapp.com/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -26,7 +26,7 @@
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://medswipeapp.com/">
 <meta property="twitter:title" content="MedSwipe - Swipe. Learn. Master Your Specialty.">
-<meta property="twitter:description" content="ENT and Neurosurgery board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
+<meta property="twitter:description" content="Otolaryngology, Neurosurgery, and Urology board review and case prep, gamified for the modern medical professional. 800+ questions and a 7-day free trial.">
 <meta property="twitter:image" content="https://medswipeapp.com/assets/og-image.png">
 
 <!-- Canonical URL -->
@@ -174,7 +174,8 @@
         
         .nav-app-store-badge img {
             width: 150px;
-            height: auto;
+            height: 44px;
+            object-fit: cover;
             display: block;
         }
         
@@ -246,53 +247,39 @@
             letter-spacing: -0.04em;
             line-height: 1.1;
         }
-        
-        .hero h1 .specialty-rotator {
-            display: grid;
-            width: max-content;
-            max-width: 100%;
-            margin: 0 auto;
-            line-height: 1.08;
-            text-align: center;
-            vertical-align: top;
-        }
 
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        .specialty-sizer,
-        .specialty-current {
-            grid-area: 1 / 1;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        .specialty-sizer {
-            visibility: hidden;
-        }
-
-        .specialty-current {
+        .hero-gradient-text {
+            display: inline-block;
             background: linear-gradient(135deg, #0C72D3 0%, #66A6FF 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.24s ease, transform 0.24s ease;
+        }
+        
+        .specialty-chip-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 auto 26px;
+            max-width: 760px;
         }
 
-        .specialty-current.is-changing {
-            opacity: 0;
-            transform: translateY(0.12em);
+        .specialty-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 8px 16px;
+            border: 1px solid rgba(12, 114, 211, 0.18);
+            border-radius: 999px;
+            background: rgba(12, 114, 211, 0.06);
+            color: #0C72D3;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
         }
 
         .hero p {
@@ -314,12 +301,6 @@
             font-weight: 500;
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .specialty-current {
-                transition: none;
-            }
-        }
-        
         .hero-cta {
             display: flex;
             gap: 16px;
@@ -341,7 +322,8 @@
         
         .app-store-badge img {
             width: 220px;
-            height: auto;
+            height: 65px;
+            object-fit: cover;
             display: block;
         }
         
@@ -1189,7 +1171,7 @@
         
         @media (max-width: 640px) {
             .hero {
-                padding: 120px 20px 80px;
+                padding: 84px 20px 64px;
                 min-height: auto;
             }
 
@@ -1198,13 +1180,26 @@
                 letter-spacing: -0.02em;
             }
 
-            .specialty-sizer,
-            .specialty-current {
-                white-space: nowrap;
+            .hero p {
+                font-size: 1.08rem;
+                line-height: 1.45;
+                margin-bottom: 22px;
             }
 
-            .hero h1 .specialty-rotator {
-                font-size: 0.86em;
+            .hero-support {
+                margin-top: 8px;
+                font-size: 0.98rem;
+            }
+
+            .specialty-chip-row {
+                gap: 8px;
+                margin-bottom: 22px;
+            }
+
+            .specialty-chip {
+                min-height: 34px;
+                padding: 7px 12px;
+                font-size: 0.9rem;
             }
 
             .hero-cta {
@@ -1256,7 +1251,7 @@
         
         @media (max-width: 480px) {
             .hero {
-                padding: 100px 16px 60px;
+                padding: 64px 16px 56px;
             }
             
             .demo-section,
@@ -1314,7 +1309,7 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "MedSwipe",
-      "description": "Gamified ENT and Neurosurgery board review and case prep platform for medical professionals",
+      "description": "Gamified Otolaryngology, Neurosurgery, and Urology board review and case prep platform for medical professionals",
       "url": "https://medswipeapp.com",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "Web, iOS, Android",
@@ -1371,15 +1366,15 @@
         <div class="hero-inner">
             <h1>
                 Swipe. Learn.<br>
-                Master<br>
-                <span class="specialty-rotator" aria-hidden="true">
-                    <span class="specialty-sizer">Otolaryngology.</span>
-                    <span class="specialty-current" data-specialty="Otolaryngology">Otolaryngology.</span>
-                </span>
-                <span class="sr-only">Otolaryngology and Neurosurgery.</span>
+                Master Your <span class="hero-gradient-text">Specialty.</span>
             </h1>
+            <div class="specialty-chip-row" aria-label="Supported specialties">
+                <span class="specialty-chip">Otolaryngology</span>
+                <span class="specialty-chip">Neurosurgery</span>
+                <span class="specialty-chip">Urology</span>
+            </div>
             <p>
-                Board review and case prep for Otolaryngology and Neurosurgery, built for fast study between cases.
+                Board review and case prep for Otolaryngology, Neurosurgery, and Urology, built for fast study between cases.
                 <span class="hero-support">Mobile-first study for high-yield specialty review.</span>
             </p>
             <div class="hero-cta" id="appstore-download">
@@ -1538,7 +1533,7 @@
                     <div class="features-list">
                         <div class="feature-item">
                             <i class="fas fa-check feature-icon"></i>
-                            <span><strong>800+ high-yield</strong> board-style questions across ENT and Neurosurgery, plus access to our curated Case Prep mode</span>
+                            <span><strong>800+ high-yield</strong> board-style questions across Otolaryngology, Neurosurgery, and Urology, plus access to our curated Case Prep mode</span>
                         </div>
                         <div class="feature-item">
                             <i class="fas fa-check feature-icon"></i>
@@ -1687,35 +1682,6 @@
                 });
             });
 
-            const specialtyCurrent = document.querySelector('.specialty-current');
-            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const specialties = [
-                { name: 'Otolaryngology', label: 'Otolaryngology.' },
-                { name: 'Neurosurgery', label: 'Neurosurgery.' }
-            ];
-            let activeSpecialtyIndex = 0;
-
-            function setActiveSpecialty(index) {
-                const activeSpecialty = specialties[index];
-                if (!activeSpecialty || !specialtyCurrent) return;
-
-                specialtyCurrent.textContent = activeSpecialty.label;
-                specialtyCurrent.dataset.specialty = activeSpecialty.name;
-
-                specialtyCurrent.classList.remove('is-changing');
-            }
-
-            setActiveSpecialty(activeSpecialtyIndex);
-
-            if (!reduceMotion && specialtyCurrent && specialties.length > 1) {
-                window.setInterval(() => {
-                    activeSpecialtyIndex = (activeSpecialtyIndex + 1) % specialties.length;
-                    specialtyCurrent.classList.add('is-changing');
-                    window.setTimeout(() => {
-                        setActiveSpecialty(activeSpecialtyIndex);
-                    }, 180);
-                }, 2600);
-            }
         });
     </script>
 

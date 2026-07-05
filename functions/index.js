@@ -96,53 +96,71 @@ function buildRateLimitDocId(uid, key, windowStartMs, windowMs) {
   return `${uid}_${key}_${windowMs}_${windowStartMs}`;
 }
 
-async function enforceRateLimit(uid, key, limits) {
+async function enforceRateLimit(uid, key, limits, options = {}) {
   if (!uid || !Array.isArray(limits) || limits.length === 0) {
     return;
   }
 
-  const nowMs = Date.now();
-  const limitsRef = db.collection(RATE_LIMITS_COLLECTION);
+  const nowMs = options.nowMs ?? Date.now();
+  const firestoreDb = options.db || db;
+  const firestoreApi = options.firestore || admin.firestore;
+  const limitsRef = firestoreDb.collection(RATE_LIMITS_COLLECTION);
 
-  await db.runTransaction(async (tx) => {
-    for (const limit of limits) {
-      const windowMs = limit.windowMs;
-      const windowStartMs = Math.floor(nowMs / windowMs) * windowMs;
-      const windowEndMs = windowStartMs + windowMs;
-      const docId = buildRateLimitDocId(uid, key, windowStartMs, windowMs);
-      const docRef = limitsRef.doc(docId);
-      const snap = await tx.get(docRef);
+  const limitWindows = limits.map((limit) => {
+    const windowMs = limit.windowMs;
+    const windowStartMs = Math.floor(nowMs / windowMs) * windowMs;
+    const windowEndMs = windowStartMs + windowMs;
+    const docId = buildRateLimitDocId(uid, key, windowStartMs, windowMs);
+    return {
+      ...limit,
+      windowMs,
+      windowStartMs,
+      windowEndMs,
+      docRef: limitsRef.doc(docId),
+    };
+  });
+
+  await firestoreDb.runTransaction(async (tx) => {
+    const snapshots = await Promise.all(
+      limitWindows.map((limitWindow) => tx.get(limitWindow.docRef))
+    );
+
+    for (let index = 0; index < limitWindows.length; index += 1) {
+      const limitWindow = limitWindows[index];
+      const snap = snapshots[index];
       const currentCount = snap.exists ? Number(snap.data().count || 0) : 0;
 
-      if (currentCount >= limit.max) {
+      if (currentCount >= limitWindow.max) {
         const retryAfterSeconds = Math.max(
           1,
-          Math.ceil((windowEndMs - nowMs) / 1000)
+          Math.ceil((limitWindow.windowEndMs - nowMs) / 1000)
         );
         throw new HttpsError(
           "resource-exhausted",
           "Too many requests. Please try again later.",
           {
             retryAfterSeconds,
-            limit: limit.max,
-            windowMs,
+            limit: limitWindow.max,
+            windowMs: limitWindow.windowMs,
             key,
           }
         );
       }
+    }
 
+    for (const limitWindow of limitWindows) {
       tx.set(
-        docRef,
+        limitWindow.docRef,
         {
           uid,
           key,
-          windowStartMs,
-          windowEndMs,
-          windowMs,
-          count: admin.firestore.FieldValue.increment(1),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          expiresAt: admin.firestore.Timestamp.fromMillis(
-            windowEndMs + MS_PER_HOUR
+          windowStartMs: limitWindow.windowStartMs,
+          windowEndMs: limitWindow.windowEndMs,
+          windowMs: limitWindow.windowMs,
+          count: firestoreApi.FieldValue.increment(1),
+          updatedAt: firestoreApi.FieldValue.serverTimestamp(),
+          expiresAt: firestoreApi.Timestamp.fromMillis(
+            limitWindow.windowEndMs + MS_PER_HOUR
           ),
         },
         { merge: true }
@@ -314,6 +332,9 @@ const recomputeAccessTierFromData = (userData = {}, nowMs = Date.now()) => {
 };
 
 exports.__TESTING__ = {
+  buildRateLimitDocId,
+  enforceRateLimit,
+  RATE_LIMIT_CONFIG,
   determineAccessTier,
   recomputeAccessTierFromData,
   computeSubscriptionWindow,

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   applyCategoryAndAnsweredFilters,
+  FREE_QUESTIONS_EXHAUSTED_MESSAGE,
+  getEmptyQuestionMessage,
   getAvailableCategoriesForUser,
   getAvailableCasePrepProcedures
 } from './quiz-filtering.js';
@@ -23,6 +25,83 @@ describe('applyCategoryAndAnsweredFilters', () => {
     });
 
     expect(result).toEqual([questions[1]]);
+  });
+
+  it('keeps answered questions when repeats are enabled', () => {
+    const questions = [
+      { Question: 'Q1', Category: 'Otology' },
+      { Question: 'Q2', Category: 'Otology' }
+    ];
+
+    const result = applyCategoryAndAnsweredFilters({
+      questions,
+      includeAnswered: true,
+      answeredIds: ['Q1', 'Q2']
+    });
+
+    expect(result).toEqual(questions);
+  });
+});
+
+describe('getEmptyQuestionMessage', () => {
+  it.each(['ENT', 'Neurosurgery', 'Urology'])(
+    'returns the clear exhaustion message for an unfiltered %s free-tier quiz',
+    () => {
+      expect(getEmptyQuestionMessage({
+        isFreeTierLimited: true,
+        includeAnswered: false,
+        emptyStateContext: 'all_questions',
+        answeredFilterApplied: true,
+        accessibleQuestionCountBeforeAnsweredFilter: 12
+      })).toBe(FREE_QUESTIONS_EXHAUSTED_MESSAGE);
+    }
+  );
+
+  it('does not report exhaustion when the accessible free bank was already empty', () => {
+    expect(getEmptyQuestionMessage({
+      isFreeTierLimited: true,
+      emptyStateContext: 'all_questions',
+      answeredFilterApplied: true,
+      accessibleQuestionCountBeforeAnsweredFilter: 0
+    })).toBe('No questions found matching your criteria.');
+  });
+
+  it('does not report exhaustion for a filtered quiz', () => {
+    expect(getEmptyQuestionMessage({
+      isFreeTierLimited: true,
+      emptyStateContext: 'filtered',
+      answeredFilterApplied: true,
+      accessibleQuestionCountBeforeAnsweredFilter: 4
+    })).toBe('No questions found matching your criteria.');
+  });
+
+  it('does not report exhaustion when answered questions are included', () => {
+    expect(getEmptyQuestionMessage({
+      isFreeTierLimited: true,
+      includeAnswered: true,
+      emptyStateContext: 'all_questions',
+      answeredFilterApplied: true,
+      accessibleQuestionCountBeforeAnsweredFilter: 4
+    })).toBe('No questions found matching your criteria.');
+  });
+
+  it('does not report free-tier exhaustion for premium users', () => {
+    expect(getEmptyQuestionMessage({
+      isFreeTierLimited: false,
+      emptyStateContext: 'all_questions',
+      answeredFilterApplied: true,
+      accessibleQuestionCountBeforeAnsweredFilter: 4
+    })).toBe('No questions found matching your criteria.');
+  });
+
+  it('preserves the CME-specific empty message', () => {
+    expect(getEmptyQuestionMessage({
+      quizType: 'cme',
+      isFreeTierLimited: true,
+      emptyStateContext: 'all_questions',
+      answeredFilterApplied: true,
+      accessibleQuestionCountBeforeAnsweredFilter: 4
+    })).toBe('No CME-eligible questions found for your selection. Please adjust your filters.');
   });
 });
 
@@ -65,6 +144,42 @@ describe('getAvailableCategoriesForUser', () => {
       'Tumor',
       'Vascular'
     ]);
+  });
+
+  it('returns all specialty-scoped Urology categories for paid users', () => {
+    const questions = [
+      { Question: 'Q1', Category: 'Stones', Specialty: 'Urology', Free: true },
+      { Question: 'Q2', Category: 'Oncology', Specialty: 'Urology', Free: false },
+      { Question: 'Q3', Category: 'Skull Base', Specialty: 'Neurosurgery', Free: false },
+      { Question: 'Q4', Category: 'Core Concepts', Free: false }
+    ];
+
+    const result = getAvailableCategoriesForUser({
+      questions,
+      authState: { specialty: 'Urology', accessTier: 'board_review' }
+    });
+
+    expect(result.map((entry) => entry.category)).toEqual([
+      'Core Concepts',
+      'Oncology',
+      'Stones'
+    ]);
+  });
+
+  it('treats free Urology users like the default paid-product path, not the neurosurgery pilot', () => {
+    const questions = [
+      { Question: 'Q1', Category: 'Free Urology', Specialty: 'Urology', Free: true },
+      { Question: 'Q2', Category: 'Premium Urology', Specialty: 'Urology', Free: false, pilotUrology: true },
+      { Question: 'Q3', Category: 'Shared Premium', Free: false, pilotUrology: true },
+      { Question: 'Q4', Category: 'ENT Free', Specialty: 'ENT', Free: true }
+    ];
+
+    const result = getAvailableCategoriesForUser({
+      questions,
+      authState: { specialty: 'Urology', accessTier: 'free_guest' }
+    });
+
+    expect(result.map((entry) => entry.category)).toEqual(['Free Urology']);
   });
 
   it('excludes categories that only have inaccessible questions', () => {
@@ -166,6 +281,26 @@ describe('getAvailableCasePrepProcedures', () => {
       { name: 'Aneurysm Clipping', enabled: true, lockedReason: null },
       { name: 'Core Skills', enabled: true, lockedReason: null },
       { name: 'Craniotomy', enabled: true, lockedReason: null }
+    ]);
+  });
+
+  it('returns specialty-scoped and shared procedures for paid Urology users', () => {
+    const questions = [
+      { Question: 'Q1', Procedures: 'Ureteroscopy', Specialty: 'Urology', Free: false },
+      { Question: 'Q2', Procedures: 'Robotic Prostatectomy', Specialty: 'Urology', Free: false },
+      { Question: 'Q3', Procedures: 'Craniotomy', Specialty: 'Neurosurgery', Free: false },
+      { Question: 'Q4', Procedures: 'Core Skills', Free: false }
+    ];
+
+    const result = getAvailableCasePrepProcedures({
+      questions,
+      authState: { specialty: 'Urology', accessTier: 'board_review' }
+    });
+
+    expect(result).toEqual([
+      { name: 'Core Skills', enabled: true, lockedReason: null },
+      { name: 'Robotic Prostatectomy', enabled: true, lockedReason: null },
+      { name: 'Ureteroscopy', enabled: true, lockedReason: null }
     ]);
   });
 
