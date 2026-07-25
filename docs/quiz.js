@@ -39,6 +39,9 @@ let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
 let questionStartTime = 0;
 let currentQuizType = 'regular';
+let activeQuizRunId = 0;
+let quizStartedAt = 0;
+const pendingAnswerTasks = new Map();
 const ONBOARDING_POOL_CACHE_TTL_MS = 5 * 60 * 1000;
 const onboardingQuestionPoolCache = new Map();
 
@@ -627,6 +630,9 @@ async function initializeQuiz(questions, quizType = 'regular', userContext = nul
   console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
   questionStartTime = Date.now();
+  quizStartedAt = questionStartTime;
+  activeQuizRunId += 1;
+  const quizRunId = activeQuizRunId;
   
   if (window.mySwiper) {
       window.mySwiper.destroy(true, true);
@@ -651,11 +657,13 @@ async function initializeQuiz(questions, quizType = 'regular', userContext = nul
     );
   }
   quizSlides.innerHTML = "";
-  questions.forEach(question => {
+  questions.forEach((question, questionIndex) => {
     const questionSlide = document.createElement("div");
     questionSlide.className = "swiper-slide";
     const qId = question["Question"].trim();
     questionSlide.dataset.id = qId;
+    questionSlide.dataset.questionIndex = String(questionIndex);
+    questionSlide.dataset.quizRunId = String(quizRunId);
     questionSlide.dataset.correct = question["Correct Answer"].trim();
     questionSlide.dataset.explanation = question["Explanation"];
     questionSlide.dataset.category = question["Category"] || "Uncategorized";
@@ -914,53 +922,264 @@ function updateBookmarkIcon() {
   }
 }
 
+function invokeHaptic(hapticFunction) {
+  try {
+    Promise.resolve(hapticFunction()).catch((error) => {
+      console.warn("Quiz haptic failed:", error);
+    });
+  } catch (error) {
+    console.warn("Quiz haptic failed:", error);
+  }
+}
+
+function emitQuizAnalytics(name, details, { defer = false } = {}) {
+  const emit = () => {
+    try {
+      Promise.resolve(logAnalyticsEvent(name, details)).catch((error) => {
+        console.warn(`Quiz analytics event "${name}" failed:`, error);
+      });
+    } catch (error) {
+      console.warn(`Quiz analytics event "${name}" failed:`, error);
+    }
+  };
+
+  if (defer) {
+    Promise.resolve().then(emit);
+    return;
+  }
+  emit();
+}
+
+function renderPeerStats(answerContext, peerStats) {
+  if (
+    !peerStats ||
+    peerStats.totalResponses <= 0 ||
+    activeQuizRunId !== answerContext.quizRunId ||
+    !answerContext.card?.isConnected ||
+    answerContext.card.dataset.peerStatsRendered === "true"
+  ) {
+    return false;
+  }
+
+  answerContext.options.forEach((option) => {
+    const optionLetter = option.getAttribute('data-option');
+    const choiceCount = Number(peerStats[`choice${optionLetter}`]) || 0;
+    const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
+
+    const backgroundBar = document.createElement('div');
+    backgroundBar.className = 'peer-stat-bar';
+    backgroundBar.style.width = `${percentage}%`;
+    if (optionLetter === answerContext.correct) {
+      backgroundBar.classList.add('bar-correct');
+    } else if (optionLetter === answerContext.selected) {
+      backgroundBar.classList.add('bar-incorrect');
+    } else {
+      backgroundBar.classList.add('bar-neutral');
+    }
+    option.prepend(backgroundBar);
+
+    const percentageSpan = document.createElement('span');
+    percentageSpan.className = 'peer-percentage';
+    percentageSpan.textContent = `${percentage}%`;
+    option.appendChild(percentageSpan);
+  });
+
+  answerContext.card.dataset.peerStatsRendered = "true";
+  return true;
+}
+
+function getQuizPlatform() {
+  try {
+    return window.Capacitor?.getPlatform?.() || 'web';
+  } catch (error) {
+    return 'web';
+  }
+}
+
+function startPeerStatsWork(answerContext) {
+  const startedAt = Date.now();
+  return Promise.resolve()
+    .then(() => recordChoiceSelection(answerContext.qId, answerContext.selected))
+    .then((peerStats) => {
+      const rendered = renderPeerStats(answerContext, peerStats);
+      return {
+        outcome: peerStats ? (rendered ? 'rendered' : 'stale') : 'unavailable',
+        durationMs: Date.now() - startedAt
+      };
+    })
+    .catch((error) => {
+      console.error("Unable to record or display peer statistics:", error);
+      return {
+        outcome: 'failed',
+        durationMs: Date.now() - startedAt
+      };
+    });
+}
+
+function createPersistenceOperations(answerContext) {
+  if (answerContext.quizType === 'cme') {
+    return [{
+      name: 'cme_answer',
+      run: () => recordCmeAnswer(
+        answerContext.qId,
+        answerContext.category,
+        answerContext.isCorrect,
+        answerContext.timeSpent
+      )
+    }];
+  }
+
+  const operations = [
+    {
+      name: 'answer',
+      run: () => recordAnswer(
+        answerContext.qId,
+        answerContext.category,
+        answerContext.isCorrect,
+        answerContext.timeSpent
+      )
+    },
+    {
+      name: 'question_stats',
+      run: () => updateQuestionStats(answerContext.qId, answerContext.isCorrect)
+    }
+  ];
+
+  if (
+    answerContext.isCmeEligible &&
+    auth?.currentUser &&
+    !auth.currentUser.isAnonymous
+  ) {
+    operations.push({
+      name: 'parallel_cme_answer',
+      run: () => recordCmeAnswer(
+        answerContext.qId,
+        answerContext.category,
+        answerContext.isCorrect,
+        answerContext.timeSpent
+      )
+    });
+  }
+
+  return operations;
+}
+
+function startAnswerPersistence(answerContext) {
+  const startedAt = Date.now();
+  const taskKey = `${answerContext.quizRunId}:${answerContext.questionIndex}:${answerContext.qId}`;
+  const operations = createPersistenceOperations(answerContext);
+  const task = Promise.allSettled(
+    operations.map(({ run }) => Promise.resolve().then(run))
+  ).then((results) => ({
+    outcome: results.every((result) => result.status === 'fulfilled')
+      ? 'completed'
+      : 'partial_failure',
+    durationMs: Date.now() - startedAt,
+    operations: results.map((result, index) => ({
+      name: operations[index].name,
+      status: result.status
+    }))
+  }));
+
+  pendingAnswerTasks.set(taskKey, task);
+  task.finally(() => {
+    if (pendingAnswerTasks.get(taskKey) === task) {
+      pendingAnswerTasks.delete(taskKey);
+    }
+  });
+  return task;
+}
+
+function startRemoteAnswerWork(answerContext) {
+  const peerTask = startPeerStatsWork(answerContext);
+  const persistenceTask = startAnswerPersistence(answerContext);
+
+  if (
+    answerContext.isLast &&
+    !answerContext.isOnboarding &&
+    !['cme', 'deep_link'].includes(answerContext.quizType)
+  ) {
+    void prepareSummary(answerContext.quizRunId);
+  }
+
+  void Promise.all([peerTask, persistenceTask])
+    .then(([peerResult, persistenceResult]) => {
+      emitQuizAnalytics('quiz_answer_async_result', {
+        quiz_type: answerContext.quizType,
+        quiz_position: answerContext.questionIndex + 1,
+        is_last_question: answerContext.isLast,
+        peer_stats_outcome: peerResult.outcome,
+        peer_stats_duration_ms: peerResult.durationMs,
+        persistence_outcome: persistenceResult.outcome,
+        persistence_duration_ms: persistenceResult.durationMs,
+        platform: getQuizPlatform()
+      });
+    })
+    .catch((error) => {
+      console.warn("Unable to emit quiz answer telemetry:", error);
+    });
+}
+
 // Add click event listeners to quiz options
-// quiz.js
 
 function addOptionListeners() {
   document.querySelectorAll('.option-btn').forEach(btn => {
-      btn.addEventListener('click', async function() {
+      btn.addEventListener('click', function() {
         // If the scroll is not yet locked, lock it now.
           // This happens on the first answer click of the quiz.
           if (!document.body.classList.contains('scroll-lock')) {
             lockBodyScroll();
           }
           const card = this.closest('.card');
-    if (card.classList.contains('answered')) return;
+    if (!card || card.dataset.answerCommitted === "true" || card.classList.contains('answered')) return;
+    card.dataset.answerCommitted = "true";
     card.classList.add('answered');
-    
-    if (window.mySwiper) {
-      window.mySwiper.allowSlideNext = true;
-      console.log("Unlocked swiping after answer selection");
-    }
+
     const questionSlide = card.closest('.swiper-slide');
     const qId = questionSlide.dataset.id;
     if (!answeredIds.includes(qId)) { answeredIds.push(qId); }
     const correct = questionSlide.dataset.correct;
     const explanation = questionSlide.dataset.explanation;
     const category = questionSlide.dataset.category;
-    const options = card.querySelectorAll('.option-btn');
+    const options = Array.from(card.querySelectorAll('.option-btn'));
     const selected = this.getAttribute('data-option');
     const isCorrect = (selected === correct);
-    playTap();
+    const questionIndex = Number.parseInt(questionSlide.dataset.questionIndex, 10);
+    const quizRunId = Number.parseInt(questionSlide.dataset.quizRunId, 10);
+    const answerSlide = questionSlide.nextElementSibling;
     const timeSpent = Date.now() - questionStartTime;
-    
-    // Record which specific choice was selected for statistics
-    await recordChoiceSelection(qId, selected);
+    const answerContext = Object.freeze({
+      quizRunId,
+      questionIndex,
+      qId,
+      selected,
+      correct,
+      isCorrect,
+      explanation,
+      category,
+      quizType: currentQuizType,
+      isOnboarding: Boolean(window.isOnboardingQuiz),
+      isLast: questionIndex === totalQuestions - 1,
+      isCmeEligible: questionSlide.dataset.cmeEligible === "true",
+      timeSpent,
+      card,
+      questionSlide,
+      answerSlide,
+      options
+    });
 
-    logAnalyticsEvent('question_answered', {
+    invokeHaptic(playTap);
+
+    emitQuizAnalytics('question_answered', {
       question_category: category,
       is_correct: isCorrect,
       time_to_answer_seconds: Math.round(timeSpent / 1000),
       is_cme_eligible: questionSlide.dataset.cmeEligible === "true",
       is_bookmarked: questionSlide.dataset.bookmarked === "true",
       question_source: currentQuizType === 'cme' ? 'cme_module' : 'regular_quiz',
-      quiz_position: currentQuestion + 1,
+      quiz_position: questionIndex + 1,
       user_tier: window.authState?.accessTier || 'free_guest'
-    });
-
-    // Get peer statistics and update the display
-    const peerStats = await getPeerStats(qId);
+    }, { defer: true });
 
     options.forEach(option => {
         option.disabled = true;
@@ -973,37 +1192,12 @@ function addOptionListeners() {
         if (optionLetter === selected && !isCorrect) {
             option.classList.add('incorrect');
         }
-
-        // Add peer percentage display if stats are available
-        if (peerStats && peerStats.totalResponses > 0) {
-            const choiceCount = peerStats[`choice${optionLetter}`] || 0;
-            const percentage = Math.round((choiceCount / peerStats.totalResponses) * 100);
-
-            // 1. Create and add the background bar
-            const backgroundBar = document.createElement('div');
-            backgroundBar.className = 'peer-stat-bar';
-            backgroundBar.style.width = percentage + '%';
-
-            if (optionLetter === correct) {
-                backgroundBar.classList.add('bar-correct');
-            } else if (optionLetter === selected) {
-                backgroundBar.classList.add('bar-incorrect');
-            } else {
-                backgroundBar.classList.add('bar-neutral');
-            }
-            option.prepend(backgroundBar); // Adds the bar behind the text
-
-            // 2. Create and add the percentage text
-            const percentageSpan = document.createElement('span');
-            percentageSpan.className = 'peer-percentage';
-            percentageSpan.textContent = `${percentage}%`;
-            option.appendChild(percentageSpan); // Adds the percentage to the button
-        }
     });
     if (isCorrect) {
-      requestAnimationFrame(() => {
-        playMedium();
-      });
+      const scheduleHaptic = typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame.bind(window)
+        : (callback) => callback();
+      scheduleHaptic(() => invokeHaptic(playMedium));
     }
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
@@ -1016,12 +1210,10 @@ function addOptionListeners() {
           } else {
             console.log("Hint element not found!"); // Debug log
           }
-          const answerSlide = questionSlide.nextElementSibling;
-
           if (answerSlide) {
 
               // --- Check if it's the last question ---
-              if (currentQuestion + 1 === totalQuestions) {
+              if (answerContext.isLast) {
                   // --- THIS IS THE LAST QUESTION ---
                   console.log(`Quiz complete. Type: ${currentQuizType}, Onboarding: ${window.isOnboardingQuiz}`);
 
@@ -1032,9 +1224,9 @@ function addOptionListeners() {
 
                   // ADD THIS: Track quiz completion
                   const finalAccuracy = Math.round((score / totalQuestions) * 100);
-                  const totalTimeSpent = Math.round((Date.now() - (questionStartTime - timeSpent)) / 1000);
+                  const totalTimeSpent = Math.round((Date.now() - quizStartedAt) / 1000);
 
-                  logAnalyticsEvent('quiz_complete', {
+                  emitQuizAnalytics('quiz_complete', {
                     quiz_type: currentQuizType,
                     category: category,
                     score: score,
@@ -1042,46 +1234,7 @@ function addOptionListeners() {
                     accuracy_percentage: finalAccuracy,
                     time_spent_seconds: totalTimeSpent,
                     user_tier: window.authState?.accessTier || 'free_guest'
-                  });
-
-                  // --- Record the final answer ---
-                  if (currentQuizType === 'cme') { // CME recording (Dedicated CME Module Flow - No Change Here)
-                      if (typeof recordCmeAnswer === 'function') {
-                          await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                          console.log(`Recorded FINAL CME answer for ${qId}`);
-                      } else { console.error("recordCmeAnswer not found"); }
-                  } else { // Regular or Onboarding recording
-                      // 1. Record Regular Answer
-                      if (typeof recordAnswer === 'function') {
-                          await recordAnswer(qId, category, isCorrect, timeSpent);
-                          console.log(`Recorded FINAL regular/onboarding answer for ${qId}`);
-                      } else { console.error("recordAnswer not found"); }
-                      // 2. Update General Question Stats
-                      if (typeof updateQuestionStats === 'function') {
-                          await updateQuestionStats(qId, isCorrect);
-                      } else { console.error("updateQuestionStats not found"); }
-
-                                                      // 3. *** ADDED: Parallel CME Tracking for Eligible Regular Questions ***
-                const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
-                if (isCmeEligible) {
-                     // --- ADD CHECK FOR AUTHENTICATED USER ---
-                    if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
-                        console.log(`FINAL Regular quiz question ${qId} is CME Eligible. Recording parallel CME stats for logged-in user...`);
-                        if (typeof recordCmeAnswer === 'function') {
-                            await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                            console.log(`Recorded parallel CME stats for FINAL regular quiz question ${qId}`);
-                        } else {
-                            console.error("recordCmeAnswer function not found for final parallel tracking.");
-                        }
-                    } else {
-                        console.log(`FINAL Regular quiz question ${qId} is CME Eligible, but user is anonymous. Skipping parallel CME recording.`);
-                    }
-                    // --- END CHECK FOR AUTHENTICATED USER ---
-                }
-                // *** END: Parallel CME Tracking ***
-            }
-            // --- End of processing final answer ---
-
+                  }, { defer: true });
 
                   // --- Set up the final explanation slide content ---
                   const finalAnswerCard = answerSlide.querySelector('.card');
@@ -1200,21 +1353,15 @@ setTimeout(() => {
                                           } else if (window.isOnboardingQuiz) {
                                             // --- Onboarding Quiz End Action ---
                                             // Create a button that will trigger the onboarding summary screen.
+                                            prepareOnboardingSummary(quizRunId);
                                             const summaryButton = document.createElement('button');
                                             summaryButton.id = "viewOnboardingSummaryBtn"; // Use a new ID
                                             summaryButton.className = "start-quiz-btn";
-                                            summaryButton.textContent = "Loading Summary..."; // Initial text
+                                            summaryButton.textContent = "Continue";
                                             summaryButton.style.display = "block";
                                             summaryButton.style.margin = "20px auto";
                                             bottomActions.appendChild(summaryButton);
-                                        
-                                            // Prepare the summary data in the background.
-                                            // This is similar to the regular quiz flow but calls a new function.
-                                            if (typeof prepareOnboardingSummary === 'function') {
-                                                setTimeout(() => {
-                                                    prepareOnboardingSummary();
-                                                }, 500); // A small delay to ensure UI updates.
-                                            }
+                                            summaryButton.addEventListener('click', showOnboardingSummary);
                                             // --- End Onboarding Action ---
                  
                                        // --- START OF NEW CODE ---
@@ -1263,18 +1410,15 @@ setTimeout(() => {
                  
                                        } else {
                                            // --- Regular Quiz End Action --- (No Change Here)
+                                           setLocalSummaryData(quizRunId);
                                            const summaryButton = document.createElement('button');
                                            summaryButton.id = "viewSummaryBtn";
                                            summaryButton.className = "start-quiz-btn";
-                                           summaryButton.textContent = "Loading Summary...";
+                                           summaryButton.textContent = "View Quiz Summary";
                                            summaryButton.style.display = "block";
                                            summaryButton.style.margin = "20px auto";
                                            bottomActions.appendChild(summaryButton);
-                                           if (typeof prepareSummary === 'function') {
-                                               setTimeout(() => {
-                                                   prepareSummary();
-                                               }, 500);
-                                           }
+                                           summaryButton.addEventListener('click', showSummary);
                                            // --- End Regular Action ---
                                        }
                                       } // end if(bottomActions)
@@ -1364,61 +1508,111 @@ setTimeout(() => {
                                     if (isCorrect) { score++; }
                                     updateProgress();
 
-                  // --- Record the answer ---
-                  if (currentQuizType === 'cme') { // Dedicated CME Module Flow - No Change Here
-                      if (typeof recordCmeAnswer === 'function') {
-                          await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                          console.log(`Recorded CME answer for ${qId}`);
-                      } else { console.error("recordCmeAnswer not found"); }
-                  } else { // Regular or Onboarding recording
-                      // 1. Record Regular Answer
-                      if (typeof recordAnswer === 'function') {
-                          await recordAnswer(qId, category, isCorrect, timeSpent);
-                          console.log(`Recorded regular/onboarding answer for ${qId}`);
-                      } else { console.error("recordAnswer not found"); }
-                      // 2. Update General Question Stats
-                      if (typeof updateQuestionStats === 'function') {
-                          await updateQuestionStats(qId, isCorrect);
-                      } else { console.error("updateQuestionStats not found"); }
-
-                                      // 3. *** ADDED: Parallel CME Tracking for Eligible Regular Questions ***
-                const isCmeEligible = questionSlide.dataset.cmeEligible === "true";
-                if (isCmeEligible) {
-                    // --- ADD CHECK FOR AUTHENTICATED USER ---
-                    if (auth && auth.currentUser && !auth.currentUser.isAnonymous) {
-                        console.log(`Regular quiz question ${qId} is CME Eligible. Recording parallel CME stats for logged-in user...`);
-                        if (typeof recordCmeAnswer === 'function') {
-                            await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                            console.log(`Recorded parallel CME stats for regular quiz question ${qId}`);
-                        } else {
-                            console.error("recordCmeAnswer function not found for parallel tracking.");
-                        }
-                    } else {
-                        console.log(`Regular quiz question ${qId} is CME Eligible, but user is anonymous. Skipping parallel CME recording.`);
-                    }
-                    // --- END CHECK FOR AUTHENTICATED USER ---
-                }
-                // *** END: Parallel CME Tracking ***
-            }
             // --- End of logic for NON-last questions ---
               } // End of if/else for last question check
 
           } // End of if(answerSlide)
 
+          const explanationReady = Boolean(
+            answerSlide?.querySelector('.answer')?.textContent?.trim()
+          );
+          if (window.mySwiper && explanationReady) {
+            window.mySwiper.allowSlideNext = true;
+            console.log("Unlocked swiping after the explanation rendered");
+          }
+
+          startRemoteAnswerWork(answerContext);
+
       }); // End of click listener
   }); // End of forEach
 } // End of addOptionListeners function
 
-// Prepare summary data and update the button
-async function prepareSummary() {
-  console.log("Preparing summary...");
+const QUIZ_LEVEL_THRESHOLDS = [
+  0, 30, 75, 150, 250, 400, 600, 850, 1150, 1500, 2000, 2750, 3750, 5000, 6500
+];
+
+function getPerformanceMessage(accuracy) {
+  if (accuracy >= 90) return "Excellent work! You're mastering this material!";
+  if (accuracy >= 70) return "Great job! Keep up the good work!";
+  if (accuracy >= 50) return "Good effort! Keep practicing to improve!";
+  return "Keep practicing! You'll improve with time.";
+}
+
+function getLevelForXP(xp) {
+  let level = 1;
+  for (let index = 1; index < QUIZ_LEVEL_THRESHOLDS.length; index += 1) {
+    if (xp < QUIZ_LEVEL_THRESHOLDS[index]) break;
+    level = index + 1;
+  }
+  return level;
+}
+
+function getLevelProgressForXP(xp, level) {
+  const currentLevelXP = QUIZ_LEVEL_THRESHOLDS[level - 1] || 0;
+  const nextLevelXP = level < QUIZ_LEVEL_THRESHOLDS.length
+    ? QUIZ_LEVEL_THRESHOLDS[level]
+    : null;
+  if (nextLevelXP === null) return 100;
+  return Math.min(
+    100,
+    Math.max(0, Math.floor(((xp - currentLevelXP) / (nextLevelXP - currentLevelXP)) * 100))
+  );
+}
+
+function setLocalSummaryData(quizRunId = activeQuizRunId) {
+  const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+  const estimatedSessionXP = score * 3 + (totalQuestions - score);
+  const estimatedCurrentXP = sessionStartXP + estimatedSessionXP;
+  const estimatedLevel = getLevelForXP(estimatedCurrentXP);
+  window.summaryData = {
+    quizRunId,
+    sessionXP: estimatedSessionXP,
+    currentLevel: estimatedLevel,
+    currentXP: estimatedCurrentXP,
+    levelProgress: getLevelProgressForXP(estimatedCurrentXP, estimatedLevel),
+    accuracy,
+    performanceMessage: getPerformanceMessage(accuracy)
+  };
+  return window.summaryData;
+}
+
+function updateVisibleSummary(summaryData) {
+  const summarySlide = document.querySelector(
+    `.swiper-slide[data-summary-run-id="${summaryData.quizRunId}"]`
+  );
+  if (!summarySlide) return;
+
+  const xpValue = summarySlide.querySelector('.xp-value');
+  const xpBar = summarySlide.querySelector('.xp-bar');
+  const xpTotal = summarySlide.querySelector('.xp-total');
+  if (xpValue) xpValue.textContent = `+${summaryData.sessionXP} XP`;
+  if (xpBar) xpBar.style.width = `${summaryData.levelProgress}%`;
+  if (xpTotal) {
+    xpTotal.textContent = `Total: ${summaryData.currentXP} XP (Level ${summaryData.currentLevel})`;
+  }
+}
+
+// Refresh summary data without blocking the final explanation or summary button.
+async function prepareSummary(quizRunId = activeQuizRunId) {
+  console.log("Refreshing summary in the background...");
+  const localSummary = window.summaryData?.quizRunId === quizRunId
+    ? window.summaryData
+    : setLocalSummaryData(quizRunId);
+
+  const pendingForRun = Array.from(pendingAnswerTasks.entries())
+    .filter(([taskKey]) => taskKey.startsWith(`${quizRunId}:`))
+    .map(([, task]) => task);
+  if (pendingForRun.length > 0) {
+    await Promise.allSettled(pendingForRun);
+  }
+  if (activeQuizRunId !== quizRunId) return localSummary;
   
   try {
     // Get the latest user data to calculate XP earned
-    let sessionXP = 0;
-    let currentLevel = 1;
-    let currentXP = 0;
-    let levelProgress = 0; // Added for level progress calculation
+    let sessionXP = localSummary.sessionXP;
+    let currentLevel = localSummary.currentLevel;
+    let currentXP = localSummary.currentXP;
+    let levelProgress = localSummary.levelProgress;
     
     if (auth && auth.currentUser) {
       const uid = auth.currentUser.uid;
@@ -1435,82 +1629,31 @@ async function prepareSummary() {
           sessionXP = currentXP - sessionStartXP;
           console.log("Quiz XP calculation:", currentXP, "-", sessionStartXP, "=", sessionXP);
 
-          // Calculate level progress percentage
-          // First, determine XP thresholds for current and next levels
-          const levelThresholds = [
-            0,     // Level 1
-            30,    // Level 2
-            75,    // Level 3
-            150,   // Level 4
-            250,   // Level 5
-            400,   // Level 6
-            600,   // Level 7
-            850,   // Level 8
-            1150,  // Level 9
-            1500,  // Level 10
-            2000,  // Level 11
-            2750,  // Level 12
-            3750,  // Level 13
-            5000,  // Level 14
-            6500   // Level 15
-          ];
-          
-          const currentLevelXP = levelThresholds[currentLevel - 1] || 0;
-          const nextLevelXP = currentLevel < levelThresholds.length ? levelThresholds[currentLevel] : null;
-          
-          if (nextLevelXP !== null) {
-            const xpInCurrentLevel = currentXP - currentLevelXP;
-            const xpRequiredForNextLevel = nextLevelXP - currentLevelXP;
-            levelProgress = Math.min(100, Math.floor((xpInCurrentLevel / xpRequiredForNextLevel) * 100));
-            console.log("Level progress calculation:", xpInCurrentLevel, "/", xpRequiredForNextLevel, "=", levelProgress + "%");
-          } else {
-            // Max level reached
-            levelProgress = 100;
-          }
+          levelProgress = getLevelProgressForXP(currentXP, currentLevel);
         }
       }
     }
+
+    if (activeQuizRunId !== quizRunId) return localSummary;
       
     // Calculate accuracy percentage
     const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
     
-    // Get appropriate message based on performance
-    let performanceMessage = "";
-    if (accuracy >= 90) {
-      performanceMessage = "Excellent work! You're mastering this material!";
-    } else if (accuracy >= 70) {
-      performanceMessage = "Great job! Keep up the good work!";
-    } else if (accuracy >= 50) {
-      performanceMessage = "Good effort! Keep practicing to improve!";
-    } else {
-      performanceMessage = "Keep practicing! You'll improve with time.";
-    }
-    
     // Store summary data
     window.summaryData = {
+      quizRunId,
       sessionXP,
       currentLevel,
       currentXP,
-      levelProgress, // Store the calculated level progress
+      levelProgress,
       accuracy,
-      performanceMessage
+      performanceMessage: getPerformanceMessage(accuracy)
     };
-    
-    // Update the button to be clickable
-    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
-    if (viewSummaryBtn) {
-      viewSummaryBtn.textContent = "View Quiz Summary";
-      viewSummaryBtn.addEventListener('click', showSummary);
-      console.log("Summary button updated and ready");
-    }
+    updateVisibleSummary(window.summaryData);
+    return window.summaryData;
   } catch (error) {
-    console.error("Error preparing summary:", error);
-    // Still update the button with a fallback in case of error
-    const viewSummaryBtn = document.getElementById('viewSummaryBtn');
-    if (viewSummaryBtn) {
-      viewSummaryBtn.textContent = "View Quiz Summary";
-      viewSummaryBtn.addEventListener('click', showSummary);
-    }
+    console.error("Error refreshing summary:", error);
+    return localSummary;
   }
 }
 
@@ -1518,14 +1661,9 @@ async function prepareSummary() {
 function showSummary() {
   console.log("Showing summary...");
   
-  const data = window.summaryData || {
-    sessionXP: score * 3 + (totalQuestions - score),
-    currentLevel: 1,
-    currentXP: 0,
-    levelProgress: 0,
-    accuracy: totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0,
-    performanceMessage: "Quiz complete!"
-  };
+  const data = window.summaryData?.quizRunId === activeQuizRunId
+    ? window.summaryData
+    : setLocalSummaryData(activeQuizRunId);
 
   const hasBoardAccess = hasBoardReviewAccessForCurrentUser();
 
@@ -1534,6 +1672,7 @@ function showSummary() {
   // Create and add the summary slide
   const summarySlide = document.createElement("div");
   summarySlide.className = "swiper-slide";
+  summarySlide.dataset.summaryRunId = String(activeQuizRunId);
 
   // Conditionally create the leaderboard button HTML
   let leaderboardButtonHtml = '';
@@ -1718,91 +1857,18 @@ if (difficultyButtonsDiv) {
     });
 }
 
-// --- Helper function to avoid repeating recording logic ---
-// Place this in the main scope of quiz.js, near addDifficultyListeners
-
-async function recordFinalAnswer(qId, category, isCorrect, timeSpent) {
-    // Use the globally stored currentQuizType
-    if (currentQuizType === 'cme') {
-        // Call CME recording function (ensure it exists, likely in user.js)
-        if (typeof recordCmeAnswer === 'function') {
-            try {
-                await recordCmeAnswer(qId, category, isCorrect, timeSpent);
-                console.log(`Recorded CME answer for ${qId} via helper.`);
-            } catch (e) { console.error(`Error calling recordCmeAnswer for ${qId}:`, e); }
-        } else {
-            console.error("recordCmeAnswer function not found when trying to record final answer.");
-        }
-    } else {
-        // Call regular recording functions (ensure they exist, likely in user.js)
-        if (typeof recordAnswer === 'function') {
-             try {
-                await recordAnswer(qId, category, isCorrect, timeSpent);
-                console.log(`Recorded regular/onboarding answer for ${qId} via helper.`);
-             } catch (e) { console.error(`Error calling recordAnswer for ${qId}:`, e); }
-        } else {
-            console.error("recordAnswer function not found when trying to record final answer.");
-        }
-        // Still update general question stats for non-CME quizzes
-        if (typeof updateQuestionStats === 'function') {
-             try {
-                await updateQuestionStats(qId, isCorrect);
-             } catch (e) { console.error(`Error calling updateQuestionStats for ${qId}:`, e); }
-        } else {
-            console.error("updateQuestionStats function not found when trying to record final answer.");
-        }
-    }
-}
-// --- End of recordFinalAnswer Helper Function ---
-
-// Function to get peer statistics for a question
-async function getPeerStats(questionId) {
-  try {
-    const choiceStatsRef = doc(db, 'choiceStats', questionId);
-    const statsDoc = await getDoc(choiceStatsRef);
-    
-    if (statsDoc.exists()) {
-      return statsDoc.data();
-    }
-    return null;
-  } catch (error) {
-    console.error("Error fetching peer stats:", error);
-    return null;
-  }
-}
-
 // Prepares the data for the onboarding summary screen
-async function prepareOnboardingSummary() {
+function prepareOnboardingSummary(quizRunId = activeQuizRunId) {
   console.log("Preparing onboarding summary...");
 
-  try {
-    // Calculate accuracy percentage
-    const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
-
-    // Store summary data globally for the next function to use
-    window.onboardingSummaryData = {
-      accuracy: accuracy,
-      score: score,
-      totalQuestions: totalQuestions
-    };
-
-    // Update the button to be clickable and change its text
-    const viewSummaryBtn = document.getElementById('viewOnboardingSummaryBtn');
-    if (viewSummaryBtn) {
-      viewSummaryBtn.textContent = "Continue";
-      // Add a click listener to show the summary screen
-      viewSummaryBtn.addEventListener('click', showOnboardingSummary);
-      console.log("Onboarding summary button updated and ready");
-    }
-  } catch (error) {
-    console.error("Error preparing onboarding summary:", error);
-    // Fallback in case of an error
-    const viewSummaryBtn = document.getElementById('viewOnboardingSummaryBtn');
-    if (viewSummaryBtn) {
-      viewSummaryBtn.textContent = "Continue";
-      viewSummaryBtn.addEventListener('click', showOnboardingSummary);
-    }
-  }
+  const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+  window.onboardingSummaryData = {
+    quizRunId,
+    accuracy,
+    score,
+    totalQuestions
+  };
+  return window.onboardingSummaryData;
 }
 
 // Creates and displays the onboarding summary slide
@@ -1810,7 +1876,10 @@ function showOnboardingSummary() {
   console.log("Showing onboarding summary...");
 
   // Use the data prepared in the previous step
-  const data = window.onboardingSummaryData || {
+  const data = window.onboardingSummaryData?.quizRunId === activeQuizRunId
+    ? window.onboardingSummaryData
+    : {
+    quizRunId: activeQuizRunId,
     accuracy: 0,
     score: 0,
     totalQuestions: 3

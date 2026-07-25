@@ -1371,35 +1371,38 @@ async function saveOnboardingSelections(specialty, experienceLevel, username) {
 
 // Function to record which choice was selected for peer statistics
 async function recordChoiceSelection(questionId, selectedChoice) {
-  if (!auth.currentUser || !db) return;
+  if (!auth?.currentUser || !db) return null;
+
+  const normalizedChoice = String(selectedChoice || '').trim().toUpperCase();
+  if (!['A', 'B', 'C', 'D', 'E'].includes(normalizedChoice)) {
+    console.warn("Invalid choice supplied for peer statistics:", selectedChoice);
+    return null;
+  }
   
   try {
     const choiceStatsRef = doc(db, 'choiceStats', questionId);
-    const choiceField = `choice${selectedChoice}`;
+    const choiceField = `choice${normalizedChoice}`;
     
-    await runTransaction(db, async (transaction) => {
+    return await runTransaction(db, async (transaction) => {
       const statsDoc = await transaction.get(choiceStatsRef);
-      
-      if (statsDoc.exists()) {
-        const currentCount = statsDoc.data()[choiceField] || 0;
-        const currentTotal = statsDoc.data().totalResponses || 0;
-        transaction.update(choiceStatsRef, {
-          [choiceField]: currentCount + 1,
-          totalResponses: currentTotal + 1
-        });
-      } else {
-        transaction.set(choiceStatsRef, {
-          choiceA: selectedChoice === 'A' ? 1 : 0,
-          choiceB: selectedChoice === 'B' ? 1 : 0,
-          choiceC: selectedChoice === 'C' ? 1 : 0,
-          choiceD: selectedChoice === 'D' ? 1 : 0,
-          choiceE: selectedChoice === 'E' ? 1 : 0,
-          totalResponses: 1
-        });
-      }
+      const currentStats = statsDoc.exists() ? statsDoc.data() : {};
+      const updatedStats = {
+        choiceA: Number(currentStats.choiceA) || 0,
+        choiceB: Number(currentStats.choiceB) || 0,
+        choiceC: Number(currentStats.choiceC) || 0,
+        choiceD: Number(currentStats.choiceD) || 0,
+        choiceE: Number(currentStats.choiceE) || 0,
+        totalResponses: Number(currentStats.totalResponses) || 0
+      };
+
+      updatedStats[choiceField] += 1;
+      updatedStats.totalResponses += 1;
+      transaction.set(choiceStatsRef, updatedStats, { merge: true });
+      return updatedStats;
     });
   } catch (error) {
     console.error("Error recording choice selection:", error);
+    return null;
   }
 }
 
