@@ -3,7 +3,6 @@ import { auth, db, doc, getDoc, runTransaction, serverTimestamp, functions, http
 import { setHapticsEnabled } from './haptics.js';
 import { isIosNativeApp } from './platform.js';
 import { getAnsweredQuestionIds, recordAnsweredQuestion } from './answered-questions.js';
-import { getSpecialtyPolicy } from './specialty-policy.js';
 
 // user.js - After imports
 
@@ -1306,99 +1305,66 @@ window.fetchSpacedRepetitionData = fetchSpacedRepetitionData;
 // NEW FUNCTION to save onboarding selections
 async function saveOnboardingSelections(specialty, experienceLevel, username) {
   if (!auth || !auth.currentUser) {
-    console.error("User not authenticated. Cannot save onboarding selections.");
-    // Potentially throw an error or handle this case, though in onboarding,
-    // an anonymous user should have been created by now by auth.js.
-    return;
+    throw new Error("User not authenticated. Cannot save onboarding selections.");
   }
 
-  const uid = auth.currentUser.uid;
+  const currentUser = auth.currentUser;
+  const uid = currentUser.uid;
   const userDocRef = doc(db, 'users', uid);
-
   const dataToSave = {
-    username: username,
-    specialty: specialty,
-    experienceLevel: experienceLevel,
-    onboardingCompletedAt: serverTimestamp(), // Mark when these were saved
-    updatedAt: serverTimestamp() // Good practice to update this timestamp
+    username,
+    specialty,
+    experienceLevel,
+    onboardingCompletedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
   };
 
   try {
-    // Check if the document exists.
-    // While onAuthStateChanged in auth.js usually creates the doc for anon users,
-    // this onboarding step might happen very quickly for a brand new anon user.
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (!userDocSnap.exists()) {
-      // Document doesn't exist, so we're creating it with these onboarding details
-      // and some essential defaults. auth.js will later merge/update if needed.
-      console.log(`User doc for ${uid} (anonymous) not found during onboarding save. Creating with onboarding data.`);
-      // SLIM WRITE: Only write non-sensitive fields. The backend will add defaults.
-      await setDoc(userDocRef, {
-        ...dataToSave,
-        email: null,
-        createdAt: serverTimestamp(),
-        // --- SENSITIVE FIELDS REMOVED ---
-        // isRegistered, accessTier, etc., will be set by a Cloud Function.
-        stats: { xp: 0, level: 1, totalAnswered: 0, totalCorrect: 0 },
-        bookmarks: [],
-        cmeStats: { creditsEarned: 0, creditsClaimed: 0, totalAnswered: 0, totalCorrect: 0 },
-      });
-      console.log("New user document created with onboarding selections for UID:", uid);
-    } else {
-      // Document exists, merge the new data
-      await setDoc(userDocRef, dataToSave, { merge: true });
-      console.log("Onboarding selections saved for existing UID:", uid, dataToSave);
-    }
-
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      try {
-        const needsUpdate = currentUser.displayName !== username;
-        if (needsUpdate) {
-          await updateProfile(currentUser, { displayName: username });
-          console.log("Firebase Auth displayName updated to onboarding username for UID:", uid);
-        }
-      } catch (profileErr) {
-        console.warn("Unable to update Firebase Auth displayName during onboarding save:", profileErr);
-      }
-
-      if (updateUserProfileFunction && !currentUser.isAnonymous) {
-        try {
-          await updateUserProfileFunction({
-            username,
-            specialty,
-            experienceLevel
-          });
-          console.log("Server-side profile synced with onboarding selections for UID:", uid);
-        } catch (callableErr) {
-          console.warn("updateUserProfileFunction failed during onboarding save:", callableErr);
-        }
-      }
-    }
+    // A merge is idempotent and creates the document when it does not exist, so
+    // the onboarding critical path needs only this single Firestore request.
+    await setDoc(userDocRef, dataToSave, { merge: true });
+    console.log("Onboarding selections saved for UID:", uid);
 
     if (window.authState) {
       window.authState.username = username;
       window.authState.specialty = specialty;
-      try {
-        window.authState.specialtyPolicy = await getSpecialtyPolicy(specialty);
-      } catch (policyError) {
-        console.warn("Unable to hydrate specialty policy after onboarding save:", policyError);
-      }
+      window.authState.onboardingSelectionsComplete = true;
       if (window.authState.user) {
         window.authState.user.displayName = username;
       }
     }
-    if (typeof window.updateUserMenuInfo === "function") {
+
+    // These keep Auth and cosmetic UI state in sync but must never delay the
+    // first quiz card.
+    void (async () => {
       try {
-        await window.updateUserMenuInfo(window.authState);
-      } catch (updateErr) {
-        console.warn("updateUserMenuInfo failed after onboarding save:", updateErr);
+        if (currentUser.displayName !== username) {
+          await updateProfile(currentUser, { displayName: username });
+        }
+      } catch (profileError) {
+        console.warn("Unable to update Firebase Auth displayName:", profileError);
       }
-    }
+
+      if (updateUserProfileFunction && !currentUser.isAnonymous) {
+        try {
+          await updateUserProfileFunction({ username, specialty, experienceLevel });
+        } catch (callableError) {
+          console.warn("Unable to sync the server-side profile:", callableError);
+        }
+      }
+
+      if (typeof window.updateUserMenuInfo === "function") {
+        try {
+          await window.updateUserMenuInfo(window.authState);
+        } catch (menuError) {
+          console.warn("Unable to refresh the user menu:", menuError);
+        }
+      }
+    })();
+
+    return { saved: true, uid };
   } catch (error) {
     console.error("Error saving onboarding selections to Firestore:", error);
-    // Optionally, re-throw the error to be handled by the caller in app.js
     throw error;
   }
 }

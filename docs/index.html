@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap" rel="stylesheet">
   
   <!-- Swiper CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css" />
+  <link rel="stylesheet" href="vendor/swiper/swiper-bundle.min.css" />
   
   <script src="https://www.google.com/recaptcha/enterprise.js?render=6Ld2rk8rAAAAAG4cK6ZdeKzASBvvVoYmfj0107Ag"></script>
 
@@ -174,10 +174,18 @@
 
   <!-- Onboarding Loading Screen -->
 <div id="onboardingLoadingScreen" class="loading-screen">
-  <div class="loading-content">
+  <div class="loading-content" role="status" aria-live="polite">
     <img src="MedSwipe Logo gradient.png" alt="MedSwipe Logo" class="loading-logo">
-    <div class="loading-spinner"></div>
-    <p class="loading-text">Curating your first three questions...</p>
+    <div id="onboardingLoadingSpinner" class="loading-spinner"></div>
+    <p id="onboardingLoadingText" class="loading-text">Curating your first three questions...</p>
+    <p id="onboardingLoadingErrorCode" class="loading-error-code" hidden></p>
+    <div id="onboardingLoadingActions" class="loading-actions" hidden>
+      <button id="onboardingRetryBtn" class="onboarding-primary-btn" type="button">Retry</button>
+      <button id="onboardingBackBtn" class="onboarding-secondary-btn" type="button" hidden>Back</button>
+      <button id="onboardingContinueDashboardBtn" class="onboarding-secondary-btn" type="button" hidden>
+        Continue to Dashboard
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1327,7 +1335,7 @@ if (isNativeApp) {
 </script>
 
 <!-- Include Swiper JS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js"></script>
+<script src="vendor/swiper/swiper-bundle.min.js"></script>
 
 <!-- Chart.js for the doughnut chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

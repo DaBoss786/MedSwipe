@@ -41,8 +41,7 @@ vi.mock('./haptics.js', () => ({
   playTap: vi.fn()
 }));
 
-import { auth, getDocs } from './firebase-config.js';
-import { fetchPersistentAnsweredIds } from './user.v2.js';
+import { auth, getDoc, getDocs } from './firebase-config.js';
 import { FREE_QUESTIONS_EXHAUSTED_MESSAGE } from './quiz-filtering.js';
 import { loadQuestions } from './quiz.js';
 
@@ -84,9 +83,16 @@ describe('loadQuestions free-tier exhaustion', () => {
           enabled: false
         }
       };
-      fetchPersistentAnsweredIds.mockResolvedValue(
-        questions.map((question) => question.Question)
-      );
+      getDoc.mockResolvedValue({
+        exists: () => true,
+        data: () => ({
+          answeredQuestions: Object.fromEntries(
+            questions.map((question) => [question.Question, {}])
+          ),
+          bookmarks: [],
+          stats: { xp: 0 }
+        })
+      });
 
       await loadQuestions({
         includeAnswered: false,
@@ -94,7 +100,7 @@ describe('loadQuestions free-tier exhaustion', () => {
         emptyStateContext: 'all_questions'
       });
 
-      expect(fetchPersistentAnsweredIds).toHaveBeenCalledTimes(1);
+      expect(getDoc).toHaveBeenCalledTimes(1);
       expect(window.alert).toHaveBeenCalledTimes(1);
       expect(window.alert).toHaveBeenCalledWith(FREE_QUESTIONS_EXHAUSTED_MESSAGE);
       expect(document.getElementById('mainOptions').style.display).toBe('flex');
@@ -113,7 +119,14 @@ describe('loadQuestions free-tier exhaustion', () => {
         enabled: false
       }
     };
-    fetchPersistentAnsweredIds.mockResolvedValue(['ENT filtered Q1']);
+    getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        answeredQuestions: { 'ENT filtered Q1': {} },
+        bookmarks: [],
+        stats: { xp: 0 }
+      })
+    });
 
     await loadQuestions({
       includeAnswered: false,
@@ -144,9 +157,16 @@ describe('loadQuestions free-tier exhaustion', () => {
         data: () => question
       }))
     });
-    fetchPersistentAnsweredIds.mockResolvedValue(
-      questions.map((question) => question.Question)
-    );
+    getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        answeredQuestions: Object.fromEntries(
+          questions.map((question) => [question.Question, {}])
+        ),
+        bookmarks: [],
+        stats: { xp: 0 }
+      })
+    });
 
     await loadQuestions({
       includeAnswered: false

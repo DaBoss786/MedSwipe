@@ -4,7 +4,15 @@ import { logAnalyticsEvent, setAnalyticsUserProperties } from './analytics.js';
 import { generateGuestUsername } from './auth.js';
 // Import needed functions from user.js
 import { updateUserXP, updateUserMenu, calculateLevelProgress, getLevelInfo, toggleBookmark, saveOnboardingSelections, fetchPersistentAnsweredIds } from './user.v2.js';
-import { loadQuestions, initializeQuiz, fetchQuestionBank } from './quiz.js';
+import {
+  loadQuestions,
+  initializeQuiz,
+  fetchQuestionBank,
+  fetchOnboardingQuestionPool,
+  prefetchOnboardingQuestionPool,
+  fetchQuizUserContext
+} from './quiz.js';
+import { createOnboardingController } from './onboarding-controller.js';
 import { showLeaderboard, showAbout, showFAQ, showContactModal } from './ui.js';
 import { closeSideMenu, closeUserMenu, shuffleArray, getCurrentQuestionId } from './utils.js';
 import { displayPerformance } from './stats.js';
@@ -1835,6 +1843,21 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
         return;
       }
 
+      if (
+        event.detail.user?.isAnonymous &&
+        !event.detail.isRegistered &&
+        event.detail.onboardingSelectionsComplete === true &&
+        event.detail.hasProgress !== true
+      ) {
+        console.log('Saved onboarding selections found without quiz progress; resuming onboarding.');
+        if (typeof window.resumeSavedOnboarding === 'function') {
+          void window.resumeSavedOnboarding(event.detail);
+        } else {
+          window.pendingOnboardingResume = event.detail;
+        }
+        return;
+      }
+
       startupInitDependencies.handleUserRouting(event.detail);
       startupInitDependencies.queueDashboardRefresh();
     }
@@ -1922,6 +1945,14 @@ document.addEventListener('DOMContentLoaded', async function() { // <-- Made thi
     const usernameContinueBtn = document.getElementById('usernameContinueBtn');
     const onboardingUsernameInput = document.getElementById('onboardingUsernameInput');
     const onboardingUsernameError = document.getElementById('onboardingUsernameError');
+    const onboardingLoadingScreen = document.getElementById('onboardingLoadingScreen');
+    const onboardingLoadingSpinner = document.getElementById('onboardingLoadingSpinner');
+    const onboardingLoadingText = document.getElementById('onboardingLoadingText');
+    const onboardingLoadingErrorCode = document.getElementById('onboardingLoadingErrorCode');
+    const onboardingLoadingActions = document.getElementById('onboardingLoadingActions');
+    const onboardingRetryBtn = document.getElementById('onboardingRetryBtn');
+    const onboardingBackBtn = document.getElementById('onboardingBackBtn');
+    const onboardingContinueDashboardBtn = document.getElementById('onboardingContinueDashboardBtn');
     // --- END NEW element references ---
 
     function resolveAutoOnboardingUsername() {
@@ -2791,6 +2822,7 @@ if (specialtyContinueBtn && specialtyPickScreen && experiencePickScreen) {
     }
     
     console.log("Proceeding from Specialty screen. Specialty:", window.selectedSpecialty);
+    void prefetchOnboardingQuestionPool(window.selectedSpecialty);
     transitionOnboardingScreen(specialtyPickScreen, experiencePickScreen, {
       onBeforeShow: () => {
         window.selectedExperienceLevel = null;
@@ -3060,6 +3092,166 @@ if (experienceContinueBtn && experiencePickScreen && usernamePickScreen) {
 
 // --- Username Screen Logic ---
 if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
+  const quizContainer = document.querySelector('.swiper');
+
+  function setOnboardingTopLevelExperience(experience) {
+    const targets = {
+      loading: onboardingLoadingScreen,
+      username: usernamePickScreen,
+      dashboard: mainOptions,
+      quiz: quizContainer
+    };
+
+    Object.entries(targets).forEach(([name, element]) => {
+      if (!element) return;
+      if (name === experience) {
+        element.style.display = name === 'quiz' ? 'block' : 'flex';
+        element.style.opacity = '1';
+        element.removeAttribute('aria-hidden');
+        element.removeAttribute('inert');
+      } else if (!(experience === 'loading' && name === 'quiz')) {
+        element.style.display = 'none';
+        element.setAttribute('aria-hidden', 'true');
+        element.setAttribute('inert', '');
+      }
+    });
+
+    if (experience === 'loading' && quizContainer) {
+      quizContainer.setAttribute('aria-hidden', 'true');
+      quizContainer.setAttribute('inert', '');
+    }
+    if (experience !== 'quiz') {
+      const bottomToolbar = document.getElementById('bottomToolbar');
+      const iconBar = document.getElementById('iconBar');
+      if (experience === 'dashboard') {
+        if (bottomToolbar) bottomToolbar.style.display = 'none';
+        if (iconBar) iconBar.style.display = 'none';
+      }
+    }
+  }
+
+  function renderOnboardingState(state) {
+    if (state.phase === 'ready') {
+      setOnboardingTopLevelExperience('quiz');
+      onboardingLoadingScreen.style.pointerEvents = 'none';
+      onboardingLoadingScreen.style.opacity = '0';
+      setTimeout(() => {
+        onboardingLoadingScreen.style.display = 'none';
+        onboardingLoadingScreen.style.pointerEvents = '';
+        onboardingLoadingScreen.style.opacity = '1';
+      }, 250);
+      return;
+    }
+
+    setOnboardingTopLevelExperience('loading');
+    onboardingLoadingScreen.style.pointerEvents = '';
+    onboardingLoadingScreen.style.opacity = '1';
+    if (onboardingLoadingText) onboardingLoadingText.textContent = state.message;
+    if (onboardingLoadingSpinner) {
+      onboardingLoadingSpinner.hidden = state.spinnerVisible === false;
+    }
+    if (onboardingLoadingErrorCode) {
+      onboardingLoadingErrorCode.hidden = !state.errorCode;
+      onboardingLoadingErrorCode.textContent = state.errorCode
+        ? `Reference: ${state.errorCode}`
+        : '';
+    }
+
+    const actions = new Set(state.actions || []);
+    if (onboardingLoadingActions) {
+      onboardingLoadingActions.hidden = actions.size === 0;
+    }
+    if (onboardingRetryBtn) onboardingRetryBtn.hidden = !actions.has('retry');
+    if (onboardingBackBtn) onboardingBackBtn.hidden = !actions.has('back');
+    if (onboardingContinueDashboardBtn) {
+      onboardingContinueDashboardBtn.hidden =
+        !actions.has('dashboard') || state.selectionsSaved !== true;
+    }
+  }
+
+  const onboardingController = createOnboardingController({
+    saveProfile: ({ specialty, experienceLevel, username }) =>
+      saveOnboardingSelections(specialty, experienceLevel, username),
+    resolvePolicy: async (specialty) => {
+      const policy = await getSpecialtyPolicy(specialty);
+      window.selectedSpecialtyPolicy = policy;
+      if (window.authState) {
+        window.authState.specialty = specialty;
+        window.authState.specialtyPolicy = policy;
+      }
+      return policy;
+    },
+    prepareQuestions: (specialty, options) =>
+      fetchOnboardingQuestionPool(specialty, options),
+    loadUserContext: () => fetchQuizUserContext(),
+    initializeQuiz: ({ questions, userContext }) =>
+      loadQuestions({
+        type: 'random',
+        num: 3,
+        includeAnswered: false,
+        isOnboarding: true,
+        propagateErrors: true,
+        prefilteredQuestions: questions,
+        userContext
+      }),
+    shouldSkipQuiz: shouldSkipOnboardingQuiz,
+    routeSkippedOnboarding: async (policy) => {
+      onboardingLoadingScreen.style.display = 'none';
+      routeAfterOnboardingSelections(policy);
+    },
+    renderState: renderOnboardingState,
+    logEvent: (name, details) => {
+      logAnalyticsEvent(name, {
+        outcome: details.outcome,
+        error_code: details.error_code || null,
+        duration_ms: details.duration,
+        specialty: details.specialty,
+        platform: isIosNativeApp ? 'ios' : (isNativeApp ? 'native' : 'web'),
+        cache_source: details.cache_source || 'unknown',
+        retry_count: details.retry_count || 0,
+        question_count: details.question_count || 0
+      });
+    }
+  });
+
+  function beginOnboardingQuizFlow({ selectionsSaved = false } = {}) {
+    const username = (
+      window.selectedUsername ||
+      window.authState?.username ||
+      window.authState?.user?.displayName ||
+      resolveAutoOnboardingUsername()
+    ).trim();
+    const specialty = window.selectedSpecialty || window.authState?.specialty || 'ENT';
+    const experienceLevel =
+      window.selectedExperienceLevel ||
+      window.authState?.experienceLevel ||
+      null;
+
+    window.selectedUsername = username;
+    window.selectedSpecialty = specialty;
+    window.selectedExperienceLevel = experienceLevel;
+    return onboardingController.start(
+      { username, specialty, experienceLevel },
+      { selectionsSaved }
+    );
+  }
+
+  window.resumeSavedOnboarding = (authState = window.authState || {}) => {
+    window.selectedSpecialty = authState.specialty || 'ENT';
+    window.selectedExperienceLevel = authState.experienceLevel || null;
+    window.selectedUsername =
+      authState.username ||
+      authState.user?.displayName ||
+      resolveAutoOnboardingUsername();
+    return beginOnboardingQuizFlow({ selectionsSaved: true });
+  };
+
+  if (window.pendingOnboardingResume) {
+    const pendingState = window.pendingOnboardingResume;
+    window.pendingOnboardingResume = null;
+    void window.resumeSavedOnboarding(pendingState);
+  }
+
   // Enable/disable continue button based on input
   onboardingUsernameInput.addEventListener('input', function() {
     const username = this.value.trim();
@@ -3076,7 +3268,7 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
     }
   });
 
-  usernameContinueBtn.addEventListener('click', async function() {
+  usernameContinueBtn.addEventListener('click', function() {
     const username = onboardingUsernameInput.value.trim();
     if (username.length < 3) {
       onboardingUsernameError.textContent = 'Username must be at least 3 characters long.';
@@ -3089,68 +3281,41 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
 
     this.disabled = true;
     this.textContent = "Saving...";
+    setOnboardingTopLevelExperience('loading');
+    void beginOnboardingQuizFlow().finally(() => {
+      this.textContent = 'Continue';
+    });
 
-    try {
-      // Now we save all three selections
-      await saveOnboardingSelections(window.selectedSpecialty, window.selectedExperienceLevel, window.selectedUsername);
-      console.log("Successfully saved onboarding selections (including username) to Firestore.");
-
-      const selectedSpecialtyPolicy = await getSpecialtyPolicy(window.selectedSpecialty);
-      window.selectedSpecialtyPolicy = selectedSpecialtyPolicy;
-      if (window.authState) {
-        window.authState.specialty = window.selectedSpecialty;
-        window.authState.specialtyPolicy = selectedSpecialtyPolicy;
-      }
-
-      if (window.selectedSpecialty) {
-        setAnalyticsUserProperties({
-          user_specialty: window.selectedSpecialty
-        });
-        console.log(`GA User Property 'user_specialty' set to: ${window.selectedSpecialty}`);
-      }
-
-      const shouldShowQuizLoading = !shouldSkipOnboardingQuiz(selectedSpecialtyPolicy);
-
-      if (!shouldShowQuizLoading) {
-        usernamePickScreen.style.display = 'none';
-        routeAfterOnboardingSelections(selectedSpecialtyPolicy);
-        return;
-      }
-
-      transitionOnboardingScreen(usernamePickScreen, onboardingLoadingScreen, {
-        display: 'flex'
-      });
-
-      setTimeout(function() {
-        onboardingLoadingScreen.style.pointerEvents = 'none';
-        onboardingLoadingScreen.style.opacity = '0';
-
-        setTimeout(function() {
-          onboardingLoadingScreen.style.display = 'none';
-          onboardingLoadingScreen.style.pointerEvents = '';
-          onboardingLoadingScreen.style.opacity = '1';
-          routeAfterOnboardingSelections(selectedSpecialtyPolicy);
-        }, ONBOARDING_TRANSITION_DURATION);
-      }, 2000);
-
-    } catch (error) {
-      console.error("Failed to save onboarding selections:", error);
-      alert("There was an error saving your selections. Please try again.");
-      this.disabled = false;
-      this.textContent = "Continue";
+    if (window.selectedSpecialty) {
+      setAnalyticsUserProperties({ user_specialty: window.selectedSpecialty });
     }
   });
-}
 
+  onboardingRetryBtn?.addEventListener('click', () => {
+    void onboardingController.retry();
+  });
+
+  onboardingBackBtn?.addEventListener('click', () => {
+    onboardingController.cancel();
+    usernameContinueBtn.disabled = onboardingUsernameInput.value.trim().length < 3;
+    usernameContinueBtn.textContent = 'Continue';
+    setOnboardingTopLevelExperience('username');
+  });
+
+  onboardingContinueDashboardBtn?.addEventListener('click', () => {
+    if (!onboardingController.getState().selectionsSaved) return;
+    onboardingController.cancel();
+    hidePaywallScreens();
+    ensureAllScreensHidden();
+    setOnboardingTopLevelExperience('dashboard');
+    showDashboard();
+    if (typeof initializeDashboard === 'function') initializeDashboard();
+  });
 
   // Function to start the onboarding quiz with 3 questions
   function startOnboardingQuiz() {
-    // Start a 3-question quiz
-    loadQuestions({
-      type: 'random',
-      num: 3,
-      includeAnswered: false,
-      isOnboarding: true  // Flag to indicate this is the onboarding quiz
+    return beginOnboardingQuizFlow({
+      selectionsSaved: window.authState?.onboardingSelectionsComplete === true
     });
   }
 
@@ -3210,6 +3375,8 @@ if (usernameContinueBtn && usernamePickScreen && onboardingLoadingScreen) {
     completeAbbreviatedOnboarding(effectivePolicy);
   }
 
+  window.startOnboardingQuiz = startOnboardingQuiz;
+}
 
 // ==================================================
 // == NEW: Onboarding Carousel Logic
@@ -3313,8 +3480,6 @@ function finishOnboarding() {
 
   showPaywallScreen();
 }
-
-  window.startOnboardingQuiz = startOnboardingQuiz; // Make global if defined locally
 
 // --- Event Listener Initializer for Paywall "Continue as Guest" Button ---
 function initializePaywallFreeAccessButton() {

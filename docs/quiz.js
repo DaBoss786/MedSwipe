@@ -7,16 +7,19 @@ import {
 import { auth, db, doc, getDoc, collection, getDocs, query, where } from './firebase-config.js'; // Adjust path if needed
 import { logAnalyticsEvent } from './analytics.js';
 import {
-  fetchPersistentAnsweredIds, // <<<--- ADD THIS IMPORT
   recordAnswer,               // Needed for regular quizzes
   recordCmeAnswer,            // Needed for CME quizzes
   updateQuestionStats,        // Needed for regular quizzes
-  getBookmarks,               // Needed for bookmark filtering
   updateSpacedRepetitionData,
   recordChoiceSelection
 } from './user.v2.js';
 import { showLeaderboard } from './ui.js'; 
 import { playMedium, playLight, playTap } from './haptics.js';
+import { getAnsweredQuestionIds } from './answered-questions.js';
+import {
+  ONBOARDING_ERROR_CODES,
+  OnboardingFlowError
+} from './onboarding-controller.js';
 import {
   applyQuestionAccessPolicy,
   specialtyMatchesQuestion,
@@ -36,6 +39,17 @@ let currentFeedbackQuestionText = "";
 let sessionStartXP = 0;
 let questionStartTime = 0;
 let currentQuizType = 'regular';
+const ONBOARDING_POOL_CACHE_TTL_MS = 5 * 60 * 1000;
+const onboardingQuestionPoolCache = new Map();
+
+function asQuizLoadError(error, fallbackCode = ONBOARDING_ERROR_CODES.QUIZ_INIT_FAILED) {
+  if (error instanceof OnboardingFlowError) return error;
+  return new OnboardingFlowError(
+    error?.code || fallbackCode,
+    error?.message || 'The quiz could not be initialized.',
+    error ? { cause: error } : {}
+  );
+}
 
 /**
  * Applies a robust, mobile-first scroll lock to the page.
@@ -124,6 +138,102 @@ async function fetchQuestionBank() {
   }
 }
 
+async function fetchQuizUserContext() {
+  if (!auth?.currentUser) {
+    return { answeredIds: [], bookmarks: [], sessionStartXP: 0 };
+  }
+
+  const userDocRef = doc(db, 'users', auth.currentUser.uid);
+  const userDocSnap = await getDoc(userDocRef);
+  if (!userDocSnap.exists()) {
+    return { answeredIds: [], bookmarks: [], sessionStartXP: 0 };
+  }
+
+  const data = userDocSnap.data() || {};
+  return {
+    answeredIds: getAnsweredQuestionIds(data.answeredQuestions),
+    bookmarks: Array.isArray(data.bookmarks) ? data.bookmarks : [],
+    sessionStartXP: Number(data.stats?.xp || 0)
+  };
+}
+
+function scopeQuestionsForSpecialty(questions, specialty) {
+  const effectiveAuthState = {
+    ...getEffectiveAuthState(),
+    specialty
+  };
+  const specialtyScoped = questions.filter((question) =>
+    specialtyMatchesQuestion(question, specialty)
+  );
+  return applyQuestionAccessPolicy(specialtyScoped, effectiveAuthState);
+}
+
+async function fetchOnboardingQuestionPool(specialty, options = {}) {
+  const specialtyKey = String(specialty || 'ENT').trim().toLowerCase();
+  const forceRefresh = options.forceRefresh === true;
+  const now = Date.now();
+  const cached = onboardingQuestionPoolCache.get(specialtyKey);
+
+  if (!forceRefresh && cached && cached.expiresAt > now) {
+    if (cached.result) {
+      return { ...cached.result, source: 'cache' };
+    }
+    return cached.promise;
+  }
+
+  const promise = (async () => {
+    try {
+      const freeQuery = query(
+        collection(db, 'questions'),
+        where('Free', '==', true)
+      );
+      const freeSnapshot = await getDocs(freeQuery);
+      const freeQuestions = freeSnapshot.docs.map((snapshot) => snapshot.data());
+      let questions = scopeQuestionsForSpecialty(freeQuestions, specialty);
+      let source = 'network_free';
+
+      if (questions.length < 3) {
+        const fullBank = await fetchQuestionBank();
+        questions = scopeQuestionsForSpecialty(fullBank, specialty);
+        source = 'network_full_fallback';
+      }
+
+      if (questions.length < 3) {
+        throw new OnboardingFlowError(
+          ONBOARDING_ERROR_CODES.INSUFFICIENT_QUESTIONS,
+          `Only ${questions.length} eligible onboarding questions were found.`
+        );
+      }
+
+      const result = { questions, source };
+      onboardingQuestionPoolCache.set(specialtyKey, {
+        result,
+        expiresAt: Date.now() + ONBOARDING_POOL_CACHE_TTL_MS
+      });
+      return result;
+    } catch (error) {
+      onboardingQuestionPoolCache.delete(specialtyKey);
+      throw asQuizLoadError(
+        error,
+        error?.code || ONBOARDING_ERROR_CODES.QUESTION_FETCH_FAILED
+      );
+    }
+  })();
+
+  onboardingQuestionPoolCache.set(specialtyKey, {
+    promise,
+    expiresAt: now + ONBOARDING_POOL_CACHE_TTL_MS
+  });
+  return promise;
+}
+
+function prefetchOnboardingQuestionPool(specialty) {
+  return fetchOnboardingQuestionPool(specialty).catch((error) => {
+    console.warn('Onboarding question prefetch did not complete:', error);
+    return null;
+  });
+}
+
 function isQuestionCmeEligible(question) {
   const flag = question?.["CME Eligible"];
   if (typeof flag === 'boolean') {
@@ -201,6 +311,7 @@ async function loadQuestions(options = {}) {
   });
 
   try {
+    const userContext = options.userContext || await fetchQuizUserContext();
     let filteredQuestions = []; // Initialize as empty
     let answeredFilterApplied = false;
     let accessibleQuestionCountBeforeAnsweredFilter = 0;
@@ -214,7 +325,7 @@ async function loadQuestions(options = {}) {
       if (options.quizType !== 'cme' && !options.bookmarksOnly && !options.includeAnswered) {
         answeredFilterApplied = true;
         accessibleQuestionCountBeforeAnsweredFilter = filteredQuestions.length;
-        const answeredIds = await fetchPersistentAnsweredIds();
+        const answeredIds = userContext.answeredIds;
         filteredQuestions = applyCategoryAndAnsweredFilters({
           questions: filteredQuestions,
           includeAnswered: false,
@@ -237,7 +348,7 @@ async function loadQuestions(options = {}) {
         if (!options.includeAnswered) {
           answeredFilterApplied = true;
           accessibleQuestionCountBeforeAnsweredFilter = procedureQuestions.length;
-          const answeredIds = await fetchPersistentAnsweredIds();
+          const answeredIds = userContext.answeredIds;
           procedureQuestions = procedureQuestions.filter(q => !answeredIds.includes(q["Question"]?.trim()));
         }
         filteredQuestions = procedureQuestions;
@@ -249,11 +360,11 @@ async function loadQuestions(options = {}) {
         if (options.quizType === 'cme' && !options.includeAnswered) {
           // ... cme answered logic ...
         } else if (!options.bookmarksOnly && !options.includeAnswered) {
-          relevantAnsweredIdsForCurrentYear = await fetchPersistentAnsweredIds();
+          relevantAnsweredIdsForCurrentYear = userContext.answeredIds;
         }
 
         if (options.bookmarksOnly) {
-          const bookmarks = await getBookmarks();
+          const bookmarks = userContext.bookmarks;
           if (bookmarks.length === 0) {
             alert("You don't have any bookmarks yet!");
             document.getElementById("mainOptions").style.display = "flex";
@@ -320,7 +431,13 @@ async function loadQuestions(options = {}) {
 
       const mainOpts = document.getElementById("mainOptions");
       if (mainOpts) mainOpts.style.display = "flex";
-      return;
+      if (options.propagateErrors || options.isOnboarding) {
+        throw new OnboardingFlowError(
+          ONBOARDING_ERROR_CODES.INSUFFICIENT_QUESTIONS,
+          message
+        );
+      }
+      return { status: 'empty' };
     }
 
     let selectedQuestions = shuffleArray(filteredQuestions);
@@ -331,13 +448,21 @@ async function loadQuestions(options = {}) {
     }
     console.log("Final selected questions count:", selectedQuestions.length);
 
-    initializeQuiz(selectedQuestions, options.quizType || 'regular');
+    return await initializeQuiz(
+      selectedQuestions,
+      options.quizType || 'regular',
+      userContext
+    );
 
   } catch (error) {
     console.error("Error loading questions:", error);
+    if (options.propagateErrors || options.isOnboarding) {
+      throw asQuizLoadError(error);
+    }
     alert("Error loading questions. Please check your connection and try again.");
     const mainOpts = document.getElementById("mainOptions");
     if (mainOpts) mainOpts.style.display = "flex";
+    return { status: 'error', error };
   }
 }
 
@@ -481,7 +606,7 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
 }
 
 // Initialize the quiz with the selected questions
-async function initializeQuiz(questions, quizType = 'regular') {
+async function initializeQuiz(questions, quizType = 'regular', userContext = null) {
   console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
   currentQuizType = quizType; 
   questionStartTime = Date.now();
@@ -489,25 +614,8 @@ async function initializeQuiz(questions, quizType = 'regular') {
   if (window.mySwiper) {
       window.mySwiper.destroy(true, true);
   }
-  // Get starting XP before the quiz begins
-  try {
-    const isOnboardingQuiz = window.isOnboardingQuiz || false;
-    console.log("Initializing quiz, isOnboarding:", isOnboardingQuiz);
-    if (auth && auth.currentUser) {
-      const uid = auth.currentUser.uid;
-      const userDocRef = doc(db, 'users', uid);
-      const userDocSnap = await getDoc(userDocRef);
-      
-      if (userDocSnap.exists()) {
-        const data = userDocSnap.data();
-        sessionStartXP = data.stats?.xp || 0;
-        console.log("Quiz starting XP:", sessionStartXP);
-      }
-    }
-  } catch (error) {
-    console.error("Error getting starting XP:", error);
-    sessionStartXP = 0;
-  }
+  const resolvedUserContext = userContext || await fetchQuizUserContext();
+  sessionStartXP = resolvedUserContext.sessionStartXP || 0;
   
   currentQuestion = 0;
   score = 0;
@@ -516,9 +624,15 @@ async function initializeQuiz(questions, quizType = 'regular') {
   updateProgress();
   
   // Get bookmarks to show the filled star for bookmarked questions
-  const bookmarks = await getBookmarks();
+  const bookmarks = resolvedUserContext.bookmarks || [];
   
   const quizSlides = document.getElementById("quizSlides");
+  if (!quizSlides) {
+    throw new OnboardingFlowError(
+      ONBOARDING_ERROR_CODES.QUIZ_INIT_FAILED,
+      'The quiz slide container is unavailable.'
+    );
+  }
   quizSlides.innerHTML = "";
   questions.forEach(question => {
     const questionSlide = document.createElement("div");
@@ -581,7 +695,15 @@ async function initializeQuiz(questions, quizType = 'regular') {
   console.log("Attempting to scroll to top. Scroll will remain UNLOCKED for the first question.");
   window.scrollTo({ top: 0, behavior: 'instant' });
 
-  window.mySwiper = new Swiper('.swiper', {
+  const SwiperConstructor = window.Swiper || globalThis.Swiper;
+  if (typeof SwiperConstructor !== 'function') {
+    throw new OnboardingFlowError(
+      ONBOARDING_ERROR_CODES.SWIPER_UNAVAILABLE,
+      'The quiz renderer is unavailable.'
+    );
+  }
+
+  window.mySwiper = new SwiperConstructor('.swiper', {
     direction: 'vertical',
     loop: false,
     mousewheel: true,
@@ -627,7 +749,14 @@ async function initializeQuiz(questions, quizType = 'regular') {
   // Set the initial bookmark icon state for the first question
   updateBookmarkIcon();
 
-  document.querySelector(".swiper").style.display = "block";
+  const quizContainer = document.querySelector(".swiper");
+  if (!quizContainer || !quizSlides.querySelector('.swiper-slide .card')) {
+    throw new OnboardingFlowError(
+      ONBOARDING_ERROR_CODES.QUIZ_INIT_FAILED,
+      'The first quiz card could not be rendered.'
+    );
+  }
+  quizContainer.style.display = "block";
   document.getElementById("bottomToolbar").style.display = "flex";
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("performanceView").style.display = "none";
@@ -635,6 +764,25 @@ async function initializeQuiz(questions, quizType = 'regular') {
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
   // --- END OF MOVED CODE ---
+
+  if (
+    !window.mySwiper ||
+    !window.mySwiper.slides ||
+    window.mySwiper.slides.length === 0 ||
+    quizContainer.style.display === 'none'
+  ) {
+    throw new OnboardingFlowError(
+      ONBOARDING_ERROR_CODES.QUIZ_INIT_FAILED,
+      'Swiper did not expose the first quiz card.'
+    );
+  }
+
+  return {
+    status: 'ready',
+    questionCount: questions.length,
+    firstCardVisible: true,
+    swiperReady: true
+  };
 }
 
 // Function to lock/unlock swiping
@@ -1695,6 +1843,9 @@ export {
   initializeQuiz, // Export if needed elsewhere, maybe not
   // Add other functions from quiz.js if they need to be called from other files
   fetchQuestionBank, // Export if called from elsewhere (e.g. stats.js)
+  fetchOnboardingQuestionPool,
+  prefetchOnboardingQuestionPool,
+  fetchQuizUserContext,
   updateBookmarkIcon, // Export if called from elsewhere
   addOptionListeners, // Likely internal, probably don't need to export
   prepareSummary, // Likely internal

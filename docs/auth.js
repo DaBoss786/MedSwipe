@@ -67,7 +67,10 @@ window.authState = {
   cmeSubscriptionEndDate: null, // <<< ADD
   cmeCreditsAvailable: 0, // <<< ADD
   specialty: null,
-  specialtyPolicy: null
+  specialtyPolicy: null,
+  username: null,
+  experienceLevel: null,
+  onboardingSelectionsComplete: false
 };
 
 // ----------------------------------------------------
@@ -642,6 +645,9 @@ function initAuth() {
       window.authState.cmeCreditsAvailable = 0;
       window.authState.specialty = null;
       window.authState.specialtyPolicy = null;
+      window.authState.username = null;
+      window.authState.experienceLevel = null;
+      window.authState.onboardingSelectionsComplete = false;
 
       const applyIosNotificationDefaults = shouldAutoApplyIosNotificationDefaults();
 
@@ -730,6 +736,9 @@ function initAuth() {
         window.authState.accessTier = "free_guest"; // Set explicitly for new user
         // Other authState fields remain default (false/null/0)
         window.authState.hasProgress = false;
+        window.authState.username = userDataForWrite.username;
+        window.authState.experienceLevel = null;
+        window.authState.onboardingSelectionsComplete = false;
         console.log(`New user document created for ${user.uid}: hasProgress=false`);
       } else {
         // ---- Existing Firestore user doc ----
@@ -740,6 +749,9 @@ function initAuth() {
         );
 
         window.authState.isRegistered = currentAuthIsRegistered; // Set from auth type
+        window.authState.username = existingData.username || user.displayName || null;
+        window.authState.experienceLevel = existingData.experienceLevel || null;
+        window.authState.onboardingSelectionsComplete = Boolean(existingData.onboardingCompletedAt);
 
         const hasNotificationOptIn = typeof existingData.notificationOptIn === 'boolean';
         if (applyIosNotificationDefaults && !hasNotificationOptIn) {
@@ -976,7 +988,10 @@ function initAuth() {
           cmeSubscriptionEndDate: window.authState.cmeSubscriptionEndDate,
           cmeCreditsAvailable: window.authState.cmeCreditsAvailable,
           specialty: window.authState.specialty,
-          specialtyPolicy: window.authState.specialtyPolicy
+          specialtyPolicy: window.authState.specialtyPolicy,
+          username: window.authState.username,
+          experienceLevel: window.authState.experienceLevel,
+          onboardingSelectionsComplete: window.authState.onboardingSelectionsComplete
         }
       })
     );
@@ -1124,6 +1139,9 @@ export async function refreshAuthStateFromFirestore(options = {}) {
 
   window.authState.accessTier = accessTier;
   window.authState.specialty = specialty;
+  window.authState.username = data.username || currentUser.displayName || null;
+  window.authState.experienceLevel = data.experienceLevel || null;
+  window.authState.onboardingSelectionsComplete = Boolean(data.onboardingCompletedAt);
   window.authState.boardReviewActive = boardReviewActive;
   window.authState.boardReviewSubscriptionEndDate = boardReviewSubscriptionEndDate;
   window.authState.cmeSubscriptionActive = cmeSubscriptionActive;
@@ -1158,7 +1176,10 @@ export async function refreshAuthStateFromFirestore(options = {}) {
           cmeSubscriptionEndDate: window.authState.cmeSubscriptionEndDate,
           cmeCreditsAvailable: window.authState.cmeCreditsAvailable,
           specialty: window.authState.specialty,
-          specialtyPolicy: window.authState.specialtyPolicy
+          specialtyPolicy: window.authState.specialtyPolicy,
+          username: window.authState.username,
+          experienceLevel: window.authState.experienceLevel,
+          onboardingSelectionsComplete: window.authState.onboardingSelectionsComplete
         }
       })
     );

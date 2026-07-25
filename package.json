@@ -8,7 +8,9 @@
   "scripts": {
     "lint": "eslint . --ext .js",
     "test:docs": "vitest run --config docs/vitest.config.mjs",
-    "verify:web-assets": "node scripts/verify-web-assets.mjs"
+    "verify:web-assets": "node scripts/verify-web-assets.mjs",
+    "sync:web-vendor": "node scripts/sync-web-vendor.mjs",
+    "verify:web-vendor": "node scripts/sync-web-vendor.mjs --check"
   },
   "dependencies": {
     "@capacitor-firebase/analytics": "^7.4.0",
@@ -24,6 +26,7 @@
     "@capawesome/capacitor-app-review": "^7.0.1",
     "@revenuecat/purchases-capacitor": "^11.2.3",
     "firebase": "^11.10.0",
-    "onesignal-cordova-plugin": "^5.2.17"
+    "onesignal-cordova-plugin": "^5.2.17",
+    "swiper": "8.4.7"
   }
 }
