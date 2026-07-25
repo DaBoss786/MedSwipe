@@ -761,6 +761,18 @@ async function initializeQuiz(questions, quizType = 'regular', userContext = nul
   window.mySwiper.on('slideChangeTransitionEnd', function() {
     const activeIndex = window.mySwiper.activeIndex;
     const previousIndex = window.mySwiper.previousIndex;
+    const previousSlide = window.mySwiper.slides?.[previousIndex];
+
+    if (
+      typeof previousIndex === 'number' &&
+      previousIndex !== activeIndex &&
+      previousIndex % 2 === 0
+    ) {
+      const previousCard = previousSlide?.querySelector('.card');
+      if (previousCard) {
+        previousCard.dataset.correctPeerHapticEligible = "false";
+      }
+    }
 
     if (typeof previousIndex === 'number' && activeIndex > previousIndex && activeIndex % 2 === 0) {
       playLight();
@@ -988,6 +1000,30 @@ function renderPeerStats(answerContext, peerStats) {
   return true;
 }
 
+function playCorrectPeerHapticIfEligible(answerContext) {
+  if (
+    !answerContext.isCorrect ||
+    answerContext.card.dataset.correctPeerHapticEligible !== "true" ||
+    answerContext.card.dataset.correctPeerHapticPlayed === "true" ||
+    activeQuizRunId !== answerContext.quizRunId ||
+    !answerContext.card.isConnected
+  ) {
+    return false;
+  }
+
+  const swiper = window.mySwiper;
+  const activeSlide = swiper?.slides?.[swiper.activeIndex];
+  if (activeSlide !== answerContext.questionSlide) {
+    answerContext.card.dataset.correctPeerHapticEligible = "false";
+    return false;
+  }
+
+  answerContext.card.dataset.correctPeerHapticPlayed = "true";
+  answerContext.card.dataset.correctPeerHapticEligible = "false";
+  invokeHaptic(playMedium);
+  return true;
+}
+
 function getQuizPlatform() {
   try {
     return window.Capacitor?.getPlatform?.() || 'web';
@@ -1002,6 +1038,9 @@ function startPeerStatsWork(answerContext) {
     .then(() => recordChoiceSelection(answerContext.qId, answerContext.selected))
     .then((peerStats) => {
       const rendered = renderPeerStats(answerContext, peerStats);
+      if (rendered) {
+        playCorrectPeerHapticIfEligible(answerContext);
+      }
       return {
         outcome: peerStats ? (rendered ? 'rendered' : 'stale') : 'unavailable',
         durationMs: Date.now() - startedAt
@@ -1134,6 +1173,7 @@ function addOptionListeners() {
     if (!card || card.dataset.answerCommitted === "true" || card.classList.contains('answered')) return;
     card.dataset.answerCommitted = "true";
     card.classList.add('answered');
+    card.dataset.correctPeerHapticEligible = "true";
 
     const questionSlide = card.closest('.swiper-slide');
     const qId = questionSlide.dataset.id;
@@ -1193,12 +1233,6 @@ function addOptionListeners() {
             option.classList.add('incorrect');
         }
     });
-    if (isCorrect) {
-      const scheduleHaptic = typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame.bind(window)
-        : (callback) => callback();
-      scheduleHaptic(() => invokeHaptic(playMedium));
-    }
           if (!isCorrect) { this.classList.add('incorrect'); }
           const hint = card.querySelector('.swipe-hint');
           console.log("Found hint element:", hint); // Debug log

@@ -105,10 +105,14 @@ function installQuizDom() {
       this.allowSlideNext = false;
       this.allowTouchMove = true;
       this.destroy = vi.fn();
-      this.on = vi.fn();
+      this.handlers = {};
+      this.on = vi.fn((event, handler) => {
+        this.handlers[event] = handler;
+      });
       this.slideTo = vi.fn((index) => {
         this.previousIndex = this.activeIndex;
         this.activeIndex = index;
+        this.handlers.slideChangeTransitionEnd?.call(this);
       });
       this.update = vi.fn(() => {
         this.slides = Array.from(document.querySelectorAll('#quizSlides .swiper-slide'));
@@ -148,7 +152,7 @@ describe('quiz answer feedback', () => {
     delete window.isOnboardingQuiz;
   });
 
-  it('commits correct styling, haptics, explanation, and summary before remote work settles', async () => {
+  it('commits correct styling, tap haptic, explanation, and summary before remote work settles', async () => {
     const peer = deferred();
     const answerWrite = deferred();
     const statsWrite = deferred();
@@ -174,7 +178,7 @@ describe('quiz answer feedback', () => {
     expect(document.getElementById('viewSummaryBtn').textContent).toBe('View Quiz Summary');
     expect(window.mySwiper.allowSlideNext).toBe(true);
     expect(playTap).toHaveBeenCalledTimes(1);
-    expect(playMedium).toHaveBeenCalledTimes(1);
+    expect(playMedium).not.toHaveBeenCalled();
     expect(recordChoiceSelection).not.toHaveBeenCalled();
 
     selected.click();
@@ -199,6 +203,7 @@ describe('quiz answer feedback', () => {
     expect(neutral.querySelector('.bar-neutral').style.width).toBe('40%');
     expect(selected.querySelector('.peer-percentage').textContent).toBe('60%');
     expect(document.querySelectorAll('.peer-stat-bar')).toHaveLength(3);
+    expect(playMedium).toHaveBeenCalledTimes(1);
     const asyncEvent = logAnalyticsEvent.mock.calls.find(
       ([name]) => name === 'quiz_answer_async_result'
     );
@@ -213,6 +218,14 @@ describe('quiz answer feedback', () => {
   });
 
   it('shows the selected incorrect choice in red and the correct choice in green without a medium haptic', async () => {
+    recordChoiceSelection.mockResolvedValue({
+      choiceA: 3,
+      choiceB: 2,
+      choiceC: 0,
+      choiceD: 0,
+      choiceE: 0,
+      totalResponses: 5
+    });
     await initializeQuiz([createQuestion({ text: 'Immediate incorrect feedback' })], 'regular', {
       bookmarks: [],
       sessionStartXP: 0
@@ -231,6 +244,38 @@ describe('quiz answer feedback', () => {
     );
     expect(document.getElementById('viewSummaryBtn').textContent).toBe('View Quiz Summary');
     expect(document.body.textContent).not.toContain('Loading Summary');
+    await flushPromises();
+    expect(document.querySelectorAll('.peer-stat-bar')).toHaveLength(3);
+    expect(playMedium).not.toHaveBeenCalled();
+  });
+
+  it('suppresses a late correct haptic after the user leaves the question slide', async () => {
+    const peer = deferred();
+    recordChoiceSelection.mockReturnValue(peer.promise);
+
+    await initializeQuiz([createQuestion({ text: 'Late peer haptic' })], 'regular', {
+      bookmarks: [],
+      sessionStartXP: 0
+    });
+
+    const questionSlide = document.querySelector('.swiper-slide[data-id="Late peer haptic"]');
+    const selected = questionSlide.querySelector('[data-option="A"]');
+    selected.click();
+    await flushPromises();
+
+    window.mySwiper.slideTo(1);
+    peer.resolve({
+      choiceA: 1,
+      choiceB: 0,
+      choiceC: 0,
+      choiceD: 0,
+      choiceE: 0,
+      totalResponses: 1
+    });
+    await flushPromises();
+
+    expect(selected.querySelector('.peer-percentage').textContent).toBe('100%');
+    expect(playMedium).not.toHaveBeenCalled();
   });
 
   it('keeps question identity stable when peer requests finish in reverse order', async () => {
@@ -292,6 +337,7 @@ describe('quiz answer feedback', () => {
     );
     expect(window.mySwiper.allowSlideNext).toBe(true);
     expect(document.querySelectorAll('.peer-stat-bar')).toHaveLength(0);
+    expect(playMedium).not.toHaveBeenCalled();
     expect(document.getElementById('viewSummaryBtn').disabled).toBe(false);
   });
 
