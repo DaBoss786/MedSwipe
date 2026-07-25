@@ -605,6 +605,23 @@ async function loadQuestionsWithSpacedRepetition(options, allQuestions, answered
   }
 }
 
+function waitForNextQuizPaint() {
+  return new Promise((resolve) => {
+    let fallbackTimer = null;
+    const finish = () => {
+      if (fallbackTimer !== null) {
+        clearTimeout(fallbackTimer);
+      }
+      resolve();
+    };
+
+    fallbackTimer = setTimeout(finish, 50);
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(finish);
+    }
+  });
+}
+
 // Initialize the quiz with the selected questions
 async function initializeQuiz(questions, quizType = 'regular', userContext = null) {
   console.log(`Initializing quiz. Type: ${quizType}, Questions: ${questions.length}`); // Log quiz type
@@ -695,6 +712,19 @@ async function initializeQuiz(questions, quizType = 'regular', userContext = nul
   console.log("Attempting to scroll to top. Scroll will remain UNLOCKED for the first question.");
   window.scrollTo({ top: 0, behavior: 'instant' });
 
+  const quizContainer = document.querySelector(".swiper");
+  if (!quizContainer || !quizSlides.querySelector('.swiper-slide .card')) {
+    throw new OnboardingFlowError(
+      ONBOARDING_ERROR_CODES.QUIZ_INIT_FAILED,
+      'The first quiz card could not be rendered.'
+    );
+  }
+
+  // Swiper cannot reliably calculate its slides while its root is display:none.
+  // Reveal it underneath the onboarding overlay before construction; the
+  // controller keeps it inert until this function reports that it is ready.
+  quizContainer.style.display = "block";
+
   const SwiperConstructor = window.Swiper || globalThis.Swiper;
   if (typeof SwiperConstructor !== 'function') {
     throw new OnboardingFlowError(
@@ -749,14 +779,6 @@ async function initializeQuiz(questions, quizType = 'regular', userContext = nul
   // Set the initial bookmark icon state for the first question
   updateBookmarkIcon();
 
-  const quizContainer = document.querySelector(".swiper");
-  if (!quizContainer || !quizSlides.querySelector('.swiper-slide .card')) {
-    throw new OnboardingFlowError(
-      ONBOARDING_ERROR_CODES.QUIZ_INIT_FAILED,
-      'The first quiz card could not be rendered.'
-    );
-  }
-  quizContainer.style.display = "block";
   document.getElementById("bottomToolbar").style.display = "flex";
   document.getElementById("mainOptions").style.display = "none";
   document.getElementById("performanceView").style.display = "none";
@@ -764,6 +786,14 @@ async function initializeQuiz(questions, quizType = 'regular', userContext = nul
   document.getElementById("aboutView").style.display = "none";
   document.getElementById("faqView").style.display = "none";
   // --- END OF MOVED CODE ---
+
+  if (typeof window.mySwiper?.update === 'function') {
+    window.mySwiper.update();
+  }
+  await waitForNextQuizPaint();
+  if (typeof window.mySwiper?.update === 'function') {
+    window.mySwiper.update();
+  }
 
   if (
     !window.mySwiper ||
