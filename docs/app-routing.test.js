@@ -309,7 +309,7 @@ describe('handleRegistrationSuccessFlow pending redirects', () => {
         accessTier: 'free_guest',
         boardReviewActive: false,
         cmeSubscriptionActive: false,
-        specialty: ''
+        specialty: 'Urology'
       })
     });
 
@@ -327,5 +327,6 @@ describe('handleRegistrationSuccessFlow pending redirects', () => {
     expect(document.getElementById('welcomeScreen').style.display).toBe('none');
     expect(document.getElementById('brAnnualContent').style.display).toBe('block');
     expect(document.getElementById('brAnnualBtn').classList.contains('active')).toBe(true);
+    expect(window.authState.specialty).toBe('Urology');
   });
 });

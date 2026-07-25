@@ -20,6 +20,8 @@ import {
   // --- Added for linkWithCredential ---
   EmailAuthProvider,
   linkWithCredential,
+  linkWithPopup,
+  linkWithRedirect,
   GoogleAuthProvider,
   OAuthProvider,
   signInWithCredential,
@@ -189,10 +191,99 @@ function isUserCancelledError(error) {
   return code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request';
 }
 
-async function handleOAuthResult(result, { providerKey, flow = 'login', marketingOptIn = false, referrerId = null }) {
+function isOAuthCredentialConflict(error) {
+  return error?.code === 'auth/credential-already-in-use'
+    || error?.code === 'auth/email-already-in-use'
+    || error?.code === 'auth/account-exists-with-different-credential';
+}
+
+function getCredentialFromOAuthError(error, providerKey) {
+  try {
+    if (providerKey === 'google') {
+      return GoogleAuthProvider.credentialFromError(error);
+    }
+    if (providerKey === 'apple') {
+      return OAuthProvider.credentialFromError(error);
+    }
+  } catch (credentialError) {
+    console.warn('Unable to recover an OAuth credential from the linking error:', credentialError);
+  }
+  return null;
+}
+
+function getAnonymousUserForRegistration(flow) {
+  const currentUser = auth?.currentUser;
+  return flow === 'register' && currentUser?.isAnonymous ? currentUser : null;
+}
+
+async function authenticateWithNativeCredential(firebaseCredential, flow) {
+  const anonymousUser = getAnonymousUserForRegistration(flow);
+  if (!anonymousUser) {
+    return {
+      userCredential: await signInWithCredential(auth, firebaseCredential),
+      anonymousUpgrade: false
+    };
+  }
+
+  try {
+    return {
+      userCredential: await linkWithCredential(anonymousUser, firebaseCredential),
+      anonymousUpgrade: true
+    };
+  } catch (error) {
+    if (!isOAuthCredentialConflict(error)) {
+      throw error;
+    }
+
+    console.info('OAuth credential belongs to an existing account; signing into that account.');
+    return {
+      userCredential: await signInWithCredential(auth, firebaseCredential),
+      anonymousUpgrade: false
+    };
+  }
+}
+
+async function authenticateWithPopup(provider, providerKey, flow) {
+  const anonymousUser = getAnonymousUserForRegistration(flow);
+  if (!anonymousUser) {
+    return {
+      userCredential: await signInWithPopup(auth, provider),
+      anonymousUpgrade: false
+    };
+  }
+
+  try {
+    return {
+      userCredential: await linkWithPopup(anonymousUser, provider),
+      anonymousUpgrade: true
+    };
+  } catch (error) {
+    if (!isOAuthCredentialConflict(error)) {
+      throw error;
+    }
+
+    const existingCredential = getCredentialFromOAuthError(error, providerKey);
+    console.info('OAuth provider belongs to an existing account; signing into that account.');
+    return {
+      userCredential: existingCredential
+        ? await signInWithCredential(auth, existingCredential)
+        : await signInWithPopup(auth, provider),
+      anonymousUpgrade: false
+    };
+  }
+}
+
+async function handleOAuthResult(result, {
+  providerKey,
+  flow = 'login',
+  marketingOptIn = false,
+  referrerId = null,
+  anonymousUpgrade = false
+}) {
   const additionalUserInfo = getAdditionalUserInfo(result);
-  const isNewUser = !!additionalUserInfo?.isNewUser;
-  const effectiveFlow = isNewUser ? 'register' : flow;
+  const firebaseIsNewUser = !!additionalUserInfo?.isNewUser;
+  const completedRegistration = firebaseIsNewUser || anonymousUpgrade;
+  const effectiveFlow = completedRegistration ? 'register' : flow;
   const user = result.user;
 
   let finalizeResult = null;
@@ -251,7 +342,7 @@ async function handleOAuthResult(result, { providerKey, flow = 'login', marketin
     usernameForFinalize = generateGuestUsername();
   }
 
-  if (isNewUser) {
+  if (completedRegistration) {
     if (!finalizeRegistrationFunction) {
       throw new Error('Registration service is not available. Please try again later.');
     }
@@ -282,7 +373,9 @@ async function handleOAuthResult(result, { providerKey, flow = 'login', marketin
     provider: providerKey,
     flow: effectiveFlow,
     user,
-    isNewUser,
+    isNewUser: completedRegistration,
+    firebaseIsNewUser,
+    anonymousUpgrade,
     finalizeResult,
     referralCleared
   };
@@ -333,7 +426,8 @@ async function processOAuthRedirectResult() {
       providerKey,
       flow: context?.flow || 'login',
       marketingOptIn: context?.marketingOptIn ?? false,
-      referrerId
+      referrerId,
+      anonymousUpgrade: context?.authOperation === 'link'
     });
 
     try {
@@ -345,6 +439,29 @@ async function processOAuthRedirectResult() {
     window.dispatchEvent(new CustomEvent('oauthRedirectResult', { detail: outcome }));
     return outcome;
   } catch (error) {
+    if (context?.authOperation === 'link' && isOAuthCredentialConflict(error)) {
+      try {
+        const existingCredential = getCredentialFromOAuthError(error, context?.providerKey);
+        if (!existingCredential) {
+          throw error;
+        }
+        const signInResult = await signInWithCredential(auth, existingCredential);
+        const outcome = await handleOAuthResult(signInResult, {
+          providerKey: context?.providerKey,
+          flow: context?.flow || 'login',
+          marketingOptIn: context?.marketingOptIn ?? false,
+          referrerId: context?.referrerId ?? null,
+          anonymousUpgrade: false
+        });
+        sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
+        window.__medswipeOAuthRedirectOutcome = outcome;
+        window.dispatchEvent(new CustomEvent('oauthRedirectResult', { detail: outcome }));
+        return outcome;
+      } catch (fallbackError) {
+        error = fallbackError;
+      }
+    }
+
     try {
       sessionStorage.removeItem(OAUTH_CONTEXT_STORAGE_KEY);
     } catch (err) {
@@ -377,6 +494,8 @@ async function oauthSignIn(providerKey, options = {}) {
   const isNativeRuntime = Boolean(isNativeApp);
 
   const startRedirectFlow = async () => {
+    const anonymousUser = getAnonymousUserForRegistration(flow);
+    const authOperation = anonymousUser ? 'link' : 'sign_in';
     try {
       sessionStorage.setItem(
         OAUTH_CONTEXT_STORAGE_KEY,
@@ -384,7 +503,8 @@ async function oauthSignIn(providerKey, options = {}) {
           providerKey,
           flow,
           marketingOptIn,
-          referrerId
+          referrerId,
+          authOperation
         })
       );
     } catch (storageErr) {
@@ -392,7 +512,11 @@ async function oauthSignIn(providerKey, options = {}) {
     }
 
     try {
-      await signInWithRedirect(auth, provider);
+      if (anonymousUser) {
+        await linkWithRedirect(anonymousUser, provider);
+      } else {
+        await signInWithRedirect(auth, provider);
+      }
       return { status: 'redirect', provider: providerKey, flow };
     } catch (redirectError) {
       try {
@@ -416,12 +540,13 @@ async function oauthSignIn(providerKey, options = {}) {
           nativeCredential.idToken || undefined,
           nativeCredential.accessToken || undefined
         );
-        const userCredential = await signInWithCredential(auth, firebaseCredential);
-        return await handleOAuthResult(userCredential, {
+        const authResult = await authenticateWithNativeCredential(firebaseCredential, flow);
+        return await handleOAuthResult(authResult.userCredential, {
           providerKey,
           flow,
           marketingOptIn,
-          referrerId
+          referrerId,
+          anonymousUpgrade: authResult.anonymousUpgrade
         });
       } catch (nativeError) {
         console.error('Native Google sign-in error:', nativeError);
@@ -439,12 +564,13 @@ async function oauthSignIn(providerKey, options = {}) {
           idToken: nativeCredential.idToken,
           rawNonce: nativeCredential.nonce || undefined
         });
-        const userCredential = await signInWithCredential(auth, firebaseCredential);
-        return await handleOAuthResult(userCredential, {
+        const authResult = await authenticateWithNativeCredential(firebaseCredential, flow);
+        return await handleOAuthResult(authResult.userCredential, {
           providerKey,
           flow,
           marketingOptIn,
-          referrerId
+          referrerId,
+          anonymousUpgrade: authResult.anonymousUpgrade
         });
       } catch (nativeError) {
         console.error('Native Apple sign-in error:', nativeError);
@@ -456,12 +582,13 @@ async function oauthSignIn(providerKey, options = {}) {
   }
 
   try {
-    const result = await signInWithPopup(auth, provider);
-    return await handleOAuthResult(result, {
+    const authResult = await authenticateWithPopup(provider, providerKey, flow);
+    return await handleOAuthResult(authResult.userCredential, {
       providerKey,
       flow,
       marketingOptIn,
-      referrerId
+      referrerId,
+      anonymousUpgrade: authResult.anonymousUpgrade
     });
   } catch (error) {
     if (shouldFallbackToRedirect(error)) {
