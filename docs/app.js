@@ -20,6 +20,7 @@ import { initialize as initializeBilling, startBoardReviewCheckout, startCmeChec
 import { detectNativeApp } from './platform.js';
 import { playTap, playLight } from './haptics.js';
 import { applyCasePrepDashboardLayout } from './dashboard-specialty-ui.js';
+import { activateDashboardRoot } from './dashboard-state.js';
 import {
   getAvailableCategoriesForUser,
   getAvailableCasePrepProcedures
@@ -2612,11 +2613,11 @@ function showDashboard() {
   clearPendingDeepLink({ reroute: false });
   clearDisabledCmeRedirectState();
   applySpecialtyUiPolicy();
-  const mainOptions = document.getElementById('mainOptions');
+  const mainOptions = activateDashboardRoot();
   if (mainOptions) {
-    mainOptions.style.display = 'flex';
     queueDashboardRefresh();
   }
+  return mainOptions;
 }
 
 function showFreeAccessRegistrationPrompt() {
@@ -3496,14 +3497,12 @@ function initializePaywallFreeAccessButton() {
   newContinueFreeAccessBtn.addEventListener("click", function() {
     console.log("Paywall 'Continue as Guest' button clicked.");
 
-    const mainOptions = document.getElementById("mainOptions"); // Your main dashboard view
-
     // Hide the paywall screen
     hidePaywallScreen();
 
-    // Show the main dashboard
+    // Show the dashboard and clear any inert/aria-hidden state left by onboarding.
+    const mainOptions = showDashboard();
     if (mainOptions) {
-      mainOptions.style.display = "flex"; // Or "block"
       // Ensure dashboard is initialized if it's the first time
       // (initializeDashboard might already be called on auth state change,
       // but an explicit call here can ensure UI elements are up-to-date for a guest)
@@ -6820,7 +6819,7 @@ function forceReinitializeDashboard() {
   }
   
   // 2. Force a redraw/layout recalculation of the dashboard
-  const mainOptions = document.getElementById("mainOptions");
+  const mainOptions = activateDashboardRoot();
   if (mainOptions) {
     // Make sure the mainOptions has a lower z-index than any potential overlays
     mainOptions.style.zIndex = "1";
