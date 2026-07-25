@@ -14,6 +14,14 @@ describe('specialty onboarding markup', () => {
     expect(indexHtml).not.toContain('data-specialty="Urology" disabled');
   });
 
+  it('shows Anesthesiology as an enabled onboarding specialty', () => {
+    expect(indexHtml).toContain('data-specialty="Anesthesiology"');
+    expect(indexHtml).toMatch(
+      /data-specialty="Anesthesiology"[^>]*>\s*Anesthesiology\s*<\/button>/
+    );
+    expect(indexHtml).not.toContain('data-specialty="Anesthesiology" disabled');
+  });
+
   it('shows all supported specialties on the landing page without the hero rotator', () => {
     expect(homepageHtml).toContain('Otolaryngology');
     expect(homepageHtml).toContain('Neurosurgery');
@@ -21,5 +29,6 @@ describe('specialty onboarding markup', () => {
     expect(homepageHtml).toContain('specialty-chip-row');
     expect(homepageHtml).not.toContain('specialty-rotator');
     expect(homepageHtml).not.toContain('specialty-current');
+    expect(homepageHtml).not.toContain('Anesthesiology');
   });
 });

@@ -44,7 +44,7 @@ describe('applyCategoryAndAnsweredFilters', () => {
 });
 
 describe('getEmptyQuestionMessage', () => {
-  it.each(['ENT', 'Neurosurgery', 'Urology'])(
+  it.each(['ENT', 'Neurosurgery', 'Urology', 'Anesthesiology'])(
     'returns the clear exhaustion message for an unfiltered %s free-tier quiz',
     () => {
       expect(getEmptyQuestionMessage({
@@ -180,6 +180,42 @@ describe('getAvailableCategoriesForUser', () => {
     });
 
     expect(result.map((entry) => entry.category)).toEqual(['Free Urology']);
+  });
+
+  it('returns all specialty-scoped Anesthesiology categories for paid users', () => {
+    const questions = [
+      { Question: 'Q1', Category: 'Pharmacology', Specialty: 'Anesthesiology', Free: true },
+      { Question: 'Q2', Category: 'Airway', Specialty: 'Anesthesiology', Free: false },
+      { Question: 'Q3', Category: 'Stones', Specialty: 'Urology', Free: false },
+      { Question: 'Q4', Category: 'Core Concepts', Free: false }
+    ];
+
+    const result = getAvailableCategoriesForUser({
+      questions,
+      authState: { specialty: 'Anesthesiology', accessTier: 'board_review' }
+    });
+
+    expect(result.map((entry) => entry.category)).toEqual([
+      'Airway',
+      'Core Concepts',
+      'Pharmacology'
+    ]);
+  });
+
+  it('treats free Anesthesiology users like the default paid-product path, not a pilot', () => {
+    const questions = [
+      { Question: 'Q1', Category: 'Free Anesthesia', Specialty: 'Anesthesiology', Free: true },
+      { Question: 'Q2', Category: 'Premium Anesthesia', Specialty: 'Anesthesiology', Free: false, pilotNeurosurgery: true },
+      { Question: 'Q3', Category: 'Shared Premium', Free: false, pilotNeurosurgery: true },
+      { Question: 'Q4', Category: 'ENT Free', Specialty: 'ENT', Free: true }
+    ];
+
+    const result = getAvailableCategoriesForUser({
+      questions,
+      authState: { specialty: 'Anesthesiology', accessTier: 'free_guest' }
+    });
+
+    expect(result.map((entry) => entry.category)).toEqual(['Free Anesthesia']);
   });
 
   it('excludes categories that only have inaccessible questions', () => {

@@ -4119,25 +4119,39 @@ button:not(:disabled):active {
   left: 0;
   width: 100%;
   height: 100%;
+  height: 100dvh;
   background: #FFFFFF; /* Match welcome screen */
   display: flex; /* Will be controlled by JS to show/hide */
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   z-index: 9997; /* Below welcome, above main content */
   opacity: 1; /* Start visible when display is not 'none' */
   transition: opacity 0.5s ease-out;
-  padding: 20px;
+  padding:
+    calc(12px + env(safe-area-inset-top, 0px))
+    20px
+    calc(12px + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
   text-align: center;
+  overflow: hidden;
 }
 
 .onboarding-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  justify-content: safe center;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   max-width: 500px; /* Max width for content */
+  padding: clamp(8px, 3vh, 24px) 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onboarding-logo {
@@ -4340,21 +4354,45 @@ button:not(:disabled):active {
 
 /* Responsive adjustments */
 @media (max-width: 480px) {
+  .onboarding-screen {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .onboarding-content {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .onboarding-logo {
+    width: 160px;
+    margin-bottom: 16px;
+  }
   .notification-explainer-title {
     font-size: 1.6rem;
   }
   .onboarding-title {
     font-size: 1.4rem;
+    margin-bottom: 10px;
   }
   .onboarding-subtitle {
     font-size: 0.9rem;
+    margin-bottom: 18px;
+  }
+  .onboarding-options-grid {
+    gap: 10px;
+    margin-bottom: 18px;
   }
   .onboarding-option-card {
     font-size: 1rem;
-    padding: 15px;
+    min-height: 64px;
+    padding: 12px;
+  }
+  .onboarding-options-list {
+    gap: 8px;
+    margin-bottom: 18px;
   }
   .onboarding-primary-btn {
     font-size: 1.1rem;
+    flex: 0 0 auto;
   }
   .notification-explainer-body {
     font-size: 0.95rem;
@@ -4415,11 +4453,10 @@ button:not(:disabled):active {
 }
 
 .onboarding-progress-strip {
-  position: absolute;
-  left: 50%;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
+  position: static;
+  flex: 0 0 auto;
   width: min(360px, calc(100% - 40px));
+  margin-top: 12px;
   text-align: center;
   pointer-events: none;
 }

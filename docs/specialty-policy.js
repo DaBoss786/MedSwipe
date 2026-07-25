@@ -3,6 +3,7 @@ import { db, doc, getDoc } from './firebase-config.js';
 const SPECIALTY_POLICY_COLLECTION = 'specialtyAccessPolicies';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CME_MODULE_ENABLED = false;
+const HIDDEN_CASE_PREP_SPECIALTIES = new Set(['anesthesiology']);
 
 const BASE_POLICY = Object.freeze({
   enabled: false,
@@ -149,6 +150,13 @@ export function resolvePolicyFromAuthState(authState = {}) {
   }
 
   return buildSpecialtyPolicy(specialtyKey, null);
+}
+
+export function getCasePrepModeForSpecialty(specialty, policy = {}) {
+  if (HIDDEN_CASE_PREP_SPECIALTIES.has(normalizeSpecialtyKey(specialty))) {
+    return 'hidden';
+  }
+  return sanitizeText(policy?.casePrepMode, 'default');
 }
 
 function hasBaseBoardReviewAccess(authState = {}) {

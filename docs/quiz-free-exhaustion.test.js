@@ -65,7 +65,8 @@ describe('loadQuestions free-tier exhaustion', () => {
   it.each([
     { specialty: 'ENT', isAnonymous: false },
     { specialty: 'Neurosurgery', isAnonymous: false },
-    { specialty: 'Urology', isAnonymous: true }
+    { specialty: 'Urology', isAnonymous: true },
+    { specialty: 'Anesthesiology', isAnonymous: false }
   ])(
     'shows the clear message for an exhausted $specialty free-tier prefiltered quiz',
     async ({ specialty, isAnonymous }) => {

@@ -11,12 +11,14 @@ import { displayPerformance } from './stats.js';
 import { initialize as initializeBilling, startBoardReviewCheckout, startCmeCheckout, restorePurchases } from './billing-service.js';
 import { detectNativeApp } from './platform.js';
 import { playTap, playLight } from './haptics.js';
+import { applyCasePrepDashboardLayout } from './dashboard-specialty-ui.js';
 import {
   getAvailableCategoriesForUser,
   getAvailableCasePrepProcedures
 } from './quiz-filtering.js';
 import {
   getSpecialtyPolicy,
+  getCasePrepModeForSpecialty,
   isCmeGloballyEnabled,
   resolvePolicyFromAuthState,
   userHasBoardReviewAccess as hasBoardReviewAccessByPolicy,
@@ -1437,10 +1439,14 @@ export async function handleQuestionDeepLink(urlOrPath) {
       const casePrepComingSoonCloseBtn = document.getElementById("casePrepComingSoonCloseBtn");
 
       function isCasePrepComingSoonForUser() {
-        const policy = resolvePolicyFromAuthState(window.authState || {
+        const state = window.authState || {
           specialty: getCurrentUserSpecialty()
-        });
-        return policy.casePrepMode === 'coming_soon';
+        };
+        const policy = resolvePolicyFromAuthState(state);
+        return getCasePrepModeForSpecialty(
+          state.specialty || getCurrentUserSpecialty(),
+          policy
+        ) === 'coming_soon';
       }
 
          /**
@@ -2483,6 +2489,10 @@ function applySpecialtyUiPolicy() {
   const state = window.authState || {};
   const policy = resolvePolicyFromAuthState(state);
   const hideCme = shouldHideCmeUi(state, policy);
+  const casePrepMode = getCasePrepModeForSpecialty(
+    state.specialty || state.selectedSpecialty,
+    policy
+  );
 
   const cmeModuleBtn = document.getElementById('cmeModuleBtn');
   const cmeInfoMenuItem = document.getElementById('cmeInfoMenuItem');
@@ -2492,11 +2502,6 @@ function applySpecialtyUiPolicy() {
   const dashboardCmeCard = document.getElementById('dashboardCmeCard');
   const mainOptions = document.getElementById('mainOptions');
   const casePrepBtn = document.getElementById('casePrepBtn');
-  const dashboardRows = mainOptions
-    ? mainOptions.querySelectorAll('.dashboard-start-section')
-    : [];
-  const primaryRow = dashboardRows[0] || null;
-  const secondaryRow = dashboardRows[1] || null;
 
   if (cmeModuleBtn) {
     cmeModuleBtn.style.display = hideCme ? 'none' : '';
@@ -2517,20 +2522,12 @@ function applySpecialtyUiPolicy() {
     dashboardCmeCard.style.display = hideCme ? 'none' : dashboardCmeCard.style.display;
   }
 
-  if (primaryRow && secondaryRow && casePrepBtn) {
-    casePrepBtn.textContent = 'Case Prep';
-    if (hideCme) {
-      if (casePrepBtn.parentElement !== primaryRow) {
-        primaryRow.appendChild(casePrepBtn);
-      }
-      secondaryRow.style.display = 'none';
-    } else {
-      if (casePrepBtn.parentElement !== secondaryRow) {
-        secondaryRow.appendChild(casePrepBtn);
-      }
-      secondaryRow.style.display = 'flex';
-    }
-  }
+  applyCasePrepDashboardLayout({
+    mainOptions,
+    casePrepBtn,
+    hideCme,
+    casePrepMode
+  });
 }
 
 if (typeof window !== 'undefined') {
