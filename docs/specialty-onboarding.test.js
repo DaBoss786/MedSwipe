@@ -26,9 +26,31 @@ describe('specialty onboarding markup', () => {
     expect(homepageHtml).toContain('Otolaryngology');
     expect(homepageHtml).toContain('Neurosurgery');
     expect(homepageHtml).toContain('Urology');
+    expect(homepageHtml).toContain('Anesthesiology');
     expect(homepageHtml).toContain('specialty-chip-row');
     expect(homepageHtml).not.toContain('specialty-rotator');
     expect(homepageHtml).not.toContain('specialty-current');
-    expect(homepageHtml).not.toContain('Anesthesiology');
+  });
+
+  it('includes Anesthesiology in landing-page search and social metadata', () => {
+    expect(homepageHtml).toContain(
+      '<title>MedSwipe | Medical Specialty Board Review</title>'
+    );
+    expect(homepageHtml).toMatch(
+      /<meta name="description" content="[^"]*Anesthesiology[^"]*">/
+    );
+    expect(homepageHtml).toMatch(
+      /<meta name="keywords" content="[^"]*anesthesiology board review[^"]*">/
+    );
+    expect(homepageHtml).toMatch(
+      /<meta property="og:description" content="[^"]*Anesthesiology[^"]*">/
+    );
+    expect(homepageHtml).toMatch(
+      /<meta property="twitter:description" content="[^"]*Anesthesiology[^"]*">/
+    );
+    expect(homepageHtml).toMatch(
+      /"description": "Gamified Anesthesiology, Otolaryngology, Neurosurgery, and Urology board review platform/
+    );
+    expect(homepageHtml).not.toContain('"priceValidUntil": "2025-12-31"');
   });
 });
